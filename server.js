@@ -19,7 +19,7 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === "/api/gifts") {
     const list = await TT.giftCatalog(u.searchParams.get("u") || "");
     res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
-    return res.end(JSON.stringify({ ok: !!list, gifts: list || [] }));
+    return res.end(JSON.stringify({ ok: !!list, gifts: list || [], why: list ? undefined : TT.giftErr(), v: TT.version }));
   }
   let p = decodeURIComponent(u.pathname); if (p === "/") p = "/index.html";
   const f = path.normalize(path.join(PUB, p));

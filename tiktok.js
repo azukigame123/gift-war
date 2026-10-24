@@ -69,13 +69,13 @@ class Live extends EventEmitter {
     if (!TT) return null;
     try {
       const c = this.conn || new TT.TikTokLiveConnection(this.name, { signApiKey: API_KEY, webConfigOverrides: { DEFAULT_HTTP_CLIENT_PARAMS: { app_language: "ja-JP", browser_language: "ja-JP" } } });
-      if (!c.roomId) { try { await c.fetchRoomId(); } catch (e) { } }
-      if (!c.roomId) return null;
+      if (!c.roomId) { try { await c.fetchRoomId(); } catch (e) { GIFT_ERR = "roomId: " + String(e && e.message || e).slice(0, 160); } }
+      if (!c.roomId) { GIFT_ERR = GIFT_ERR || "roomId not found"; return null; }
       const list = await c.fetchAvailableGifts();
       const arr = Array.isArray(list) ? list : (list && (list.gifts || list.data && list.data.gifts)) || [];
       return arr.map(g => ({ id: String(g.id), name: String(g.name || ""), coins: +g.diamond_count || +g.diamondCount || 0, img: urlOf(g.image) || urlOf(g.icon) || null }))
         .filter(g => g.id && g.name).sort((a, b) => a.coins - b.coins);
-    } catch (e) { return null; }
+    } catch (e) { GIFT_ERR = "gifts: " + String(e && e.message || e).slice(0, 160); return null; }
   }
   startMock() {
     this.avatar = null;
@@ -106,7 +106,7 @@ function release(l) {
   if (!l) return; l.refs = Math.max(0, l.refs - 1);
   if (l.refs === 0) { clearTimeout(l.dropT); l.dropT = setTimeout(() => { if (l.refs === 0) { l.stop(); LIVES.delete(l.name.toLowerCase()); } }, 5 * 60 * 1000); }
 }
-let GIFT_CACHE = { at: 0, list: null };
+let GIFT_CACHE = { at: 0, list: null }; let GIFT_ERR = "";
 async function giftCatalog(name) {
   if (GIFT_CACHE.list && Date.now() - GIFT_CACHE.at < 6 * 3600 * 1000) return GIFT_CACHE.list;
   const l = LIVES.get(clean(name).toLowerCase()) || [...LIVES.values()][0] || new Live(process.env.GIFT_SOURCE || "tiktok");
@@ -117,4 +117,4 @@ async function giftCatalog(name) {
 // warm the gift list at start-up so it is ready before anyone goes live
 setTimeout(() => giftCatalog("").catch(() => { }), 3000);
 setInterval(() => giftCatalog("").catch(() => { }), 6 * 3600 * 1000);
-module.exports = { acquire, release, giftCatalog, clean, MOCK };
+module.exports = { acquire, release, giftCatalog, clean, MOCK, giftErr: () => GIFT_ERR, version: "gw-3" };
