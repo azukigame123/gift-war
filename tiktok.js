@@ -68,7 +68,9 @@ class Live extends EventEmitter {
     if (MOCK) return [["5655", "Rose", 1], ["5487", "Finger Heart", 5], ["5658", "Rosa", 10], ["5879", "Doughnut", 30], ["6427", "Hat and Mustache", 99], ["8217", "Boxing Gloves", 299], ["6000", "Snowman", 299], ["7934", "Galaxy", 1000]].map(([id, name, coins]) => ({ id, name, coins, img: null }));
     if (!TT) return null;
     try {
-      const c = this.conn || new TT.TikTokLiveConnection(this.name, { signApiKey: API_KEY });
+      const c = this.conn || new TT.TikTokLiveConnection(this.name, { signApiKey: API_KEY, webConfigOverrides: { DEFAULT_HTTP_CLIENT_PARAMS: { app_language: "ja-JP", browser_language: "ja-JP" } } });
+      if (!c.roomId) { try { await c.fetchRoomId(); } catch (e) { } }
+      if (!c.roomId) return null;
       const list = await c.fetchAvailableGifts();
       const arr = Array.isArray(list) ? list : (list && (list.gifts || list.data && list.data.gifts)) || [];
       return arr.map(g => ({ id: String(g.id), name: String(g.name || ""), coins: +g.diamond_count || +g.diamondCount || 0, img: urlOf(g.image) || urlOf(g.icon) || null }))
