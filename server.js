@@ -42,7 +42,7 @@ const other = t => t === "b" ? "r" : "b";
 function cleanDeck(d) { const s = new Set((Array.isArray(d) ? d : []).filter(x => UNIT_IDS.includes(x))); return s.size >= 1 ? [...s] : [...UNIT_IDS]; }
 function cleanGifts(g) {
   const o = {}; if (!g || typeof g !== "object") return o;
-  for (const k of [...UNIT_IDS, "glove"]) { const v = g[k]; if (v && typeof v === "object") o[k] = { id: String(v.id || "").slice(0, 32), name: String(v.name || "").slice(0, 40).toLowerCase() }; }
+  for (const k of [...UNIT_IDS, "glove"]) { const v = g[k]; if (v && typeof v === "object") o[k] = { id: String(v.id || "").slice(0, 32), name: String(v.name || "").slice(0, 40).toLowerCase(), alt: String(v.alt || "").slice(0, 40).toLowerCase() }; }
   return o;
 }
 
@@ -85,7 +85,7 @@ function battling(room) { return room.phase === "battle" && room.sim && room.sim
 function onGift(room, team, g) {
   if (!battling(room)) return; if (room.practice && team === "b" && room.src !== "live") return;
   const P = room.players[team], sim = room.sim, gn = g.giftName.toLowerCase();
-  const match = k => { const m = P.gifts[k]; return m && ((m.id && m.id === g.giftId) || (m.name && m.name === gn)); };
+  const match = k => { const m = P.gifts[k]; return m && ((m.id && m.id === g.giftId) || (m.name && m.name === gn) || (m.alt && m.alt === gn)); };
   if (match("glove")) { sim.sendGlove(team); return; }
   const unit = UNIT_IDS.find(k => k !== "rookie" && match(k));
   if (!unit) return;

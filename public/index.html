@@ -397,7 +397,7 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
   <h3 id="gmT">ギフトを選ぶ</h3>
   <div class="gtools"><input id="gmQ" type="search" placeholder="ギフト名で検索"><select id="gmS"><option value="a">コインが安い順</option><option value="d">コインが高い順</option></select><select id="gmF"><option value="0">すべて</option><option value="1">1〜99</option><option value="2">100〜999</option><option value="3">1000以上</option></select><button type="button" class="lbtn" id="gmX">閉じる</button></div>
   <div class="ggrid" id="gmG"></div>
-  <p class="note">よく使われるギフトの一覧です。配信中に届いたギフトは、本物の画像つきでこの一覧に自動で増えていきます。ほかのキャラで使っているギフトは薄く表示します。</p>
+  <p class="note">TikTok のギフト一覧（ChainRoulette で取った728個）です。名前で検索できます。ほかのキャラで使っているギフトは薄く表示します。</p>
 </div></div>
 <script>
 (()=>{
@@ -1115,13 +1115,14 @@ function drawBtn(g,team,x,y,w,h,cmp){
   g.fillStyle=ready?"#4a2c00":"#fff";g.fillText(txt,bx+bw/2,y+press+bh/2+1,bw-r);
 }
 // ---------- TikTok gift catalog (見本用の仮リスト。本番はサーバーから全ギフトを取得) ----------
-const GIFTS=[["Rose","🌹",1,"","バラ"],["TikTok","🎵",1,"",""],["GG","🎮",1,"",""],["Ice Cream Cone","🍦",1,"","アイスクリーム"],["Heart Me","💗",1,"","ハートミー"],["Finger Heart","🫰",5,"","指ハート"],["Rosa","🌷",10,"","ローザ"],["Perfume","🧴",20,"","香水"],["Doughnut","🍩",30,"","ドーナツ"],["Hat and Mustache","🎩",99,"","帽子とひげ"],["Hand Hearts","🫶",100,"","ハンドハート"],["Confetti","🎊",100,"","紙吹雪"],["Corgi","🐕",299,"","コーギー"],["Boxing Gloves","🥊",299,"","グローブ"],["Money Gun","💸",500,"","マネーガン"],["Galaxy","🌌",1000,"","ギャラクシー"],["Fireworks","🎆",1088,"","花火"],["Lion","🦁",29999,"","ライオン"],["Universe","🪐",34999,"","ユニバース"]];
+const GIFTS=[["Rose","🌹",1,"5655","バラ"],["TikTok","🎵",1,"",""],["GG","🎮",1,"",""],["Ice Cream Cone","🍦",1,"","アイスクリーム"],["Heart Me","💗",1,"","ハートミー"],["Finger Heart","🫰",5,"","指ハート"],["Rosa","🌷",10,"","ローザ"],["Perfume","🧴",20,"","香水"],["Doughnut","🍩",30,"","ドーナツ"],["Hat and Mustache","🎩",99,"","帽子とひげ"],["Hand Hearts","🫶",100,"","ハンドハート"],["Confetti","🎊",100,"","紙吹雪"],["Corgi","🐕",299,"","コーギー"],["Boxing Gloves","🥊",299,"","グローブ"],["Money Gun","💸",500,"","マネーガン"],["Galaxy","🌌",1000,"","ギャラクシー"],["Fireworks","🎆",1088,"","花火"],["Lion","🦁",29999,"","ライオン"],["Universe","🪐",34999,"","ユニバース"]];
 {const JP={"バラ":"Rose","アイスクリーム":"Ice Cream Cone","指ハート":"Finger Heart","ローザ":"Rosa","香水":"Perfume","ドーナツ":"Doughnut","帽子とひげ":"Hat and Mustache","ハンドハート":"Hand Hearts","紙吹雪":"Confetti","グローブ":"Boxing Gloves","ゆきだるま":"Corgi","太陽":"Hand Hearts","マネーガン":"Money Gun","ギャラクシー":"Galaxy","花火":"Fireworks","ライオン":"Lion","ユニバース":"Universe"};for(const k in CFG.gifts)if(JP[CFG.gifts[k]])CFG.gifts[k]=JP[CFG.gifts[k]]}
 const gInfo=n=>GIFTS.find(g=>g[0]===n);let GIFTS_REAL=false,paintGifts=null;const GIMG={};
 const isUrl=x=>typeof x==="string"&&/^https?:/.test(x);
 const gIcon=(x,cls)=>isUrl(x)?`<img src="${x}" alt="" referrerpolicy="no-referrer">`:`<span class="gi">${x}</span>`;
 function gImg(u){if(!GIMG[u]){const im=new Image();im.referrerPolicy="no-referrer";im.src=u;GIMG[u]=im}return GIMG[u]}
 const DEFG={archer:"Rose",rider:"Finger Heart",shield:"Rosa",bomber:"Doughnut",mage:"Hat and Mustache",golem:"Corgi",dragon:"Galaxy",glove:"Boxing Gloves"};
+const DEFGID={archer:"5655",rider:"5487",shield:"8913",bomber:"5879",mage:"6427",golem:"6267",dragon:"11046",glove:"6007"};
 try{const gc=JSON.parse(localStorage.getItem("giftwar_gifts")||"null");if(gc&&gc.length){for(const g of gc){const e=GIFTS.find(x=>(g.id&&x[3]===g.id)||x[0]===g.name);if(e){if(g.id)e[3]=g.id;if(g.img)e[1]=g.img}else GIFTS.push([g.name,g.img||"🎁",g.coins,g.id||""])}GIFTS.sort((a,b)=>a[2]-b[2])}}catch(e){}
 for(const k in DEFG)if(!CFG.gifts[k]||!gInfo(CFG.gifts[k])){const want=k==="glove"?299:COINV[k];const g=gInfo(DEFG[k])||GIFTS.find(x=>x[2]===want)||GIFTS.find(x=>x[2]>=want);if(g){CFG.gifts[k]=g[0];if(g[3])CFG.gid[k]=g[3]}}
 // ---------- settings UI ----------
@@ -1211,7 +1212,7 @@ const STREAM_NAME=(new URLSearchParams(location.search).get("stream")||"").repla
 if(STREAM_NAME){document.documentElement.classList.add("streamonly");stCv.style.width=stCv.style.height="";document.title="ギフト攻城戦 配信用画面"}
 var NETX={ok:false,url:null,tries:0,dt:66,lastSnap:0,you:"b",room:null,rival:"",avatars:{}};
 function wsURL(){const q=new URLSearchParams(location.search).get("server");if(q)return q.replace(/^http/,"ws").replace(/\/$/,"")+"/ws";if(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent|anthropic/.test(location.hostname))return null;return (location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws"}
-function gfor(id){const n=CFG.gifts[id];const g=gInfo(n);return {id:(CFG.gid&&CFG.gid[id])||(g&&g[3])||"",name:n||""}}
+function gfor(id){const n=CFG.gifts[id];const g=gInfo(n);return {id:(CFG.gid&&CFG.gid[id])||(g&&g[3])||"",name:n||"",alt:(g&&g[4])||""}}
 function cfgMsg(){const gifts={};for(const k of ["archer","rider","shield","bomber","mage","golem","dragon","glove"])gifts[k]=gfor(k);return {name:$("ttB").value.trim().replace(/^@/,""),gifts,cheer:CFG.cheer,deck:[...DECK.b],cap:CFG.cap}}
 let cfgT=null;function sendCfg(){if(!NETX.ok)return;clearTimeout(cfgT);cfgT=setTimeout(()=>NET.send(Object.assign({t:"cfg"},cfgMsg())),500)}
 function netConnect(){const u=wsURL();if(!u)return;NETX.url=u;let ws;try{ws=new WebSocket(u)}catch(e){return}
@@ -1257,8 +1258,14 @@ function netMsg(m){
   if(m.t==="left"){NETX.room=null;netBackToLobby();LB.code=null;LB.inB=LB.inR=LB.rdB=LB.rdR=false;lobbyUI();return}
   if(m.t==="err"){const t=$("roomStat");t.textContent=m.msg;t.style.color="#ff5468";setTimeout(()=>t.style.color="",3000);$("pracSt").textContent=m.msg;return}
 }
+async function loadBundledCatalog(){try{const r=await fetch("gift-catalog.json",{cache:"no-cache"});if(!r.ok)return;const j=await r.json();if(!j.gifts||j.gifts.length<50)return;
+  const extra=GIFTS.filter(x=>x[3]&&!j.gifts.some(g=>g.id===x[3])&&isUrl(x[1]));GIFTS.length=0;j.gifts.forEach(g=>GIFTS.push([g.name,g.img||"🎁",g.coins,g.id,""]));extra.forEach(x=>GIFTS.push(x));GIFTS.sort((a,b)=>a[2]-b[2]);catOk=true;
+  const byId=id=>GIFTS.find(x=>x[3]===id);
+  for(const k in DEFGID){const cur=(CFG.gid[k]&&byId(CFG.gid[k]))||GIFTS.find(x=>x[0]===CFG.gifts[k]);const g=cur||byId(DEFGID[k]);if(g){CFG.gifts[k]=g[0];CFG.gid[k]=g[3]}}
+  saveCfg();paintGifts&&paintGifts();drawDeck();buildDex();sendCfg()}catch(e){}}
+loadBundledCatalog();
 setInterval(()=>loadGiftCatalog(),120000);
-let catT=0,catOk=false;async function loadGiftCatalog(){if(!NETX.ok||Date.now()-catT<(catOk?600000:4000))return;catT=Date.now();try{const r=await fetch("/api/gifts?u="+encodeURIComponent($("ttB").value.trim()));const j=await r.json();if(j.ok&&j.gifts.length){if(j.partial){for(const g of j.gifts){const e=GIFTS.find(x=>x[3]===g.id||x[0]===g.name);if(e){e[3]=g.id;if(g.img)e[1]=g.img}else GIFTS.push([g.name,g.img||"🎁",g.coins,g.id])}GIFTS.sort((a,b)=>a[2]-b[2]);try{localStorage.setItem("giftwar_gifts",JSON.stringify(GIFTS.map(x=>({name:x[0],img:isUrl(x[1])?x[1]:null,coins:x[2],id:x[3]}))))}catch(e){}}else{catOk=true;try{localStorage.setItem("giftwar_gifts",JSON.stringify(j.gifts))}catch(e){}const jp={},em={};GIFTS.forEach(x=>{if(x[4])jp[x[0]]=x[4];if(!isUrl(x[1]))em[x[0]]=x[1]});GIFTS.length=0;j.gifts.forEach(g=>GIFTS.push([g.name,g.img||em[g.name]||"🎁",g.coins,g.id,jp[g.name]||""]))}GIFTS_REAL=true;
+let catT=0,catOk=false;async function loadGiftCatalog(){if(!NETX.ok||Date.now()-catT<(catOk?600000:4000))return;catT=Date.now();try{const r=await fetch("/api/gifts?u="+encodeURIComponent($("ttB").value.trim()));const j=await r.json();if(j.ok&&j.gifts.length){if(j.partial||j.gifts.length<GIFTS.length){for(const g of j.gifts){const e=GIFTS.find(x=>(g.id&&x[3]===g.id)||x[0]===g.name);if(e){if(!e[3])e[3]=g.id;if(g.img&&!isUrl(e[1]))e[1]=g.img}else GIFTS.push([g.name,g.img||"🎁",g.coins,g.id])}GIFTS.sort((a,b)=>a[2]-b[2]);try{localStorage.setItem("giftwar_gifts",JSON.stringify(GIFTS.map(x=>({name:x[0],img:isUrl(x[1])?x[1]:null,coins:x[2],id:x[3]}))))}catch(e){}}else{catOk=true;try{localStorage.setItem("giftwar_gifts",JSON.stringify(j.gifts))}catch(e){}const jp={},em={};GIFTS.forEach(x=>{if(x[4])jp[x[0]]=x[4];if(!isUrl(x[1]))em[x[0]]=x[1]});GIFTS.length=0;j.gifts.forEach(g=>GIFTS.push([g.name,g.img||em[g.name]||"🎁",g.coins,g.id,jp[g.name]||""]))}GIFTS_REAL=true;
   for(const k in DEFG){const cur=gInfo(CFG.gifts[k]);if(!cur){const want=k==="glove"?299:COINV[k];const used=new Set(Object.entries(CFG.gifts).filter(([q])=>q!==k).map(([,v])=>v));const free=x=>!used.has(x[0]);const g=gInfo(DEFG[k])||GIFTS.find(x=>x[2]===want&&free(x))||GIFTS.find(x=>x[2]>=want&&free(x));if(g){CFG.gifts[k]=g[0];CFG.gid[k]=g[3]}}else CFG.gid[k]=cur[3]}
   saveCfg();paintGifts&&paintGifts();drawDeck();sendCfg()}}catch(e){}}
 // online overrides of lobby buttons (offline preview keeps the pseudo flow)
