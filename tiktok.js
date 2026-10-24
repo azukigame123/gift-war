@@ -107,9 +107,12 @@ function release(l) {
 let GIFT_CACHE = { at: 0, list: null };
 async function giftCatalog(name) {
   if (GIFT_CACHE.list && Date.now() - GIFT_CACHE.at < 6 * 3600 * 1000) return GIFT_CACHE.list;
-  const l = LIVES.get(clean(name).toLowerCase()) || [...LIVES.values()][0];
-  const list = l ? await l.gifts() : null;
+  const l = LIVES.get(clean(name).toLowerCase()) || [...LIVES.values()][0] || new Live(process.env.GIFT_SOURCE || "tiktok");
+  const list = await l.gifts();
   if (list && list.length) GIFT_CACHE = { at: Date.now(), list };
   return list || GIFT_CACHE.list;
 }
+// warm the gift list at start-up so it is ready before anyone goes live
+setTimeout(() => giftCatalog("").catch(() => { }), 3000);
+setInterval(() => giftCatalog("").catch(() => { }), 6 * 3600 * 1000);
 module.exports = { acquire, release, giftCatalog, clean, MOCK };

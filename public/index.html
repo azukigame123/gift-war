@@ -69,11 +69,14 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .feed div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .feed .b{color:var(--blue)} .feed .r{color:var(--red)} .feed .s{color:var(--gold)}
 .ghost{position:fixed;pointer-events:none;z-index:50;width:48px;height:48px;transform:translate(-50%,-50%);opacity:.85}
-.streamsec{background:var(--panel);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.streamsec{background:var(--panel);border-radius:10px;padding:12px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start}
+.stside{flex:1;min-width:240px;display:flex;flex-direction:column;gap:10px}
+.stside .seg{display:flex;flex-wrap:wrap;gap:6px}.stst{font-size:12px;font-weight:800;color:var(--muted);background:var(--panel2);border-radius:999px;padding:3px 10px}.stst.live{color:#0d2a14;background:var(--green)}
+.sthint{margin:0;font-size:12.5px;color:var(--muted)}
 .sthead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
 .sthead h2{font-size:14px;margin:0}
-.stwrap{display:flex;justify-content:center;background:#0c111c;border-radius:8px;padding:10px}
-#streamCv{background:repeating-conic-gradient(#2a3044 0 25%,#1d2232 0 50%) 0 0/24px 24px;display:block;max-width:100%;max-height:70vh;height:auto;width:auto;border:1px dashed var(--muted)}
+.stwrap{flex:none;display:flex;justify-content:center;background:#0c111c;border-radius:8px;padding:8px;max-width:100%}
+#streamCv{background:repeating-conic-gradient(#2a3044 0 25%,#1d2232 0 50%) 0 0/24px 24px;display:block;max-width:100%;max-height:64vh;height:64vh;width:auto;border:1px dashed var(--muted)}
 .setrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px}
 .setrow label{font-weight:800;min-width:9em}
 .setrow span{color:var(--muted);font-size:12px}
@@ -118,7 +121,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .dc .nm{font-size:12px;font-weight:800}.dc .gf{font-size:10.5px;color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dc .cst{position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:50%;background:var(--purple);color:#1a1033;font-size:11px;font-weight:800;display:grid;place-items:center}
 .dc .chk{position:absolute;top:4px;right:4px;font-size:12px;font-weight:800;color:var(--gold)}
-.wrap[data-phase="lobby"] .bar,.wrap[data-phase="lobby"] .battle,.wrap[data-phase="lobby"] .streamsec,.wrap[data-phase="lobby"] .decks,.wrap[data-phase="lobby"] #feed{display:none}
+.wrap[data-phase="lobby"] .bar,.wrap[data-phase="lobby"] .battle,.wrap[data-phase="lobby"] .decks,.wrap[data-phase="lobby"] #feed{display:none}
 .wrap:not([data-phase="lobby"]) .lobby{display:none}
 .ov{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(8,12,20,.55);padding:16px}
 .ov[hidden]{display:none!important}
@@ -168,6 +171,8 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .tgift b{color:var(--green)}
 .ptag{display:none;font-size:11px;font-weight:800;color:#0d2a14;background:var(--green);border-radius:4px;padding:2px 8px}
 .wrap.prac .ptag{display:inline-block}
+.pstop{display:none;font-family:var(--f-body);font-size:13px;font-weight:800;color:#fff;background:#c0394f;border:none;border-radius:6px;padding:7px 14px;cursor:pointer}
+.wrap.prac:not([data-phase="lobby"]) .pstop{display:inline-block}
 .wrap.net-b #plR,.wrap.net-r #plB{display:none}
 .wrap.net-b .ctrl,.wrap.net-r .ctrl,.wrap.net-b .bar .seg,.wrap.net-r .bar .seg{display:none}
 .wrap.net-b .decks,.wrap.net-r .decks{grid-template-columns:1fr}
@@ -219,6 +224,17 @@ table.mu td.sel{outline:2px solid var(--gold)}
 .mulist{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:6px 14px;font-size:12px;line-height:1.55}
 .mulist div{display:flex;gap:8px;align-items:flex-start}.mulist img{width:28px;height:28px;object-fit:contain;flex:none}
 .mulist .g{color:#6fe08a;font-weight:700}.mulist .b{color:#ff7b8b;font-weight:700}
+.stbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.stbar .sti{font-size:22px}.stbar .stt{display:flex;flex-direction:column;font-weight:800;font-size:13px}.stbar .stt small{font-weight:400;color:var(--muted);font-size:11px}
+.stbar code{flex:1;min-width:220px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:7px 10px;color:var(--fg);font-size:12.5px;user-select:all;word-break:break-all}
+.stbar .lbtn:disabled{opacity:.45;cursor:default}
+.modetabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 10px}
+.modetabs button{font-family:var(--f-disp);font-size:18px;color:var(--fg);background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.modetabs button small{font-family:var(--f-body);font-size:11.5px;color:var(--muted);font-weight:700}
+.modetabs button[aria-selected="true"]{border-color:var(--gold);background:#3a3216;box-shadow:0 0 0 2px var(--gold) inset}
+.lobby[data-mode="battle"] .ponly,.lobby[data-mode="prac"] .bonly,.lobby[data-mode="prac"] #pcR{display:none!important}
+.lobby[data-mode="prac"] .players{grid-template-columns:1fr}
+html.streamonly .stbar{display:none!important}
 section.spec{background:var(--panel);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px}
 section.spec h2{font-size:14px;margin:0;letter-spacing:.06em}
 section.spec p{margin:0;font-size:13px;line-height:1.7;color:var(--muted)}
@@ -232,15 +248,17 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
 <div class="wrap" id="wrap" data-phase="lobby">
 <header>
   <h1>ギフト攻城戦</h1>
-  <div class="snd"><button type="button" id="sndBtn" aria-pressed="true">効果音 ON</button><label for="vol">音量</label><input id="vol" type="range" min="0" max="1" step="0.05" value="0.5"><span class="tag">見本 v32・デッキ30</span></div>
+  <div class="snd"><button type="button" id="sndBtn" aria-pressed="true">効果音 ON</button><label for="vol">音量</label><input id="vol" type="range" min="0" max="1" step="0.05" value="0.5"><span class="tag">見本 v34・配信画面プレビュー</span></div>
 </header>
 <p class="lead">バトル中、視聴者には2人の映像が左右に並んで見えます。各自のゲーム画面は「自分の陣地の半分」だけを映し、真ん中の川でつながります。兵は川沿いのゲートに入ると、相手の画面のゲートから出てきます。中央の砦は2つの画面にまたがっていて、2人で取り合います。</p>
 
-<section class="lobby" id="lobby">
+<div class="stbar" id="stLink"><span class="sti">📺</span><span class="stt">配信に映すURL<small>LIVE Studio の「リンク」に貼ると、バトルでも練習でも自分の画面が映ります</small></span><code id="stUrl">ユーザー名を入れると出ます</code><button type="button" class="lbtn" id="stCopy" disabled>コピー</button></div>
+<section class="lobby" id="lobby" data-mode="battle">
   <h2 class="lh">対戦の準備 <span class="netst off" id="netSt"><b>●</b> サーバー未接続（見本モード）</span></h2>
+  <div class="modetabs" role="tablist" aria-label="遊び方"><button type="button" role="tab" data-mode="battle" aria-selected="true">⚔ バトル<small>友達と対戦</small></button><button type="button" role="tab" data-mode="prac" aria-selected="false">🎯 練習<small>ひとりでCPUと</small></button></div>
   <div class="lgrid">
     <div class="lcol">
-      <div class="lcard">
+      <div class="lcard bonly">
         <h3>部屋</h3>
         <label class="offchk"><input type="checkbox" id="offChk"> 配信なしで遊ぶ（ライブのギフトといいねの代わりに、兵といいねが自動で届きます）</label>
         <div class="lrow"><button type="button" id="mkRoom" class="lbtn">部屋を作る</button><span class="or">または</span><input id="codeIn" type="text" maxlength="6" placeholder="入室コード" autocomplete="off"><button type="button" id="joinRoom" class="lbtn">入る</button></div>
@@ -250,16 +268,16 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
         <div class="pcard b" id="pcB"><div class="av" id="avB">?</div><div class="pinfo"><b>あなた（青軍）</b><input id="ttB" type="text" maxlength="24" placeholder="TikTokのユーザー名" autocomplete="off"><span class="tts" id="tsB">TikTok 未接続</span><span class="pst" id="stB">未入室</span></div></div>
         <div class="pcard r" id="pcR"><div class="av" id="avR">?</div><div class="pinfo"><b>相手（赤軍）</b><span class="ttn" id="ttR">—</span><span class="tts" id="tsR">—</span><span class="pst" id="stR">未入室</span></div></div>
       </div>
-      <button type="button" id="readyBtn" class="ready" disabled>準備完了</button>
-      <div class="lcard prac">
+      <button type="button" id="readyBtn" class="ready bonly" disabled>準備完了</button>
+      <div class="lcard prac ponly">
         <h3>練習（CPUと対戦）</h3>
-        <p class="lstat">部屋に入らず、ひとりでCPUと戦えます。配信前の練習や、ギフトの設定を試すときに。</p>
+        <p class="lstat">ひとりでCPUと戦えます。ライブにつながっていなくても遊べます（そのときは兵といいねが自動で届きます）。</p>
         <div class="lrow"><label for="pLv">CPUの強さ</label><select id="pLv"><option value="0.6">弱い</option><option value="1" selected>ふつう</option><option value="1.6">強い</option></select>
-          <label for="pSrc">自分のギフト</label><select id="pSrc"><option value="live">自分のライブのギフト</option><option value="test">テストボタンで出す</option><option value="auto">自動で届く</option></select></div>
+          <label for="pSrc">自分のギフト</label><select id="pSrc"><option value="auto">自動で届く</option><option value="live">自分のライブのギフト（配信中のとき）</option><option value="test">テストボタンで出す</option></select></div>
         <button type="button" id="pracBtn" class="lbtn pgo">練習を始める</button>
         <p class="lstat" id="pracSt"></p>
       </div>
-      <p class="lnote">ユーザー名を入れると、サーバーがそのライブにつなぎます。2人とも「配信中」になり入室がそろうと「準備完了」ボタンが光ります（見本では接続は疑似です。名前に off を含めると「配信していません」になります）。2人とも押すと、バトルが始まります。この見本では、部屋を作ると数秒後にテスト用の相手が入ってきて、少しあとに準備完了を押します。</p>
+      <p class="lnote bonly">ユーザー名を入れると、サーバーがそのライブにつなぎます。2人とも「配信中」になり入室がそろうと「準備完了」ボタンが光ります（見本では接続は疑似です。名前に off を含めると「配信していません」になります）。2人とも押すと、バトルが始まります。この見本では、部屋を作ると数秒後にテスト用の相手が入ってきて、少しあとに準備完了を押します。</p>
     </div>
     <div class="lcol">
       <div class="lcard">
@@ -283,7 +301,7 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
 
 <div class="tgift" id="tgift"><b>テストギフト（練習）</b></div>
 <div class="bar">
-  <span class="ptag">練習中（CPU対戦）</span>
+  <span class="ptag">練習中（CPU対戦）</span><button type="button" class="pstop" id="pracStop">■ 練習をやめる</button>
   <span>残り <b id="time">5:00</b></span>
   <span>砦：<b id="fortOwner">中立</b></span>
   <span>FPS <b id="fps">-</b> ／ 計算 <b id="simms">-</b>ms ／ <b id="ucount">0</b>体</span>
@@ -303,6 +321,20 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
   </div>
 </div>
 
+<section class="streamsec">
+  <div class="stwrap"><canvas id="streamCv" width="720" height="960" aria-label="配信に映す画面のプレビュー"></canvas></div>
+  <div class="stside">
+    <div class="sthead"><h2>配信画面プレビュー</h2><span class="stst" id="stState">試合が始まると動きます</span></div>
+    <p class="sthint">配信に映る形です。比率を選ぶと、上の「配信に映すURL」にも反映されます。</p>
+    <div class="seg" role="group" aria-label="配信画面の比率" id="aspect">
+    <button data-a="0.5725" aria-pressed="true">TikTokバトル枠</button><button data-a="0.5625" aria-pressed="false">縦長 9:16</button>
+    <button data-a="0.75" aria-pressed="false">縦長 3:4</button>
+    <button data-a="1" aria-pressed="false">正方形 1:1</button>
+    <button data-a="1.7778" aria-pressed="false">横長 16:9</button>
+  </div>
+    <p class="note">「TikTokバトル枠」では、上の約半分を透明にして自分のカメラが見えるようにし、下にゲーム（自陣だけ）を出します。配信画面では塔・砦・キャラを1.3倍で描きます。自分の操作画面はフィールド全体のままです。ほかの比率では、この枠の中だけを映します。戦場より横に広い比率なら帯を右に、縦に長い比率なら帯を下に置きます。帯には、キャラと対応するギフト、いいねゲージ、いいねスキルのボタンを出します。</p>
+  </div>
+</section>
 <div class="battle">
   <div class="labels"><span id="labL"></span><span id="labR"></span></div>
   <div class="field">
@@ -312,18 +344,7 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
   <p class="note">左右の画面は、それぞれの配信者のゲーム画面です。本番では各自のPCに自分の半分だけが出ます。上の切り替えで、相手の部屋だと左右が入れ替わっても成立するかを確認できます。</p>
 </div>
 
-<section class="streamsec">
-  <div class="sthead"><h2>配信画面プレビュー</h2>
-  <div class="seg" role="group" aria-label="配信画面の比率" id="aspect">
-    <button data-a="0.5725" aria-pressed="true">TikTokバトル枠</button><button data-a="0.5625" aria-pressed="false">縦長 9:16</button>
-    <button data-a="0.75" aria-pressed="false">縦長 3:4</button>
-    <button data-a="1" aria-pressed="false">正方形 1:1</button>
-    <button data-a="1.7778" aria-pressed="false">横長 16:9</button>
-  </div></div>
-  <div class="stlink" id="stLink" hidden>LIVE Studio の「リンク」に貼るURL：<code id="stUrl"></code><button type="button" class="lbtn" id="stCopy">コピー</button></div>
-  <div class="stwrap"><canvas id="streamCv" width="720" height="960" aria-label="配信に映す画面のプレビュー"></canvas></div>
-  <p class="note">「TikTokバトル枠」では、上の約半分を透明にして自分のカメラが見えるようにし、下にゲーム（自陣だけ）を出します。配信画面では塔・砦・キャラを1.3倍で描きます。自分の操作画面はフィールド全体のままです。ほかの比率では、この枠の中だけを映します。戦場より横に広い比率なら帯を右に、縦に長い比率なら帯を下に置きます。帯には、キャラと対応するギフト、いいねゲージ、いいねスキルのボタンを出します。</p>
-</section>
+
 
 <div class="decks">
   <div class="pl b" id="plB">
@@ -945,9 +966,10 @@ function renderCanvas(k){
 }
 
 // ---------- stream preview ----------
-const stCv=document.getElementById("streamCv"),stG=stCv.getContext("2d");let stA=.5725;
-document.querySelectorAll("#aspect button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#aspect button").forEach(x=>x.setAttribute("aria-pressed",x===b));stA=+b.dataset.a;sizeStream()});
-function sizeStream(){if(stA>=1){stCv.width=1280;stCv.height=Math.round(1280/stA)}else{stCv.height=1280;stCv.width=Math.round(1280*stA)}}
+const stCv=document.getElementById("streamCv"),stG=stCv.getContext("2d");let stA=.5725;try{const q=+new URLSearchParams(location.search).get("r");const v=q||+localStorage.getItem("giftwar_ratio");if([.5725,.5625,.75,1,1.7778].includes(v))stA=v}catch(e){}
+document.querySelectorAll("#aspect button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#aspect button").forEach(x=>x.setAttribute("aria-pressed",x===b));stA=+b.dataset.a;sizeStream();try{localStorage.setItem("giftwar_ratio",stA)}catch(e){}typeof updStreamLink==="function"&&updStreamLink()});
+document.querySelectorAll("#aspect button").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.a===stA));
+function sizeStream(){if(stA>=1){stCv.width=1280;stCv.height=Math.round(1280/stA)}else{stCv.height=1280;stCv.width=Math.round(1280*stA)}if(!document.documentElement.classList.contains("streamonly")){if(stA>=1){stCv.style.width="min(100%,720px)";stCv.style.height="auto"}else{stCv.style.height="64vh";stCv.style.width="auto"}}}
 sizeStream();
 const GIFTLBL={rookie:"いいね100",archer:"1",rider:"5",shield:"10",bomber:"30",mage:"99",golem:"299",dragon:"1000"};
 function coin(g,x,y,r){g.fillStyle="#ffcf3f";g.beginPath();g.arc(x,y,r,0,7);g.fill();g.strokeStyle="#b8860b";g.lineWidth=r*.25;g.stroke();g.fillStyle="#b8860b";g.font=`bold ${r*1.1}px sans-serif`;g.textAlign="center";g.textBaseline="middle";g.fillText("¢",x,y+r*.05)}
@@ -1098,7 +1120,8 @@ const isUrl=x=>typeof x==="string"&&/^https?:/.test(x);
 const gIcon=(x,cls)=>isUrl(x)?`<img src="${x}" alt="" referrerpolicy="no-referrer">`:`<span class="gi">${x}</span>`;
 function gImg(u){if(!GIMG[u]){const im=new Image();im.referrerPolicy="no-referrer";im.src=u;GIMG[u]=im}return GIMG[u]}
 const DEFG={archer:"バラ",rider:"指ハート",shield:"ローザ",bomber:"ドーナツ",mage:"帽子とひげ",golem:"ゆきだるま",dragon:"ギャラクシー",glove:"グローブ"};
-for(const k in DEFG)if(!CFG.gifts[k]||!gInfo(CFG.gifts[k]))CFG.gifts[k]=DEFG[k];
+try{const gc=JSON.parse(localStorage.getItem("giftwar_gifts")||"null");if(gc&&gc.length>10){GIFTS.length=0;gc.forEach(g=>GIFTS.push([g.name,g.img||"🎁",g.coins,g.id]))}}catch(e){}
+for(const k in DEFG)if(!CFG.gifts[k]||!gInfo(CFG.gifts[k])){const want=k==="glove"?299:COINV[k];const g=gInfo(DEFG[k])||GIFTS.find(x=>x[2]===want)||GIFTS.find(x=>x[2]>=want);if(g){CFG.gifts[k]=g[0];if(g[3])CFG.gid[k]=g[3]}}
 // ---------- settings UI ----------
 {const tb=document.getElementById("giftRows");const rows=[...UNITS.map(u=>[u.id,u.name,u.id==="rookie"?"いいね100":COINV[u.id]]),["glove","グローブ（逆転用）",299]];
  const paint=paintGifts=()=>{tb.innerHTML=rows.map(([id,nm,c])=>{if(id==="rookie")return `<tr><td>${nm}</td><td>いいね100回</td><td class="n">—</td></tr>`;const gi=gInfo(CFG.gifts[id])||[CFG.gifts[id]||"未設定","❔",0];return `<tr><td>${nm}</td><td><button type="button" class="gpick" data-id="${id}">${gIcon(gi[1])}${gi[0]}<small>変更 ▸</small></button></td><td class="n">${gi[2]}</td></tr>`}).join("");
@@ -1132,7 +1155,7 @@ setRoom("b");newState();
 let uiT=0;
 let PH="lobby",resTimer=null;
 const wrapEl=document.getElementById("wrap");
-function setPhase(ph){PH=ph;wrapEl.dataset.phase=ph==="lobby"?"lobby":"battle"}
+function setPhase(ph){PH=ph;wrapEl.dataset.phase=ph==="lobby"?"lobby":"battle";const e=document.getElementById("stState");if(e){e.textContent=ph==="lobby"?"試合が始まると動きます":"試合中・動いています";e.classList.toggle("live",ph!=="lobby")}}
 // ---------- lobby ----------
 const LB={code:null,inB:false,inR:false,rdB:false,rdR:false,nameR:"rival_streamer"};
 const $=id=>document.getElementById(id);
@@ -1163,7 +1186,7 @@ function drawDeck(){const g=$("dgrid");g.innerHTML=UNITS.map(u=>`<button type="b
   g.querySelectorAll(".dc").forEach(b=>b.onclick=()=>{const id=b.dataset.id;if(DECK.b.has(id))DECK.b.delete(id);else DECK.b.add(id);drawDeck();lobbyUI();sendCfg()});
   const c=deckCost();$("deckCost").textContent=`${DECK.b.size}体・コスト ${c} / ${DECK_CAP}`;$("deckCost").style.color=deckValid()?"":"#ff5468"}
 drawDeck();lobbyUI();
-function pracStart(){const src=$("pSrc").value;if(!deckValid()){$("pracSt").textContent="デッキを直してください（6体以上、コスト30以内）";$("pracSt").style.color="#ff5468";return}if(src==="live"&&TT.b!=="ok"){$("pracSt").textContent="自分のライブにつながっていません。ユーザー名を入れるか、「テストボタンで出す」を選んでください。";$("pracSt").style.color="#ff5468";return}
+function pracStart(){let src=$("pSrc").value;if(src==="live"&&TT.b!=="ok")src="auto";if(!deckValid()){$("pracSt").textContent="デッキを直してください（6体以上、コスト30以内）";$("pracSt").style.color="#ff5468";return}
   $("pracSt").textContent="";PRAC.on=true;GR.r=+$("pLv").value;AG.r=true;AG.b=src==="auto";GR.b=1;wrapEl.classList.add("prac");wrapEl.classList.toggle("practest",src==="test");
   DECK.r=new Set(DECK.b);startCountdown()}
 $("pracBtn").onclick=()=>{au();play("ready");pracStart()};
@@ -1183,7 +1206,7 @@ $("doneBtn").onclick=()=>{$("resOv").hidden=true;resTimer=null;if(PRAC.on){PRAC.
 // ---------- online (server runs the battle; this page draws it and sends your actions) ----------
 const UMAP={};UNITS.forEach(u=>UMAP[u.id]=u);
 const STREAM_NAME=(new URLSearchParams(location.search).get("stream")||"").replace(/^@/,"").trim();
-if(STREAM_NAME){document.documentElement.classList.add("streamonly");document.title="ギフト攻城戦 配信用画面"}
+if(STREAM_NAME){document.documentElement.classList.add("streamonly");stCv.style.width=stCv.style.height="";document.title="ギフト攻城戦 配信用画面"}
 var NETX={ok:false,url:null,tries:0,dt:66,lastSnap:0,you:"b",room:null,rival:"",avatars:{}};
 function wsURL(){const q=new URLSearchParams(location.search).get("server");if(q)return q.replace(/^http/,"ws").replace(/\/$/,"")+"/ws";if(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent|anthropic/.test(location.hostname))return null;return (location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws"}
 function gfor(id){const n=CFG.gifts[id];const g=gInfo(n);return {id:(CFG.gid&&CFG.gid[id])||(g&&g[3])||"",name:n||""}}
@@ -1193,7 +1216,8 @@ function netConnect(){const u=wsURL();if(!u)return;NETX.url=u;let ws;try{ws=new 
   NET.ws=ws;ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}netMsg(m)};
   ws.onopen=()=>{NETX.tries=0};
   ws.onclose=()=>{const was=NETX.ok;NETX.ok=false;NET.on=false;netBadge();if(was&&PH!=="lobby"){log("s","サーバーとの接続が切れました。つなぎ直しています…")}setTimeout(netConnect,Math.min(10000,1000*(++NETX.tries)))}}
-function updStreamLink(){const n=$("ttB").value.trim().replace(/^@/,"");const box=$("stLink");if(!box)return;if(!NETX.ok||!n){box.hidden=true;return}box.hidden=false;$("stUrl").textContent=`${location.origin}/?stream=${encodeURIComponent(n)}`}
+function updStreamLink(){const n=$("ttB").value.trim().replace(/^@/,"");const base=NETX&&NETX.ok?location.origin:"https://gift-war.onrender.com";const c=$("stCopy");
+  if(!n){$("stUrl").textContent="ユーザー名を入れると出ます";c.disabled=true;return}$("stUrl").textContent=`${base}/?stream=${encodeURIComponent(n)}`+(stA!==.5725?`&r=${stA}`:"");c.disabled=false}
 function netBadge(){const el=$("netSt");if(!el)return;el.className="netst"+(NETX.ok?"":" off");el.innerHTML=NETX.ok?"<b>●</b> サーバー接続中":"<b>●</b> サーバー未接続（見本モード）"}
 function setAv(el,url,name){if(url){el.innerHTML=`<img src="${url}" alt="" referrerpolicy="no-referrer">`;el.classList.add("on","live")}else{el.innerHTML="";el.classList.remove("live");el.style.background="";avatar(el,name)}}
 function ttInfo(slot,info,name){const st=info&&info.st||"";TT[slot]=st;const el=$(slot==="b"?"tsB":"tsR");
@@ -1231,7 +1255,7 @@ function netMsg(m){
   if(m.t==="left"){NETX.room=null;netBackToLobby();LB.code=null;LB.inB=LB.inR=LB.rdB=LB.rdR=false;lobbyUI();return}
   if(m.t==="err"){const t=$("roomStat");t.textContent=m.msg;t.style.color="#ff5468";setTimeout(()=>t.style.color="",3000);$("pracSt").textContent=m.msg;return}
 }
-let catT=0,catOk=false;async function loadGiftCatalog(){if(!NETX.ok||Date.now()-catT<(catOk?600000:4000))return;catT=Date.now();try{const r=await fetch("/api/gifts?u="+encodeURIComponent($("ttB").value.trim()));const j=await r.json();if(j.ok&&j.gifts.length){catOk=true;GIFTS.length=0;j.gifts.forEach(g=>GIFTS.push([g.name,g.img||"🎁",g.coins,g.id]));GIFTS_REAL=true;
+let catT=0,catOk=false;async function loadGiftCatalog(){if(!NETX.ok||Date.now()-catT<(catOk?600000:4000))return;catT=Date.now();try{const r=await fetch("/api/gifts?u="+encodeURIComponent($("ttB").value.trim()));const j=await r.json();if(j.ok&&j.gifts.length){catOk=true;try{localStorage.setItem("giftwar_gifts",JSON.stringify(j.gifts))}catch(e){}GIFTS.length=0;j.gifts.forEach(g=>GIFTS.push([g.name,g.img||"🎁",g.coins,g.id]));GIFTS_REAL=true;
   for(const k in DEFG){const cur=gInfo(CFG.gifts[k]);if(!cur){const want=k==="glove"?299:COINV[k];const g=GIFTS.find(x=>x[2]===want)||GIFTS.find(x=>x[2]>=want);if(g){CFG.gifts[k]=g[0];CFG.gid[k]=g[3]}}else CFG.gid[k]=cur[3]}
   saveCfg();paintGifts&&paintGifts();drawDeck();sendCfg()}}catch(e){}}
 // online overrides of lobby buttons (offline preview keeps the pseudo flow)
@@ -1239,8 +1263,8 @@ let catT=0,catOk=false;async function loadGiftCatalog(){if(!NETX.ok||Date.now()-
  $("mkRoom").onclick=()=>{if(!NETX.ok)return oMk();au();NET.send(Object.assign({t:"cfg"},cfgMsg()));NET.send({t:"create",cap:CFG.cap,offline:$("offChk").checked})};
  $("joinRoom").onclick=()=>{if(!NETX.ok)return oJoin();const c=$("codeIn").value.trim().toUpperCase();if(c.length<4){$("roomStat").textContent="入室コードを入れてください（4〜6文字）";return}au();NET.send(Object.assign({t:"cfg"},cfgMsg()));NET.send({t:"join",code:c})};
  $("readyBtn").onclick=()=>{if(!NETX.ok)return oReady();if($("readyBtn").disabled)return;au();play("ready");NET.send({t:"ready",deck:[...DECK.b]})};
- $("ttB").oninput=()=>{if(!NETX.ok)return oTT();updStreamLink();ttInfo("b",{st:$("ttB").value.trim()?"wait":""},"");lobbyUI();sendCfg()};
- $("pracBtn").onclick=()=>{if(!NETX.ok)return oPr();au();play("ready");const src=$("pSrc").value;if(!deckValid()){$("pracSt").textContent="デッキを直してください（6体以上、コスト30以内）";return}if(src==="live"&&TT.b!=="ok"){$("pracSt").textContent="自分のライブにつながっていません。ユーザー名を入れるか、「テストボタンで出す」を選んでください。";return}
+ $("ttB").oninput=()=>{updStreamLink();if(!NETX.ok)return oTT();ttInfo("b",{st:$("ttB").value.trim()?"wait":""},"");lobbyUI();sendCfg()};
+ $("pracBtn").onclick=()=>{if(!NETX.ok)return oPr();au();play("ready");let src=$("pSrc").value;if(src==="live"&&TT.b!=="ok"){src="auto";$("pracSt").textContent="ライブにつながっていないので、自動で届く設定で始めます"}if(!deckValid()){$("pracSt").textContent="デッキを直してください（6体以上、コスト30以内）";return}
    $("pracSt").textContent="";NETX.psrc=src;NET.send(Object.assign({t:"cfg"},cfgMsg()));NET.send({t:"practice",lvl:+$("pLv").value,src,deck:[...DECK.b],cap:CFG.cap})};
  $("doneBtn").onclick=()=>{if(!NETX.ok||!NET.on)return oDone();NET.send({t:"done"});if(!(NETX.room&&NETX.room.practice)){netBackToLobby();if(NETX.room)netLobby(NETX.room,NETX.you)}};}
 {const c=$("stCopy");if(c)c.onclick=()=>{const t=$("stUrl").textContent;try{navigator.clipboard.writeText(t);c.textContent="コピーしました";setTimeout(()=>c.textContent="コピー",1500)}catch(e){}}}
@@ -1319,6 +1343,10 @@ function buildMU(){const T=$("muTable");if(!T)return;const U=UNITS.map(u=>u.id),
   $("muList").innerHTML=U.map(a=>{const g=MU.filter(x=>x[0]===a).map(x=>nm(x[1])),b=MU.filter(x=>x[1]===a).map(x=>nm(x[0]));if(a==="bomber")g.push("塔・砦");
     return `<div>${im(a)}<span><b>${nm(a)}</b>　<span class="g">得意</span> ${g.join("・")||"—"}　<span class="b">苦手</span> ${b.join("・")||"—"}</span></div>`}).join("")}
 buildMU();
+{const tabs=document.querySelectorAll(".modetabs button");const setMode=m=>{$("lobby").dataset.mode=m;tabs.forEach(b=>b.setAttribute("aria-selected",b.dataset.mode===m));try{localStorage.setItem("giftwar_mode",m)}catch(e){}};
+ tabs.forEach(b=>b.onclick=()=>setMode(b.dataset.mode));let m0="battle";try{m0=localStorage.getItem("giftwar_mode")||"battle"}catch(e){}setMode(m0);updStreamLink();}
+$("pracStop").onclick=()=>{if(NETX.ok&&NET.on){NET.send({t:"done"});return}
+  PRAC.on=false;AG.b=AG.r=true;GR.r=1;wrapEl.classList.remove("prac","practest");$("cdOv").hidden=true;$("resOv").hidden=true;resTimer&&clearTimeout(resTimer);resTimer=null;setPhase("lobby");newState();refreshUI();lobbyUI()};
 function frame(){const now=performance.now();fpsAcc+=now-lastT;lastT=now;fpsN++;if(cardsDirty&&imgLeft===0){cardsDirty=false;PLAYERS.forEach(p=>UNITS.forEach(u=>drawCard(p.pcs[u.id],u,p.team)))}const t0=performance.now();if(PH==="battle"&&!NET.on)for(let i=0;i<speed;i++){tick++;step()}else tick++;if(NET.on)netLerp(now);if(PH==="battle"&&S.over&&!resTimer)resTimer=setTimeout(showResult,1500);simAcc+=performance.now()-t0;if(fpsN>=30){document.getElementById("fps").textContent=Math.round(1000/(fpsAcc/fpsN));document.getElementById("simms").textContent=(simAcc/fpsN).toFixed(1);document.getElementById("ucount").textContent=S.units.length;fpsAcc=simAcc=fpsN=0}dexStep();for(let i=LFX.length-1;i>=0;i--)if(--LFX[i].life<=0)LFX.splice(i,1);CANVAS.forEach(renderCanvas);if(STREAM_NAME&&(!NET.on||(S.over&&(NETX.overAt=NETX.overAt||performance.now())&&performance.now()-NETX.overAt>15000))){stG.setTransform(1,0,0,1,0,0);stG.clearRect(0,0,stCv.width,stCv.height)}else if(uiT%2===0){if(!S.over)NETX.overAt=0;drawStream()}if(++uiT%6===0)refreshUI();requestAnimationFrame(frame)}
 refreshUI();netConnect();frame();
 })();
