@@ -147,7 +147,7 @@ function maybeClose(room) {
 // ---------- websocket ----------
 const wss = new WebSocketServer({ server, path: "/ws", perMessageDeflate: { threshold: 512 } , maxPayload: 64 * 1024 });
 wss.on("connection", ws => {
-  const C = { ws, name: "", gifts: {}, cheer: "がんばれ", deck: UNIT_IDS.slice(0, 7), room: null, team: null, live: null, on: null, rate: 0 };
+  const C = { ws, name: "", gifts: {}, cheer: "がんばれ", deck: UNIT_IDS.slice(), room: null, team: null, live: null, on: null, rate: 0 };
   let solo = null; // TikTok status while not in a room
   const soloLive = () => {
     if (C.room) return;

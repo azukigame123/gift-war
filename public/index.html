@@ -232,7 +232,7 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
 <div class="wrap" id="wrap" data-phase="lobby">
 <header>
   <h1>ギフト攻城戦</h1>
-  <div class="snd"><button type="button" id="sndBtn" aria-pressed="true">効果音 ON</button><label for="vol">音量</label><input id="vol" type="range" min="0" max="1" step="0.05" value="0.5"><span class="tag">見本 v31・図鑑と相性表</span></div>
+  <div class="snd"><button type="button" id="sndBtn" aria-pressed="true">効果音 ON</button><label for="vol">音量</label><input id="vol" type="range" min="0" max="1" step="0.05" value="0.5"><span class="tag">見本 v32・デッキ30</span></div>
 </header>
 <p class="lead">バトル中、視聴者には2人の映像が左右に並んで見えます。各自のゲーム画面は「自分の陣地の半分」だけを映し、真ん中の川でつながります。兵は川沿いのゲートに入ると、相手の画面のゲートから出てきます。中央の砦は2つの画面にまたがっていて、2人で取り合います。</p>
 
@@ -264,7 +264,7 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
     <div class="lcol">
       <div class="lcard">
         <h3>デッキ編成 <small id="deckCost"></small></h3>
-        <p class="lstat">使うキャラを選んでください（6体以上、コストの合計25以内）。外したキャラのギフトが届くと、デッキの中の一つ下のキャラが出ます。</p>
+        <p class="lstat">使うキャラを選んでください（6体以上、コストの合計30以内）。外したキャラのギフトが届くと、デッキの中の一つ下のキャラが出ます。</p>
         <div class="dgrid" id="dgrid"></div>
       </div>
     </div>
@@ -432,7 +432,7 @@ const UNITS=[
  {id:"bomber",building:true, name:"爆弾工兵",cost:4,src:"30コイン",  hp:70, atk:30,spd:1.0,r:9, range:16,cd:80,role:"攻城",look:"bomber",G:12,atkTxt:"工具で叩く（単体）。90以内に塔・砦があれば爆弾を投げる（爆発に巻き込まれた敵にも少しダメージ）",trait:"建物へのダメージ2倍",skill:"地雷を4個ばらまく（踏んだ敵が爆発）",sk:"地雷だ！"},
  {id:"mage",   name:"魔法使い",cost:4,src:"99コイン",  hp:90, atk:22,spd:.65,r:9, range:75,cd:70,role:"範囲・妨害",look:"mage",G:12,atkTxt:"光の玉で3体を攻撃",trait:"必殺技のゲージが1.5倍の速さでたまる",skill:"火の粉の範囲：4秒間、範囲の敵に続けてダメージ",sk:"燃え尽きろ！"},
  {id:"golem",  name:"ゴーレム",cost:6,src:"299コイン", hp:1100,atk:40,spd:.4, r:16,range:20,cd:80,role:"重戦車",look:"golem",G:14,atkTxt:"薙ぎ払いの範囲攻撃（範囲は狭い）。当たった敵を少し押し戻す",trait:"やられると小さいゴーレム2体に分裂する（小さい方は分裂しない）",skill:"地面たたき：周りの敵を吹き飛ばす",sk:"ドゴォン！"},
- {id:"dragon", name:"ドラゴン",cost:8,src:"1000コイン",hp:1600,atk:70,spd:.85,r:18,range:65,cd:60,role:"切り札",look:"dragon",splash:45,fly:true,G:15,atkTxt:"炎で範囲攻撃",trait:"空を飛ぶので剣や槍が当たらない",skill:"咆哮：周りの広い範囲の敵を1.5秒止める",sk:"グオォォ！"},
+ {id:"dragon", name:"ドラゴン",cost:7,src:"1000コイン",hp:1600,atk:70,spd:.85,r:18,range:65,cd:60,role:"切り札",look:"dragon",splash:45,fly:true,G:15,atkTxt:"炎で範囲攻撃",trait:"空を飛ぶので剣や槍が当たらない",skill:"咆哮：周りの広い範囲の敵を1.5秒止める",sk:"グオォォ！"},
 ];
 const SKILLS=[
  {id:"double",name:"2倍タイム",need:5000,desc:"30秒間、キャラを1回出すと2体出る（ストックは1つだけ減る）。1試合1回まで。押すだけ",instant:true,color:"#ffcf3f",max:1},
@@ -545,8 +545,8 @@ function refreshUI(){
 //#SIM-B
 // ---------- simulation ----------
 const COINV={rookie:0,archer:1,rider:5,shield:10,bomber:30,mage:99,golem:299,dragon:1000};
-const DECK={b:new Set(["rookie","archer","rider","shield","bomber","mage","golem"]),r:new Set(["rookie","archer","rider","shield","bomber","mage","golem","dragon"])};
-const DECK_CAP=25,DECK_MIN=6;
+const DECK={b:new Set(["rookie","archer","rider","shield","bomber","mage","golem","dragon"]),r:new Set(["rookie","archer","rider","shield","bomber","mage","golem","dragon"])};
+const DECK_CAP=30,DECK_MIN=6;
 function deckMap(team,id){if(DECK[team].has(id))return id;const order=["rookie","archer","rider","shield","bomber","mage","golem","dragon"];let i=order.indexOf(id);while(i>0){i--;if(DECK[team].has(order[i]))return order[i]}return "rookie"}
 const CFG={gifts:{rookie:"いいね100",archer:"バラ",rider:"",shield:"",bomber:"",mage:"",golem:"",dragon:"",glove:"グローブ"},cheer:"がんばれ",cap:60};
 CFG.gid={};try{const sv=JSON.parse(localStorage.getItem("giftwar_cfg")||"null");if(sv){if(sv.gid)Object.assign(CFG.gid,sv.gid);Object.assign(CFG.gifts,sv.gifts||{});if(sv.cheer)CFG.cheer=sv.cheer;if(sv.cap)CFG.cap=sv.cap}}catch(e){}
@@ -1163,7 +1163,7 @@ function drawDeck(){const g=$("dgrid");g.innerHTML=UNITS.map(u=>`<button type="b
   g.querySelectorAll(".dc").forEach(b=>b.onclick=()=>{const id=b.dataset.id;if(DECK.b.has(id))DECK.b.delete(id);else DECK.b.add(id);drawDeck();lobbyUI();sendCfg()});
   const c=deckCost();$("deckCost").textContent=`${DECK.b.size}体・コスト ${c} / ${DECK_CAP}`;$("deckCost").style.color=deckValid()?"":"#ff5468"}
 drawDeck();lobbyUI();
-function pracStart(){const src=$("pSrc").value;if(!deckValid()){$("pracSt").textContent="デッキを直してください（6体以上、コスト25以内）";$("pracSt").style.color="#ff5468";return}if(src==="live"&&TT.b!=="ok"){$("pracSt").textContent="自分のライブにつながっていません。ユーザー名を入れるか、「テストボタンで出す」を選んでください。";$("pracSt").style.color="#ff5468";return}
+function pracStart(){const src=$("pSrc").value;if(!deckValid()){$("pracSt").textContent="デッキを直してください（6体以上、コスト30以内）";$("pracSt").style.color="#ff5468";return}if(src==="live"&&TT.b!=="ok"){$("pracSt").textContent="自分のライブにつながっていません。ユーザー名を入れるか、「テストボタンで出す」を選んでください。";$("pracSt").style.color="#ff5468";return}
   $("pracSt").textContent="";PRAC.on=true;GR.r=+$("pLv").value;AG.r=true;AG.b=src==="auto";GR.b=1;wrapEl.classList.add("prac");wrapEl.classList.toggle("practest",src==="test");
   DECK.r=new Set(DECK.b);startCountdown()}
 $("pracBtn").onclick=()=>{au();play("ready");pracStart()};
@@ -1240,7 +1240,7 @@ let catT=0,catOk=false;async function loadGiftCatalog(){if(!NETX.ok||Date.now()-
  $("joinRoom").onclick=()=>{if(!NETX.ok)return oJoin();const c=$("codeIn").value.trim().toUpperCase();if(c.length<4){$("roomStat").textContent="入室コードを入れてください（4〜6文字）";return}au();NET.send(Object.assign({t:"cfg"},cfgMsg()));NET.send({t:"join",code:c})};
  $("readyBtn").onclick=()=>{if(!NETX.ok)return oReady();if($("readyBtn").disabled)return;au();play("ready");NET.send({t:"ready",deck:[...DECK.b]})};
  $("ttB").oninput=()=>{if(!NETX.ok)return oTT();updStreamLink();ttInfo("b",{st:$("ttB").value.trim()?"wait":""},"");lobbyUI();sendCfg()};
- $("pracBtn").onclick=()=>{if(!NETX.ok)return oPr();au();play("ready");const src=$("pSrc").value;if(!deckValid()){$("pracSt").textContent="デッキを直してください（6体以上、コスト25以内）";return}if(src==="live"&&TT.b!=="ok"){$("pracSt").textContent="自分のライブにつながっていません。ユーザー名を入れるか、「テストボタンで出す」を選んでください。";return}
+ $("pracBtn").onclick=()=>{if(!NETX.ok)return oPr();au();play("ready");const src=$("pSrc").value;if(!deckValid()){$("pracSt").textContent="デッキを直してください（6体以上、コスト30以内）";return}if(src==="live"&&TT.b!=="ok"){$("pracSt").textContent="自分のライブにつながっていません。ユーザー名を入れるか、「テストボタンで出す」を選んでください。";return}
    $("pracSt").textContent="";NETX.psrc=src;NET.send(Object.assign({t:"cfg"},cfgMsg()));NET.send({t:"practice",lvl:+$("pLv").value,src,deck:[...DECK.b],cap:CFG.cap})};
  $("doneBtn").onclick=()=>{if(!NETX.ok||!NET.on)return oDone();NET.send({t:"done"});if(!(NETX.room&&NETX.room.practice)){netBackToLobby();if(NETX.room)netLobby(NETX.room,NETX.you)}};}
 {const c=$("stCopy");if(c)c.onclick=()=>{const t=$("stUrl").textContent;try{navigator.clipboard.writeText(t);c.textContent="コピーしました";setTimeout(()=>c.textContent="コピー",1500)}catch(e){}}}
