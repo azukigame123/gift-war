@@ -252,7 +252,7 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
 </header>
 <p class="lead">バトル中、視聴者には2人の映像が左右に並んで見えます。各自のゲーム画面は「自分の陣地の半分」だけを映し、真ん中の川でつながります。兵は川沿いのゲートに入ると、相手の画面のゲートから出てきます。中央の砦は2つの画面にまたがっていて、2人で取り合います。</p>
 
-<div class="stbar" id="stLink"><span class="sti">📺</span><span class="stt">配信に映すURL<small>LIVE Studio の「リンク」に貼ると、バトルでも練習でも自分の画面が映ります</small></span><code id="stUrl">ユーザー名を入れると出ます</code><button type="button" class="lbtn" id="stCopy" disabled>コピー</button></div>
+<div class="stbar" id="stLink"><span class="sti">📺</span><span class="stt">配信に映すURL<small>LIVE Studio の「リンク」に貼ると、バトルでも練習でも自分の画面が映ります</small></span><code id="stUrl">下の「あなた」の欄にユーザー名を入れると出ます</code><button type="button" class="lbtn" id="stCopy" disabled>コピー</button></div>
 <section class="lobby" id="lobby" data-mode="battle">
   <h2 class="lh">対戦の準備 <span class="netst off" id="netSt"><b>●</b> サーバー未接続（見本モード）</span></h2>
   <div class="modetabs" role="tablist" aria-label="遊び方"><button type="button" role="tab" data-mode="battle" aria-selected="true">⚔ バトル<small>友達と対戦</small></button><button type="button" role="tab" data-mode="prac" aria-selected="false">🎯 練習<small>ひとりでCPUと</small></button></div>
@@ -1217,7 +1217,7 @@ function netConnect(){const u=wsURL();if(!u)return;NETX.url=u;let ws;try{ws=new 
   ws.onopen=()=>{NETX.tries=0};
   ws.onclose=()=>{const was=NETX.ok;NETX.ok=false;NET.on=false;netBadge();if(was&&PH!=="lobby"){log("s","サーバーとの接続が切れました。つなぎ直しています…")}setTimeout(netConnect,Math.min(10000,1000*(++NETX.tries)))}}
 function updStreamLink(){const n=$("ttB").value.trim().replace(/^@/,"");const base=NETX&&NETX.ok?location.origin:"https://gift-war.onrender.com";const c=$("stCopy");
-  if(!n){$("stUrl").textContent="ユーザー名を入れると出ます";c.disabled=true;return}$("stUrl").textContent=`${base}/?stream=${encodeURIComponent(n)}`+(stA!==.5725?`&r=${stA}`:"");c.disabled=false}
+  if(!n){$("stUrl").textContent="下の「あなた」の欄にユーザー名を入れると出ます";c.disabled=true;return}$("stUrl").textContent=`${base}/?stream=${encodeURIComponent(n)}`+(stA!==.5725?`&r=${stA}`:"");c.disabled=false}
 function netBadge(){const el=$("netSt");if(!el)return;el.className="netst"+(NETX.ok?"":" off");el.innerHTML=NETX.ok?"<b>●</b> サーバー接続中":"<b>●</b> サーバー未接続（見本モード）"}
 function setAv(el,url,name){if(url){el.innerHTML=`<img src="${url}" alt="" referrerpolicy="no-referrer">`;el.classList.add("on","live")}else{el.innerHTML="";el.classList.remove("live");el.style.background="";avatar(el,name)}}
 function ttInfo(slot,info,name){const st=info&&info.st||"";TT[slot]=st;const el=$(slot==="b"?"tsB":"tsR");
@@ -1267,6 +1267,7 @@ let catT=0,catOk=false;async function loadGiftCatalog(){if(!NETX.ok||Date.now()-
  $("pracBtn").onclick=()=>{if(!NETX.ok)return oPr();au();play("ready");let src=$("pSrc").value;if(src==="live"&&TT.b!=="ok"){src="auto";$("pracSt").textContent="ライブにつながっていないので、自動で届く設定で始めます"}if(!deckValid()){$("pracSt").textContent="デッキを直してください（6体以上、コスト30以内）";return}
    $("pracSt").textContent="";NETX.psrc=src;NET.send(Object.assign({t:"cfg"},cfgMsg()));NET.send({t:"practice",lvl:+$("pLv").value,src,deck:[...DECK.b],cap:CFG.cap})};
  $("doneBtn").onclick=()=>{if(!NETX.ok||!NET.on)return oDone();NET.send({t:"done"});if(!(NETX.room&&NETX.room.practice)){netBackToLobby();if(NETX.room)netLobby(NETX.room,NETX.you)}};}
+$("stUrl").onclick=()=>{if($("stCopy").disabled){const i=$("ttB");i.scrollIntoView({block:"center"});i.focus();i.style.boxShadow="0 0 0 3px #ffcf3f";setTimeout(()=>i.style.boxShadow="",1500)}};
 {const c=$("stCopy");if(c)c.onclick=()=>{const t=$("stUrl").textContent;try{navigator.clipboard.writeText(t);c.textContent="コピーしました";setTimeout(()=>c.textContent="コピー",1500)}catch(e){}}}
 // ---------- character gallery: each card runs a tiny real battle (same code as the game) ----------
 const DEX={cards:[],vis:false,last:0};
