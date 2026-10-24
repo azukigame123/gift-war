@@ -27,7 +27,7 @@ class Live extends EventEmitter {
     this.set("wait");
     const { TikTokLiveConnection, WebcastEvent } = TT;
     if (this.conn) { const o = this.conn; this.conn = null; try { o.removeAllListeners(); o.disconnect(); } catch (e) { } }
-    const c = new TikTokLiveConnection(this.name, { signApiKey: API_KEY, processInitialData: false, enableExtendedGiftInfo: true });
+    const c = new TikTokLiveConnection(this.name, { signApiKey: API_KEY, processInitialData: false, enableExtendedGiftInfo: false });
     this.conn = c;
     c.on(WebcastEvent.GIFT, d => this.onGift(d));
     c.on(WebcastEvent.LIKE, d => { const n = +d.likeCount || 0; if (n > 0) this.emit("like", { n, nick: nickOf(d.user) }); });
@@ -62,6 +62,7 @@ class Live extends EventEmitter {
       if (d.repeatEnd) this.streak.delete(key); else this.streak.set(key, rc);
       if (this.streak.size > 500) this.streak.clear();
     }
+    if (giftId && giftName) learn({ id: giftId, name: giftName, coins, img: urlOf(g.giftImage && (g.giftImage.giftPictureUrl || g.giftImage)) || urlOf(g.image) || urlOf(g.icon) || null });
     if (count > 0) this.emit("gift", { giftId, giftName, coins, count: Math.min(count, 200), nick: nickOf(user) });
   }
   async gifts() {
@@ -71,7 +72,10 @@ class Live extends EventEmitter {
       const c = this.conn || new TT.TikTokLiveConnection(this.name, { signApiKey: API_KEY, webConfigOverrides: { DEFAULT_HTTP_CLIENT_PARAMS: { app_language: "ja-JP", browser_language: "ja-JP" } } });
       if (!c.roomId) { try { await c.fetchRoomId(); } catch (e) { GIFT_ERR = "roomId: " + String(e && e.message || e).slice(0, 160); } }
       if (!c.roomId) { GIFT_ERR = GIFT_ERR || "roomId not found"; return null; }
-      const list = await c.fetchAvailableGifts();
+      let list = null, why = [];
+      try { list = await TT.fetchRoomGiftsFromEulerRoute({ roomId: c.roomId, webClient: c.webClient, apiClient: c.apiClient, webcastLanguage: "ja-JP" }); } catch (e) { why.push("euler: " + String(e && e.message || e).slice(0, 120)); }
+      if (!list) { try { list = await c.fetchAvailableGifts(); } catch (e) { why.push("direct: " + String(e && e.message || e).slice(0, 120)); } }
+      if (!list) { GIFT_ERR = why.join(" / "); return null; }
       const arr = Array.isArray(list) ? list : (list && (list.gifts || list.data && list.data.gifts)) || [];
       return arr.map(g => ({ id: String(g.id), name: String(g.name || ""), coins: +g.diamond_count || +g.diamondCount || 0, img: urlOf(g.image) || urlOf(g.icon) || null }))
         .filter(g => g.id && g.name).sort((a, b) => a.coins - b.coins);
@@ -107,14 +111,19 @@ function release(l) {
   if (l.refs === 0) { clearTimeout(l.dropT); l.dropT = setTimeout(() => { if (l.refs === 0) { l.stop(); LIVES.delete(l.name.toLowerCase()); } }, 5 * 60 * 1000); }
 }
 let GIFT_CACHE = { at: 0, list: null }; let GIFT_ERR = "";
+const LEARNED = new Map(); // gifts seen in real streams (used when the full list cannot be fetched)
+function learn(g) { if (!LEARNED.has(g.id) || (g.img && !LEARNED.get(g.id).img)) LEARNED.set(g.id, g); }
 async function giftCatalog(name) {
   if (GIFT_CACHE.list && Date.now() - GIFT_CACHE.at < 6 * 3600 * 1000) return GIFT_CACHE.list;
   const l = LIVES.get(clean(name).toLowerCase()) || [...LIVES.values()][0] || new Live(process.env.GIFT_SOURCE || "tiktok");
   const list = await l.gifts();
   if (list && list.length) GIFT_CACHE = { at: Date.now(), list };
-  return list || GIFT_CACHE.list;
+  const base = list || GIFT_CACHE.list;
+  if (base) return base;
+  if (LEARNED.size) { const l = [...LEARNED.values()].sort((a, b) => a.coins - b.coins); l.partial = true; return l; }
+  return null;
 }
 // warm the gift list at start-up so it is ready before anyone goes live
 setTimeout(() => giftCatalog("").catch(() => { }), 3000);
 setInterval(() => giftCatalog("").catch(() => { }), 6 * 3600 * 1000);
-module.exports = { acquire, release, giftCatalog, clean, MOCK, giftErr: () => GIFT_ERR, version: "gw-3" };
+module.exports = { acquire, release, giftCatalog, clean, MOCK, giftErr: () => GIFT_ERR, version: "gw-4" };

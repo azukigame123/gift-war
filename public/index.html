@@ -1255,7 +1255,7 @@ function netMsg(m){
   if(m.t==="left"){NETX.room=null;netBackToLobby();LB.code=null;LB.inB=LB.inR=LB.rdB=LB.rdR=false;lobbyUI();return}
   if(m.t==="err"){const t=$("roomStat");t.textContent=m.msg;t.style.color="#ff5468";setTimeout(()=>t.style.color="",3000);$("pracSt").textContent=m.msg;return}
 }
-let catT=0,catOk=false;async function loadGiftCatalog(){if(!NETX.ok||Date.now()-catT<(catOk?600000:4000))return;catT=Date.now();try{const r=await fetch("/api/gifts?u="+encodeURIComponent($("ttB").value.trim()));const j=await r.json();if(j.ok&&j.gifts.length){catOk=true;try{localStorage.setItem("giftwar_gifts",JSON.stringify(j.gifts))}catch(e){}GIFTS.length=0;j.gifts.forEach(g=>GIFTS.push([g.name,g.img||"🎁",g.coins,g.id]));GIFTS_REAL=true;
+let catT=0,catOk=false;async function loadGiftCatalog(){if(!NETX.ok||Date.now()-catT<(catOk?600000:4000))return;catT=Date.now();try{const r=await fetch("/api/gifts?u="+encodeURIComponent($("ttB").value.trim()));const j=await r.json();if(j.ok&&j.gifts.length){if(j.partial){for(const g of j.gifts){const e=GIFTS.find(x=>x[3]===g.id||x[0]===g.name);if(e){e[3]=g.id;if(g.img)e[1]=g.img}else GIFTS.push([g.name,g.img||"🎁",g.coins,g.id])}GIFTS.sort((a,b)=>a[2]-b[2])}else{catOk=true;try{localStorage.setItem("giftwar_gifts",JSON.stringify(j.gifts))}catch(e){}GIFTS.length=0;j.gifts.forEach(g=>GIFTS.push([g.name,g.img||"🎁",g.coins,g.id]))}GIFTS_REAL=true;
   for(const k in DEFG){const cur=gInfo(CFG.gifts[k]);if(!cur){const want=k==="glove"?299:COINV[k];const g=GIFTS.find(x=>x[2]===want)||GIFTS.find(x=>x[2]>=want);if(g){CFG.gifts[k]=g[0];CFG.gid[k]=g[3]}}else CFG.gid[k]=cur[3]}
   saveCfg();paintGifts&&paintGifts();drawDeck();sendCfg()}}catch(e){}}
 // online overrides of lobby buttons (offline preview keeps the pseudo flow)
