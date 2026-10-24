@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: gift-war
+    runtime: node
+    plan: starter
+    region: singapore
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    envVars:
+      - key: EULER_API_KEY
+        sync: false

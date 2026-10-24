@@ -1,0 +1,10 @@
+{
+  "name": "gift-war",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ギフト攻城戦 — TikTok LIVE battle game server",
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "mock": "MOCK_TIKTOK=1 node server.js" },
+  "engines": { "node": ">=20" },
+  "dependencies": { "tiktok-live-connector": "^2.5.0", "ws": "^8.22.0" }
+}
