@@ -48,7 +48,7 @@ function cleanGifts(g) {
 
 function roomView(room) {
   const pv = t => { const P = room.players[t]; if (!P) return null; return { name: P.name, live: P.live ? P.live.info() : { st: "", msg: "", avatar: null }, here: !!P.ws, ready: !!P.ready, cpu: !!P.cpu }; };
-  return { code: room.code, phase: room.phase, practice: room.practice, players: { b: pv("b"), r: pv("r") } };
+  return { code: room.code, phase: room.phase, practice: room.practice, offline: !!room.offline, players: { b: pv("b"), r: pv("r") } };
 }
 // stream-only pages (LIVE Studio "link" source) watch a streamer by TikTok username
 const WATCH = new Map();
@@ -111,7 +111,12 @@ function startMatch(room) {
   for (const t of ["b", "r"]) { for (const id in sim.S.stock[t]) sim.S.stock[t][id] = sim.S.stock[t][id].map(() => "はじめの兵"); sim.S.q[t].forEach(e => e.name = "はじめの兵"); }
   sim.S.gf = { b: {}, r: {} };
   if (room.practice) { sim.setAuto(true, false); sim.setAutoGift(true); sim.AG.b = room.src === "auto"; sim.AG.r = true; sim.GR.r = room.lvl; sim.GR.b = 1; sim.PRAC.on = true; }
-  else { sim.setAuto(false, false); sim.setAutoGift(false); sim.AG.b = sim.AG.r = false; sim.GR.b = sim.GR.r = 1; sim.PRAC.on = false; }
+  else {
+    sim.setAuto(false, false); sim.GR.b = sim.GR.r = 1; sim.PRAC.on = false;
+    for (const t of ["b", "r"]) { const P = room.players[t]; const live = P && P.live && P.live.st === "ok"; const off = !!room.offline && !live; sim.AG[t] = off; sim.OFF[t] = false; }
+    sim.setAutoGift(sim.AG.b || sim.AG.r);
+  }
+  if (room.practice) { sim.OFF.b = sim.OFF.r = false; }
   room.ev = [];
   room.phase = "countdown";
   broadcast(room, { t: "start", room: roomView(room), s: snapshot(sim.S) });
@@ -190,7 +195,7 @@ wss.on("connection", ws => {
         else soloLive();
         break;
       }
-      case "create": { leave(); const room = { code: newCode(), phase: "lobby", players: { b: null, r: null }, practice: false, cap: Math.max(10, Math.min(200, +m.cap || 60)) }; ROOMS.set(room.code, room); enter(room, "b"); break; }
+      case "create": { leave(); const room = { code: newCode(), phase: "lobby", players: { b: null, r: null }, practice: false, offline: !!m.offline, cap: Math.max(10, Math.min(200, +m.cap || 60)) }; ROOMS.set(room.code, room); enter(room, "b"); break; }
       case "join": {
         const code = String(m.code || "").toUpperCase().trim(); const room = ROOMS.get(code);
         if (!room || room.practice) return send(ws, { t: "err", msg: "その入室コードの部屋は見つかりません" });
@@ -205,7 +210,7 @@ wss.on("connection", ws => {
         const room = C.room, P = me(); if (!room || !P || room.practice || room.phase !== "lobby") return;
         if (m.deck) P.deck = C.deck = cleanDeck(m.deck);
         const bothLive = ["b", "r"].every(t => room.players[t] && room.players[t].live && room.players[t].live.st === "ok");
-        if (!bothLive && !TT.MOCK && !process.env.ALLOW_OFFLINE) return send(ws, { t: "err", msg: "2人とも配信中になってから準備完了を押してください" });
+        if (!bothLive && !room.offline && !TT.MOCK && !process.env.ALLOW_OFFLINE) return send(ws, { t: "err", msg: "2人とも配信中になってから準備完了を押してください" });
         P.ready = true; lobbyUpdate(room);
         if (["b", "r"].every(t => room.players[t] && room.players[t].ready && room.players[t].ws)) startMatch(room);
         break;
@@ -218,7 +223,7 @@ wss.on("connection", ws => {
         enter(room, "b"); room.players.r.deck = room.players.b.deck.slice();
         startMatch(room); break;
       }
-      case "act": { const room = C.room; if (!room || room.phase !== "battle" || !room.sim) return; try { room.sim.doAct(C.team, m.a); } catch (e) { } break; }
+      case "act": { const room = C.room; if (!room || room.phase !== "battle" || !room.sim) return; if (m.a && m.a.a === "like") { const n = Date.now(); if (n - (C.likeT || 0) < 80) return; C.likeT = n; } try { room.sim.doAct(C.team, m.a); } catch (e) { } break; }
       case "done": {
         const room = C.room; if (!room) return;
         if (room.practice) { leave(); soloLive(); send(ws, { t: "left" }); return; }
