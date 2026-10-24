@@ -42,7 +42,7 @@ class Live extends EventEmitter {
       this.set("ok");
     } catch (e) {
       const m = String((e && (e.message || e.name)) || e);
-      if (/offline|not.*live|UserOffline/i.test(m) || (e && e.name === "UserOfflineError")) { this.set("ng", "配信していません"); this.retry(45); }
+      if (/offline|not.*live|isn.?t online|not online|UserOffline/i.test(m) || (e && e.name === "UserOfflineError")) { this.set("ng", "配信していません"); this.retry(45); }
       else if (/rate|limit|429/i.test(m)) { this.set("err", "接続の回数制限に達しました。少し待ってください"); this.retry(90); }
       else if (/api.?key|unauthor|401|403/i.test(m)) { this.set("err", "Euler Stream のAPIキーを確認してください"); this.retry(120); }
       else { this.set("err", "つながりませんでした（" + m.slice(0, 80) + "）"); this.retry(60); }

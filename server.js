@@ -50,7 +50,17 @@ function roomView(room) {
   const pv = t => { const P = room.players[t]; if (!P) return null; return { name: P.name, live: P.live ? P.live.info() : { st: "", msg: "", avatar: null }, here: !!P.ws, ready: !!P.ready, cpu: !!P.cpu }; };
   return { code: room.code, phase: room.phase, practice: room.practice, players: { b: pv("b"), r: pv("r") } };
 }
-function broadcast(room, o) { for (const t of ["b", "r"]) { const P = room.players[t]; if (P && P.ws) send(P.ws, Object.assign({ you: t }, o)); } }
+// stream-only pages (LIVE Studio "link" source) watch a streamer by TikTok username
+const WATCH = new Map();
+const wkey = n => TT.clean(n).toLowerCase();
+function broadcast(room, o) {
+  for (const t of ["b", "r"]) {
+    const P = room.players[t]; if (!P) continue;
+    if (P.ws) send(P.ws, Object.assign({ you: t }, o));
+    if ((o.t === "start" || o.t === "snap") && P.name && !P.cpu) { const W = WATCH.get(wkey(P.name)); if (W) { const msg = JSON.stringify(Object.assign({ you: t }, o)); for (const w of W) if (w.readyState === 1) w.send(msg); } }
+  }
+}
+function roomOf(name) { const k = wkey(name); for (const room of ROOMS.values()) for (const t of ["b", "r"]) { const P = room.players[t]; if (P && !P.cpu && P.name && wkey(P.name) === k) return { room, team: t }; } return null; }
 function lobbyUpdate(room) { broadcast(room, { t: "lobby", room: roomView(room) }); }
 
 function attachLive(room, team) {
@@ -215,11 +225,18 @@ wss.on("connection", ws => {
         if (room.phase === "result") { room.phase = "lobby"; for (const t of ["b", "r"]) if (room.players[t]) room.players[t].ready = false; }
         lobbyUpdate(room); break;
       }
+      case "watch": {
+        const k = wkey(m.name || ""); if (!k) return;
+        if (C.watch) { const W = WATCH.get(C.watch); if (W) W.delete(ws); }
+        C.watch = k; if (!WATCH.has(k)) WATCH.set(k, new Set()); WATCH.get(k).add(ws);
+        const f = roomOf(k); if (f && f.room.sim && f.room.phase !== "lobby") send(ws, { t: "start", you: f.team, room: roomView(f.room), s: snapshot(f.room.sim.S), resume: true });
+        break;
+      }
       case "ping": send(ws, { t: "pong", at: m.at }); break;
     }
   });
   const rt = setInterval(() => { C.rate = 0; }, 1000);
-  ws.on("close", () => { clearInterval(rt); leave(); dropSolo(); });
+  ws.on("close", () => { clearInterval(rt); if (C.watch) { const W = WATCH.get(C.watch); if (W) { W.delete(ws); if (!W.size) WATCH.delete(C.watch); } } leave(); dropSolo(); });
   send(ws, { t: "hi", mock: TT.MOCK, version: 1 });
 });
 

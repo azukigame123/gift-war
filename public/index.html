@@ -173,6 +173,16 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .netst{font-size:11.5px;color:var(--muted)}.netst b{color:var(--green)}.netst.off b{color:var(--gold)}
 .av img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
 .gc img,.gpick img{width:40px;height:40px;object-fit:contain}.gpick img{width:24px;height:24px}
+html.streamonly,html.streamonly body{color-scheme:normal!important;background:transparent!important;overflow:hidden;margin:0;padding:0}
+html.streamonly body>*:not(.wrap){display:none!important}
+html.streamonly .wrap{display:block!important;padding:0!important;margin:0!important;max-width:none!important}
+html.streamonly .wrap>*:not(.streamsec){display:none!important}
+html.streamonly .streamsec{display:block!important;background:none!important;padding:0!important}
+html.streamonly .streamsec>*:not(.stwrap){display:none!important}
+html.streamonly .stwrap{background:none!important;border:none!important;padding:0!important}
+html.streamonly #streamCv{position:fixed;inset:0;margin:auto;width:auto;height:100vh;max-width:100vw;max-height:100vh;object-fit:contain;border:none!important;background:none!important}
+.stlink{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.stlink code{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 8px;color:var(--fg);font-size:12px;user-select:all;word-break:break-all}
 section.spec{background:var(--panel);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px}
 section.spec h2{font-size:14px;margin:0;letter-spacing:.06em}
 section.spec p{margin:0;font-size:13px;line-height:1.7;color:var(--muted)}
@@ -273,6 +283,7 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
     <button data-a="1" aria-pressed="false">正方形 1:1</button>
     <button data-a="1.7778" aria-pressed="false">横長 16:9</button>
   </div></div>
+  <div class="stlink" id="stLink" hidden>LIVE Studio の「リンク」に貼るURL：<code id="stUrl"></code><button type="button" class="lbtn" id="stCopy">コピー</button></div>
   <div class="stwrap"><canvas id="streamCv" width="720" height="960" aria-label="配信に映す画面のプレビュー"></canvas></div>
   <p class="note">「TikTokバトル枠」では、上の約半分を透明にして自分のカメラが見えるようにし、下にゲーム（自陣だけ）を出します。配信画面では塔・砦・キャラを1.3倍で描きます。自分の操作画面はフィールド全体のままです。ほかの比率では、この枠の中だけを映します。戦場より横に広い比率なら帯を右に、縦に長い比率なら帯を下に置きます。帯には、キャラと対応するギフト、いいねゲージ、いいねスキルのボタンを出します。</p>
 </section>
@@ -1125,6 +1136,8 @@ function showResult(){const ov=$("resOv"),w=S.over.team;$("rWin").textContent=w=
 $("doneBtn").onclick=()=>{$("resOv").hidden=true;resTimer=null;if(PRAC.on){PRAC.on=false;AG.b=AG.r=true;GR.r=1;wrapEl.classList.remove("prac","practest");setPhase("lobby");lobbyUI();return}LB.rdB=LB.rdR=false;setPhase("lobby");lobbyUI();setTimeout(()=>{if(PH==="lobby"&&LB.inR&&!LB.rdR){LB.rdR=true;lobbyUI();tryStart()}},4000)};
 // ---------- online (server runs the battle; this page draws it and sends your actions) ----------
 const UMAP={};UNITS.forEach(u=>UMAP[u.id]=u);
+const STREAM_NAME=(new URLSearchParams(location.search).get("stream")||"").replace(/^@/,"").trim();
+if(STREAM_NAME){document.documentElement.classList.add("streamonly");document.title="ギフト攻城戦 配信用画面"}
 const NETX={ok:false,url:null,tries:0,dt:66,lastSnap:0,you:"b",room:null,rival:"",avatars:{}};
 function wsURL(){const q=new URLSearchParams(location.search).get("server");if(q)return q.replace(/^http/,"ws").replace(/\/$/,"")+"/ws";if(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent|anthropic/.test(location.hostname))return null;return (location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws"}
 function gfor(id){const n=CFG.gifts[id];const g=gInfo(n);return {id:(CFG.gid&&CFG.gid[id])||(g&&g[3])||"",name:n||""}}
@@ -1134,6 +1147,7 @@ function netConnect(){const u=wsURL();if(!u)return;NETX.url=u;let ws;try{ws=new 
   NET.ws=ws;ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}netMsg(m)};
   ws.onopen=()=>{NETX.tries=0};
   ws.onclose=()=>{const was=NETX.ok;NETX.ok=false;NET.on=false;netBadge();if(was&&PH!=="lobby"){log("s","サーバーとの接続が切れました。つなぎ直しています…")}setTimeout(netConnect,Math.min(10000,1000*(++NETX.tries)))}}
+function updStreamLink(){const n=$("ttB").value.trim().replace(/^@/,"");const box=$("stLink");if(!box)return;if(!NETX.ok||!n){box.hidden=true;return}box.hidden=false;$("stUrl").textContent=`${location.origin}/?stream=${encodeURIComponent(n)}`}
 function netBadge(){const el=$("netSt");if(!el)return;el.className="netst"+(NETX.ok?"":" off");el.innerHTML=NETX.ok?"<b>●</b> サーバー接続中":"<b>●</b> サーバー未接続（見本モード）"}
 function setAv(el,url,name){if(url){el.innerHTML=`<img src="${url}" alt="" referrerpolicy="no-referrer">`;el.classList.add("on","live")}else{el.innerHTML="";el.classList.remove("live");el.style.background="";avatar(el,name)}}
 function ttInfo(slot,info,name){const st=info&&info.st||"";TT[slot]=st;const el=$(slot==="b"?"tsB":"tsR");
@@ -1163,7 +1177,7 @@ function netStart(m){const you=m.you;NET.team=you;NET.on=true;setRoom(you);{cons
   const it=setInterval(()=>{k--;if(k>0){n.textContent=k;play("beep")}else if(k===0){n.textContent="START!";play("go")}else{clearInterval(it);ov.hidden=true;setPhase("battle")}},900)}
 function netBackToLobby(){NET.on=false;PRAC.on=false;wrapEl.classList.remove("net-b","net-r","prac","practest");$("resOv").hidden=true;resTimer=null;setRoom("b");setPhase("lobby");newState();refreshUI();lobbyUI()}
 function netMsg(m){
-  if(m.t==="hi"){NETX.ok=true;netBadge();NET.send(Object.assign({t:"hello"},cfgMsg()));loadGiftCatalog();return}
+  if(m.t==="hi"){NETX.ok=true;netBadge();if(STREAM_NAME){NET.send({t:"watch",name:STREAM_NAME});return}NET.send(Object.assign({t:"hello"},cfgMsg()));loadGiftCatalog();updStreamLink();return}
   if(m.t==="tt"){if(!NETX.room||NETX.room.practice)ttInfo("b",m.info,$("ttB").value.trim());lobbyUI();if(m.info&&m.info.st==="ok")loadGiftCatalog();return}
   if(m.t==="joined"||m.t==="lobby"){if(m.room.practice){NETX.room=m.room;return}if(PH!=="lobby"&&(m.room.phase!=="lobby"||!$("resOv").hidden||(S&&S.over))){NETX.room=m.room;NETX.you=m.you;return}netLobby(m.room,m.you);if(PH!=="lobby")netBackToLobby();return}
   if(m.t==="start"){NETX.room=m.room;netStart(m);return}
@@ -1179,11 +1193,12 @@ let catT=0,catOk=false;async function loadGiftCatalog(){if(!NETX.ok||Date.now()-
  $("mkRoom").onclick=()=>{if(!NETX.ok)return oMk();au();NET.send(Object.assign({t:"cfg"},cfgMsg()));NET.send({t:"create",cap:CFG.cap})};
  $("joinRoom").onclick=()=>{if(!NETX.ok)return oJoin();const c=$("codeIn").value.trim().toUpperCase();if(c.length<4){$("roomStat").textContent="入室コードを入れてください（4〜6文字）";return}au();NET.send(Object.assign({t:"cfg"},cfgMsg()));NET.send({t:"join",code:c})};
  $("readyBtn").onclick=()=>{if(!NETX.ok)return oReady();if($("readyBtn").disabled)return;au();play("ready");NET.send({t:"ready",deck:[...DECK.b]})};
- $("ttB").oninput=()=>{if(!NETX.ok)return oTT();ttInfo("b",{st:$("ttB").value.trim()?"wait":""},"");lobbyUI();sendCfg()};
+ $("ttB").oninput=()=>{if(!NETX.ok)return oTT();updStreamLink();ttInfo("b",{st:$("ttB").value.trim()?"wait":""},"");lobbyUI();sendCfg()};
  $("pracBtn").onclick=()=>{if(!NETX.ok)return oPr();au();play("ready");const src=$("pSrc").value;if(!deckValid()){$("pracSt").textContent="デッキを直してください（6体以上、コスト25以内）";return}if(src==="live"&&TT.b!=="ok"){$("pracSt").textContent="自分のライブにつながっていません。ユーザー名を入れるか、「テストボタンで出す」を選んでください。";return}
    $("pracSt").textContent="";NETX.psrc=src;NET.send(Object.assign({t:"cfg"},cfgMsg()));NET.send({t:"practice",lvl:+$("pLv").value,src,deck:[...DECK.b],cap:CFG.cap})};
  $("doneBtn").onclick=()=>{if(!NETX.ok||!NET.on)return oDone();NET.send({t:"done"});if(!(NETX.room&&NETX.room.practice)){netBackToLobby();if(NETX.room)netLobby(NETX.room,NETX.you)}};}
-function frame(){const now=performance.now();fpsAcc+=now-lastT;lastT=now;fpsN++;if(cardsDirty&&imgLeft===0){cardsDirty=false;PLAYERS.forEach(p=>UNITS.forEach(u=>drawCard(p.pcs[u.id],u,p.team)))}const t0=performance.now();if(PH==="battle"&&!NET.on)for(let i=0;i<speed;i++){tick++;step()}else tick++;if(NET.on)netLerp(now);if(PH==="battle"&&S.over&&!resTimer)resTimer=setTimeout(showResult,1500);simAcc+=performance.now()-t0;if(fpsN>=30){document.getElementById("fps").textContent=Math.round(1000/(fpsAcc/fpsN));document.getElementById("simms").textContent=(simAcc/fpsN).toFixed(1);document.getElementById("ucount").textContent=S.units.length;fpsAcc=simAcc=fpsN=0}for(let i=LFX.length-1;i>=0;i--)if(--LFX[i].life<=0)LFX.splice(i,1);CANVAS.forEach(renderCanvas);if(uiT%2===0)drawStream();if(++uiT%6===0)refreshUI();requestAnimationFrame(frame)}
+{const c=$("stCopy");if(c)c.onclick=()=>{const t=$("stUrl").textContent;try{navigator.clipboard.writeText(t);c.textContent="コピーしました";setTimeout(()=>c.textContent="コピー",1500)}catch(e){}}}
+function frame(){const now=performance.now();fpsAcc+=now-lastT;lastT=now;fpsN++;if(cardsDirty&&imgLeft===0){cardsDirty=false;PLAYERS.forEach(p=>UNITS.forEach(u=>drawCard(p.pcs[u.id],u,p.team)))}const t0=performance.now();if(PH==="battle"&&!NET.on)for(let i=0;i<speed;i++){tick++;step()}else tick++;if(NET.on)netLerp(now);if(PH==="battle"&&S.over&&!resTimer)resTimer=setTimeout(showResult,1500);simAcc+=performance.now()-t0;if(fpsN>=30){document.getElementById("fps").textContent=Math.round(1000/(fpsAcc/fpsN));document.getElementById("simms").textContent=(simAcc/fpsN).toFixed(1);document.getElementById("ucount").textContent=S.units.length;fpsAcc=simAcc=fpsN=0}for(let i=LFX.length-1;i>=0;i--)if(--LFX[i].life<=0)LFX.splice(i,1);CANVAS.forEach(renderCanvas);if(STREAM_NAME&&(!NET.on||(S.over&&(NETX.overAt=NETX.overAt||performance.now())&&performance.now()-NETX.overAt>15000))){stG.setTransform(1,0,0,1,0,0);stG.clearRect(0,0,stCv.width,stCv.height)}else if(uiT%2===0){if(!S.over)NETX.overAt=0;drawStream()}if(++uiT%6===0)refreshUI();requestAnimationFrame(frame)}
 refreshUI();netConnect();frame();
 })();
 </script>
