@@ -76,7 +76,9 @@ class Live extends EventEmitter {
       try { list = await TT.fetchRoomGiftsFromEulerRoute({ roomId: c.roomId, webClient: c.webClient, apiClient: c.apiClient, webcastLanguage: "ja-JP" }); } catch (e) { why.push("euler: " + String(e && e.message || e).slice(0, 120)); }
       if (!list) { try { list = await c.fetchAvailableGifts(); } catch (e) { why.push("direct: " + String(e && e.message || e).slice(0, 120)); } }
       if (!list) { GIFT_ERR = why.join(" / "); return null; }
-      const arr = Array.isArray(list) ? list : (list && (list.gifts || list.data && list.data.gifts)) || [];
+      const dig = o => { if (!o || typeof o !== "object") return null; if (Array.isArray(o)) return o.length && typeof o[0] === "object" && ("diamond_count" in o[0] || "diamondCount" in o[0] || "name" in o[0]) ? o : null; for (const k of Object.keys(o)) { const r = dig(o[k]); if (r) return r; } return null; };
+      const arr = dig(list) || [];
+      if (!arr.length) { GIFT_ERR = "shape: " + JSON.stringify(list).slice(0, 300); return null; }
       return arr.map(g => ({ id: String(g.id), name: String(g.name || ""), coins: +g.diamond_count || +g.diamondCount || 0, img: urlOf(g.image) || urlOf(g.icon) || null }))
         .filter(g => g.id && g.name).sort((a, b) => a.coins - b.coins);
     } catch (e) { GIFT_ERR = "gifts: " + String(e && e.message || e).slice(0, 160); return null; }
@@ -126,4 +128,4 @@ async function giftCatalog(name) {
 // warm the gift list at start-up so it is ready before anyone goes live
 setTimeout(() => giftCatalog("").catch(() => { }), 3000);
 setInterval(() => giftCatalog("").catch(() => { }), 6 * 3600 * 1000);
-module.exports = { acquire, release, giftCatalog, clean, MOCK, giftErr: () => GIFT_ERR, version: "gw-4" };
+module.exports = { acquire, release, giftCatalog, clean, MOCK, giftErr: () => GIFT_ERR, version: "gw-5" };
