@@ -81,7 +81,7 @@ function attachLive(room, team) {
 }
 function detachLive(P) { if (P && P.live) { for (const k in P.on || {}) P.live.off(k, P.on[k]); TT.release(P.live); P.live = null; P.on = null; } }
 
-function battling(room) { return room.phase === "battle" && room.sim && room.sim.S && !room.sim.S.over; }
+function battling(room) { return room.phase === "battle" && room.sim && room.sim.S && !room.sim.S.over && !room.offline; }
 function onGift(room, team, g) {
   if (!battling(room)) return; if (room.practice && team === "b" && room.src !== "live") return;
   const P = room.players[team], sim = room.sim, gn = g.giftName.toLowerCase();
@@ -113,7 +113,7 @@ function startMatch(room) {
   if (room.practice) { sim.setAuto(true, false); sim.setAutoGift(true); sim.AG.b = room.src === "auto"; sim.AG.r = true; sim.GR.r = room.lvl; sim.GR.b = 1; sim.PRAC.on = true; }
   else {
     sim.setAuto(false, false); sim.GR.b = sim.GR.r = 1; sim.PRAC.on = false;
-    for (const t of ["b", "r"]) { const P = room.players[t]; const live = P && P.live && P.live.st === "ok"; const off = !!room.offline && !live; sim.AG[t] = off; sim.OFF[t] = false; }
+    for (const t of ["b", "r"]) { const P = room.players[t]; const off = !!room.offline; /* 配信なし: both sides get troops and likes automatically, live gifts are ignored */ sim.AG[t] = off; sim.OFF[t] = false; }
     sim.setAutoGift(sim.AG.b || sim.AG.r);
   }
   if (room.practice) { sim.OFF.b = sim.OFF.r = false; }
