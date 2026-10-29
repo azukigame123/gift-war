@@ -47,7 +47,7 @@ function cleanGifts(g) {
 }
 
 function roomView(room) {
-  const pv = t => { const P = room.players[t]; if (!P) return null; return { name: P.name, live: P.live ? P.live.info() : { st: "", msg: "", avatar: null }, here: !!P.ws, ready: !!P.ready, cpu: !!P.cpu }; };
+  const pv = t => { const P = room.players[t]; if (!P) return null; return { name: P.name, live: P.live ? P.live.info() : { st: "", msg: "", avatar: null }, here: !!P.ws, ready: !!P.ready, cpu: !!P.cpu, deck: cleanDeck(P.deck) }; };
   return { code: room.code, phase: room.phase, practice: room.practice, offline: !!room.offline, players: { b: pv("b"), r: pv("r") } };
 }
 // stream-only pages (LIVE Studio "link" source) watch a streamer by TikTok username
@@ -121,7 +121,7 @@ function startMatch(room) {
   room.phase = "countdown";
   broadcast(room, { t: "start", room: roomView(room), s: snapshot(sim.S) });
   clearTimeout(room.cdT);
-  room.cdT = setTimeout(() => { room.phase = "battle"; runLoop(room); }, 2700);
+  room.cdT = setTimeout(() => { room.phase = "battle"; runLoop(room); }, 6300); /* VS intro 3.6s + countdown 2.7s */
 }
 function runLoop(room) {
   clearInterval(room.loop);

@@ -236,6 +236,14 @@ table.mu td.sel{outline:2px solid var(--gold)}
 .lobby[data-mode="battle"] .ponly,.lobby[data-mode="prac"] .bonly,.lobby[data-mode="prac"] #pcR{display:none!important}
 .lobby[data-mode="prac"] .players{grid-template-columns:1fr}
 html.streamonly .stbar{display:none!important}
+.gate{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:16px}
+.gbox2{max-width:440px;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px 22px}.gbox2 h2{margin:6px 0 10px;font-family:var(--f-disp)}.gbox2 p{color:var(--muted);line-height:1.7;margin:0}.gi2{font-size:44px}
+.invcard{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px dashed var(--gold);border-radius:10px;padding:10px 12px}
+.invcard[hidden]{display:none}.invcard input{font-family:var(--f-body);font-size:13px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:7px 10px;width:160px}
+.invlist{flex-basis:100%;display:flex;flex-direction:column;gap:6px}.invlist:empty{display:none}.invlist div{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px}.invlist b{min-width:5em}.invlist code{flex:1;min-width:200px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px;word-break:break-all;user-select:all}
+html.streamonly .invcard{display:none!important}
+.vsov{position:fixed;inset:0;z-index:60;background:#05070d}.vsov[hidden]{display:none}.vsov canvas{display:block;width:100%;height:100%}
+.vsskip{position:absolute;right:16px;bottom:16px;font-family:var(--f-body);font-size:13px;font-weight:800;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:7px 14px;cursor:pointer}
 section.spec{background:var(--panel);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px}
 section.spec h2{font-size:14px;margin:0;letter-spacing:.06em}
 section.spec p{margin:0;font-size:13px;line-height:1.7;color:var(--muted)}
@@ -249,11 +257,14 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
 <div class="wrap" id="wrap" data-phase="lobby">
 <header>
   <h1>ギフト攻城戦</h1>
-  <div class="snd"><button type="button" id="sndBtn" aria-pressed="true">効果音 ON</button><label for="vol">音量</label><input id="vol" type="range" min="0" max="1" step="0.05" value="0.5"><span class="tag">見本 v34・配信画面プレビュー</span></div>
+  <div class="snd"><button type="button" id="sndBtn" aria-pressed="true">効果音 ON</button><label for="vol">音量</label><input id="vol" type="range" min="0" max="1" step="0.05" value="0.5"><span class="tag">見本 v37・VS演出（全画面＋配信の半分）</span></div>
 </header>
 <p class="lead">バトル中、視聴者には2人の映像が左右に並んで見えます。各自のゲーム画面は「自分の陣地の半分」だけを映し、真ん中の川でつながります。兵は川沿いのゲートに入ると、相手の画面のゲートから出てきます。中央の砦は2つの画面にまたがっていて、2人で取り合います。</p>
 
 <div class="stbar" id="stLink"><span class="sti">📺</span><span class="stt">配信に映すURL<small>LIVE Studio の「リンク」に貼ると、バトルでも練習でも自分の画面が映ります</small></span><code id="stUrl">下の「あなた」の欄にユーザー名を入れると出ます</code><button type="button" class="lbtn" id="stCopy" disabled>コピー</button></div>
+<div class="invcard" id="invCard" hidden><span class="sti">🔑</span><span class="stt">友達を招待する<small>名前を入れると、その人専用の招待URLができます。このURLを持っている人だけが遊べます</small></span>
+  <input id="invName" type="text" maxlength="24" placeholder="友達の名前"><button type="button" class="lbtn" id="invMake">招待URLを作る</button>
+  <div class="invlist" id="invList"></div></div>
 <section class="lobby" id="lobby" data-mode="battle">
   <h2 class="lh">対戦の準備 <span class="netst off" id="netSt"><b>●</b> サーバー未接続（見本モード）</span></h2>
   <div class="modetabs" role="tablist" aria-label="遊び方"><button type="button" role="tab" data-mode="battle" aria-selected="true">⚔ バトル<small>友達と対戦</small></button><button type="button" role="tab" data-mode="prac" aria-selected="false">🎯 練習<small>ひとりでCPUと</small></button></div>
@@ -290,6 +301,7 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
   </div>
 </section>
 
+<div class="vsov" id="vsOv" hidden><canvas id="vsCv"></canvas><button type="button" class="vsskip" id="vsSkip">スキップ ▸</button></div>
 <div class="ov" id="cdOv" hidden><div class="cdnum" id="cdNum">3</div></div>
 <div class="ov" id="resOv" hidden><div class="res">
   <div class="rwin" id="rWin"></div><div class="rwhy" id="rWhy"></div>
@@ -975,6 +987,7 @@ sizeStream();
 const GIFTLBL={rookie:"いいね100",archer:"1",rider:"5",shield:"10",bomber:"30",mage:"99",golem:"299",dragon:"1000"};
 function coin(g,x,y,r){g.fillStyle="#ffcf3f";g.beginPath();g.arc(x,y,r,0,7);g.fill();g.strokeStyle="#b8860b";g.lineWidth=r*.25;g.stroke();g.fillStyle="#b8860b";g.font=`bold ${r*1.1}px sans-serif`;g.textAlign="center";g.textBaseline="middle";g.fillText("¢",x,y+r*.05)}
 function drawStream(){
+  if(VSH){const W0=stCv.width,H0=stCv.height;if(drawVSHalf(stG,W0,H0))return}
   const g=stG,W=stCv.width,H=stCv.height,team=room,src=CANVAS[0].cv,FA=FW/FH,left=!CANVAS[0].mirror;
   g.setTransform(1,0,0,1,0,0);if(W/H<.62){drawCam(g,W,H,team,src,FA,left);return}
   g.fillStyle="#0c111c";g.fillRect(0,0,W,H);
@@ -1197,7 +1210,101 @@ $("pracBtn").onclick=()=>{au();play("ready");pracStart()};
  tg.onclick=e=>{const b=e.target.closest("button");if(!b||PH!=="battle")return;const nm=($("ttB").value.trim()||"テスト").replace(/^@/,"");
   act("b",{a:"test",name:nm,id:b.dataset.id||null,like:!!b.dataset.like,glove:!!b.dataset.glove,cheer:!!b.dataset.cheer})}}
 function tryStart(){if(!(LB.rdB&&LB.rdR))return;setTimeout(startCountdown,800)}
+// ---------- VS intro (both streamers and their troops face off, then clash) ----------
+function vsAvatar(name,url){if(url){const im=new Image();im.referrerPolicy="no-referrer";im.src=url;return im}const c=document.createElement("canvas");c.width=c.height=200;const g=c.getContext("2d");let h=0;for(const ch of name||"?")h=(h*31+ch.charCodeAt(0))%360;
+  const gr=g.createLinearGradient(0,0,200,200);gr.addColorStop(0,`hsl(${h},70%,58%)`);gr.addColorStop(1,`hsl(${(h+50)%360},70%,38%)`);g.fillStyle=gr;g.fillRect(0,0,200,200);g.fillStyle="#fff";g.font="bold 110px 'Dela Gothic One',sans-serif";g.textAlign="center";g.textBaseline="middle";g.fillText((name||"?").replace(/^@/,"")[0]?.toUpperCase()||"?",100,108);return c}
+let VS=null;
+function playVS(info,done){const ov=$("vsOv"),cv=$("vsCv");ov.hidden=false;const dpr=Math.min(2,window.devicePixelRatio||1);
+  const fit=()=>{cv.width=innerWidth*dpr;cv.height=innerHeight*dpr};fit();addEventListener("resize",fit);
+  const side=t=>({name:info[t].name||(t==="b"?"あなた":"相手"),av:vsAvatar(info[t].name,info[t].avatar),deck:(info[t].deck||[]).slice()});
+  VS={t0:performance.now(),L:side("b"),R:side("r"),fx:[],snd:{},done:()=>{if(!VS)return;removeEventListener("resize",fit);ov.hidden=true;VS=null;done&&done()}};
+  $("vsSkip").onclick=()=>VS&&VS.done();
+  const T=3.6;
+  const ease=x=>1-Math.pow(1-Math.max(0,Math.min(1,x)),3),back=x=>{x=Math.max(0,Math.min(1,x));const c=1.7;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+  const once=(k,f)=>{if(!VS.snd[k]){VS.snd[k]=1;f()}};
+  const loop=()=>{if(!VS)return;const g=cv.getContext("2d"),W=cv.width,H=cv.height,t=(performance.now()-VS.t0)/1000;if(t>T){VS.done();return}
+    let shake=0;if(t>1.35&&t<1.6)shake=(1.6-t)*60;if(t>2.35&&t<2.8)shake=(2.8-t)*80;
+    g.setTransform(1,0,0,1,(Math.random()-.5)*shake*dpr,(Math.random()-.5)*shake*dpr);
+    // background: two slanted halves sliding in
+    g.fillStyle="#05070d";g.fillRect(-50,-50,W+100,H+100);
+    const s1=ease(t/.45),tilt=W*.08;
+    g.save();g.translate(-W*(1-s1)*.6,0);const gb=g.createLinearGradient(0,0,W*.55,0);gb.addColorStop(0,"#0b2a5e");gb.addColorStop(1,"#1f6fd1");g.fillStyle=gb;
+    g.beginPath();g.moveTo(-50,-50);g.lineTo(W*.5+tilt,-50);g.lineTo(W*.5-tilt,H+50);g.lineTo(-50,H+50);g.fill();g.restore();
+    g.save();g.translate(W*(1-s1)*.6,0);const gr=g.createLinearGradient(W,0,W*.45,0);gr.addColorStop(0,"#5e0b1a");gr.addColorStop(1,"#d1283f");g.fillStyle=gr;
+    g.beginPath();g.moveTo(W+50,-50);g.lineTo(W*.5+tilt,-50);g.lineTo(W*.5-tilt,H+50);g.lineTo(W+50,H+50);g.fill();g.restore();
+    // speed lines
+    g.save();g.globalAlpha=.18;g.strokeStyle="#fff";g.lineWidth=2*dpr;for(let i=0;i<26;i++){const y=(i*97%H),len=W*(.08+(i%5)*.03),x=((t*1.8+i*.137)%1)*W*1.4-W*.2;const dir=i%2?1:-1;g.beginPath();g.moveTo(dir>0?x:W-x,y);g.lineTo((dir>0?x:W-x)+len*dir,y);g.stroke()}g.restore();
+    // seam glow
+    g.save();g.globalCompositeOperation="lighter";g.strokeStyle=`rgba(255,240,180,${.5+.3*Math.sin(t*20)})`;g.lineWidth=6*dpr;g.beginPath();g.moveTo(W*.5+tilt,-50);g.lineTo(W*.5-tilt,H+50);g.stroke();g.restore();
+    // avatars + names
+    const ar=Math.min(W,H)*.13,ay=H*.3;
+    for(const [S2,dir] of [[VS.L,-1],[VS.R,1]]){const p=back((t-.2)/.5),x=W*.5+dir*W*.28+dir*W*.6*(1-p);
+      g.save();g.translate(x,ay);g.fillStyle="rgba(0,0,0,.35)";g.beginPath();g.arc(0,ar*.1,ar*1.08,0,7);g.fill();g.save();g.beginPath();g.arc(0,0,ar,0,7);g.clip();try{g.drawImage(S2.av,-ar,-ar,ar*2,ar*2)}catch(e){}g.restore();
+      g.lineWidth=ar*.1;g.strokeStyle=dir<0?"#7cc4ff":"#ff8a9a";g.beginPath();g.arc(0,0,ar,0,7);g.stroke();
+      const fs=ar*.34;g.font=`900 ${fs}px 'Dela Gothic One','M PLUS 1p',sans-serif`;g.textAlign="center";g.textBaseline="middle";const nm="@"+String(S2.name).replace(/^@/,"");const tw=Math.min(W*.4,g.measureText(nm).width+fs);
+      g.fillStyle="rgba(0,0,0,.55)";g.beginPath();g.roundRect?g.roundRect(-tw/2,ar*1.25,tw,fs*1.5,fs*.75):g.rect(-tw/2,ar*1.25,tw,fs*1.5);g.fill();g.fillStyle="#fff";g.fillText(nm,0,ar*1.25+fs*.78,tw-fs*.6);
+      g.font=`900 ${fs*.62}px 'M PLUS 1p',sans-serif`;g.fillStyle=dir<0?"#9fd3ff":"#ffb0bb";g.fillText(dir<0?"青軍":"赤軍",0,-ar*1.22);g.restore()}
+    // troops: march in, face off, charge, clash
+    const base=H*.8,usz=Math.min(W,H)*.0028;
+    for(const [S2,dir,team] of [[VS.L,-1,"b"],[VS.R,1,"r"]]){const n=S2.deck.length;
+      S2.deck.forEach((id,i)=>{const row=i%2,col=Math.floor(i/2),cols=Math.ceil(n/2);
+        const home=W*.5+dir*(W*.12+col*W*.085+row*W*.04);const enter=ease((t-.45-i*.05)/.6);
+        let x=home+dir*W*.7*(1-enter);const charge=t>1.95?ease((t-1.95)/.4):0;x+=-dir*W*.085*charge;
+        if(t>2.35){const kb=Math.exp(-(t-2.35)*4)*W*.05;x+=dir*kb*(1-Math.min(1,(t-2.35)*1.2))}
+        const y=base-row*H*.1,moving=(enter<1||(t>1.95&&t<2.35));const k=t>2.3&&t<2.7?"attack":moving?(Math.floor(t*8+i)%2?"walk1":"walk2"):"idle";
+        g.save();g.translate(x,y);const sc=usz*(row?0.92:1);g.scale(sc,sc);
+        if(!drawPoseImg(g,id,k,team,-dir,0,0,0,1)){const im=IMG[id+"_"+team];if(ok(im)){g.scale(-dir,1);g.drawImage(im,-30,-60,60,60)}}g.restore()})}
+    // VS slam
+    if(t>1.25){const p=ease((t-1.25)/.25),sc=3-2*p;g.save();g.translate(W*.5,H*.32);g.scale(sc,sc);g.globalAlpha=Math.min(1,(t-1.25)/.12);const fs=Math.min(W,H)*.2;
+      g.font=`900 ${fs}px 'Dela Gothic One',sans-serif`;g.textAlign="center";g.textBaseline="middle";g.lineWidth=fs*.12;g.strokeStyle="#2a1600";g.strokeText("VS",0,0);const vg=g.createLinearGradient(0,-fs/2,0,fs/2);vg.addColorStop(0,"#fff6c0");vg.addColorStop(1,"#ffb31f");g.fillStyle=vg;g.fillText("VS",0,0);g.restore();once("vs",()=>play("boom"))}
+    // clash burst
+    if(t>2.33){once("clash",()=>{play("bomb");play("skill")});const k=(t-2.33)/.6,cx=W*.5,cy=base-H*.05;g.save();g.globalCompositeOperation="lighter";
+      for(let i=0;i<18;i++){const an=i/18*6.283+.3,r1=Math.min(W,H)*(.04+k*.35),r2=r1*(1.4+(i%3)*.25);g.strokeStyle=`rgba(255,${200+(i%3)*20},120,${Math.max(0,1-k)})`;g.lineWidth=(6-(i%3)*1.5)*dpr;g.beginPath();g.moveTo(cx+Math.cos(an)*r1,cy+Math.sin(an)*r1*.6);g.lineTo(cx+Math.cos(an)*r2,cy+Math.sin(an)*r2*.6);g.stroke()}
+      const rg=g.createRadialGradient(cx,cy,0,cx,cy,Math.min(W,H)*.35);rg.addColorStop(0,`rgba(255,250,220,${Math.max(0,.9-k)})`);rg.addColorStop(1,"rgba(255,200,80,0)");g.fillStyle=rg;g.fillRect(0,0,W,H);g.restore()}
+    // flashes
+    const fl=t>1.3&&t<1.45?(1.45-t)/.15:t>2.33&&t<2.5?(2.5-t)/.17:0;if(fl>0){g.setTransform(1,0,0,1,0,0);g.fillStyle=`rgba(255,255,255,${fl*.8})`;g.fillRect(0,0,W,H)}
+    if(t>3.1){g.setTransform(1,0,0,1,0,0);g.fillStyle=`rgba(5,7,13,${(t-3.1)/.5})`;g.fillRect(0,0,W,H)}
+    if(t>.3&&t<.32)once("in",()=>play("deploy"));
+    requestAnimationFrame(loop)};
+  requestAnimationFrame(loop)}
+// half-screen pattern: one streamer's own frame (TikTok battle shows each streamer's half side by side)
+let VSH=null;
+function startVSHalf(info,you){VSH={t0:performance.now(),own:{name:info[you].name,av:vsAvatar(info[you].name,info[you].avatar),deck:(info[you].deck||[]).slice()},opp:{name:info[other(you)].name,av:vsAvatar(info[other(you)].name,info[other(you)].avatar)},team:you,snd:{}}}
+function drawVSHalf(g,W,H){const t=(performance.now()-VSH.t0)/1000;if(t>3.6){VSH=null;return false}
+  const ease=x=>1-Math.pow(1-Math.max(0,Math.min(1,x)),3),back=x=>{x=Math.max(0,Math.min(1,x));const c=1.7;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+  const blue=VSH.team==="b";let shake=0;if(t>1.35&&t<1.6)shake=(1.6-t)*40;if(t>2.35&&t<2.8)shake=(2.8-t)*60;
+  g.setTransform(1,0,0,1,(Math.random()-.5)*shake,(Math.random()-.5)*shake);g.clearRect(-50,-50,W+100,H+100);
+  const a=Math.min(1,t/.3)*(t>3.1?Math.max(0,1-(t-3.1)/.5):1);g.globalAlpha=a;
+  const bg=g.createLinearGradient(0,0,0,H);bg.addColorStop(0,blue?"#0b2a5e":"#5e0b1a");bg.addColorStop(1,blue?"#1f6fd1":"#d1283f");g.fillStyle=bg;g.fillRect(-50,-50,W+100,H+100);
+  g.save();g.globalAlpha=a*.2;g.strokeStyle="#fff";g.lineWidth=3;for(let i=0;i<22;i++){const y=(i*113%H),len=W*(.15+(i%4)*.06),x=((t*1.6+i*.17)%1)*W*1.5-W*.3;g.beginPath();g.moveTo(x,y);g.lineTo(x+len,y);g.stroke()}g.restore();
+  // own avatar (big)
+  const ar=W*.2,ax=W*.5,ay=H*.2,p=back((t-.15)/.5);
+  g.save();g.translate(ax-W*(1-p),ay);g.fillStyle="rgba(0,0,0,.35)";g.beginPath();g.arc(0,ar*.1,ar*1.08,0,7);g.fill();g.save();g.beginPath();g.arc(0,0,ar,0,7);g.clip();try{g.drawImage(VSH.own.av,-ar,-ar,ar*2,ar*2)}catch(e){}g.restore();
+  g.lineWidth=ar*.1;g.strokeStyle=blue?"#7cc4ff":"#ff8a9a";g.beginPath();g.arc(0,0,ar,0,7);g.stroke();
+  let fs=ar*.32;g.font=`900 ${fs}px 'Dela Gothic One','M PLUS 1p',sans-serif`;g.textAlign="center";g.textBaseline="middle";const nm="@"+String(VSH.own.name).replace(/^@/,"");const tw=Math.min(W*.9,g.measureText(nm).width+fs);
+  g.fillStyle="rgba(0,0,0,.55)";g.beginPath();g.roundRect?g.roundRect(-tw/2,ar*1.22,tw,fs*1.5,fs*.75):g.rect(-tw/2,ar*1.22,tw,fs*1.5);g.fill();g.fillStyle="#fff";g.fillText(nm,0,ar*1.22+fs*.78,tw-fs*.6);g.restore();
+  // VS + opponent (small)
+  if(t>1.2){const q=ease((t-1.2)/.25),sc=2.6-1.6*q;g.save();g.translate(W*.34,H*.52);g.scale(sc,sc);g.globalAlpha=a*Math.min(1,(t-1.2)/.12);fs=W*.22;
+    g.font=`900 ${fs}px 'Dela Gothic One',sans-serif`;g.textAlign="center";g.textBaseline="middle";g.lineWidth=fs*.12;g.strokeStyle="#2a1600";g.strokeText("VS",0,0);const vg=g.createLinearGradient(0,-fs/2,0,fs/2);vg.addColorStop(0,"#fff6c0");vg.addColorStop(1,"#ffb31f");g.fillStyle=vg;g.fillText("VS",0,0);g.restore()}
+  {const q=back((t-1.3)/.4),r2=W*.1;g.save();g.translate(W*.72+W*.5*(1-q),H*.52);g.save();g.beginPath();g.arc(0,0,r2,0,7);g.clip();try{g.drawImage(VSH.opp.av,-r2,-r2,r2*2,r2*2)}catch(e){}g.restore();
+    g.lineWidth=r2*.12;g.strokeStyle=blue?"#ff8a9a":"#7cc4ff";g.beginPath();g.arc(0,0,r2,0,7);g.stroke();fs=r2*.42;g.font=`900 ${fs}px 'M PLUS 1p',sans-serif`;g.textAlign="center";g.fillStyle="#fff";g.fillText("@"+String(VSH.opp.name).replace(/^@/,""),0,r2*1.5,W*.5);g.restore()}
+  // own troops: march in from the left, then charge out to the right edge (toward the opponent's frame)
+  const usz=W*.0038,n=VSH.own.deck.length;
+  VSH.own.deck.forEach((id,i)=>{const row=i%2,col=Math.floor(i/2);const home=W*.82-col*W*.19-row*W*.08;const enter=ease((t-.45-i*.05)/.6);let x=home-W*1.1*(1-enter);
+    const ch=t>1.95?ease((t-1.95)/.4):0;x+=W*.22*ch;if(t>2.35){x-=Math.exp(-(t-2.35)*4)*W*.06*(1-Math.min(1,(t-2.35)*1.2))}
+    const y=H*.92-row*H*.085,mv=enter<1||(t>1.95&&t<2.35),k=t>2.3&&t<2.7?"attack":mv?(Math.floor(t*8+i)%2?"walk1":"walk2"):"idle";
+    g.save();g.translate(x,y);const sc=usz*(row?.92:1);g.scale(sc,sc);if(!drawPoseImg(g,id,k,VSH.team,1,0,0,0,a)){const im=IMG[id+"_"+VSH.team];if(ok(im))g.drawImage(im,-30,-60,60,60)}g.restore()});
+  if(t>2.33){const k=(t-2.33)/.6,cx=W,cy=H*.85;g.save();g.globalCompositeOperation="lighter";for(let i=0;i<14;i++){const an=Math.PI*.5+i/13*Math.PI,r1=W*(.04+k*.5),r2=r1*(1.4+(i%3)*.25);g.strokeStyle=`rgba(255,${200+(i%3)*20},120,${Math.max(0,1-k)})`;g.lineWidth=7-(i%3)*2;g.beginPath();g.moveTo(cx+Math.cos(an)*r1,cy+Math.sin(an)*r1*.7);g.lineTo(cx+Math.cos(an)*r2,cy+Math.sin(an)*r2*.7);g.stroke()}
+    const rg=g.createRadialGradient(cx,cy,0,cx,cy,W*.7);rg.addColorStop(0,`rgba(255,250,220,${Math.max(0,.9-k)})`);rg.addColorStop(1,"rgba(255,200,80,0)");g.fillStyle=rg;g.fillRect(0,0,W,H);g.restore()}
+  const fl=t>1.3&&t<1.45?(1.45-t)/.15:t>2.33&&t<2.5?(2.5-t)/.17:0;if(fl>0){g.setTransform(1,0,0,1,0,0);g.fillStyle=`rgba(255,255,255,${fl*.8})`;g.fillRect(0,0,W,H)}
+  g.globalAlpha=1;g.setTransform(1,0,0,1,0,0);return true}
+function vsInfo(){const myName=$("ttB").value.trim().replace(/^@/,"")||"あなた";const r=NETX&&NETX.room;const you=NET.team||"b";
+  const pl=t=>r&&r.players&&r.players[t];const nm=t=>t===you?myName:(pl(t)&&pl(t).name)||(r&&r.practice?"CPU":LB.nameR||"相手");
+  const av=t=>{const p=pl(t);return p&&p.live&&p.live.avatar||null};
+  return {b:{name:nm("b"),avatar:av("b"),deck:[...DECK.b]},r:{name:nm("r"),avatar:av("r"),deck:[...(DECK.r&&DECK.r.size?DECK.r:DECK.b)]}}}
 function startCountdown(){newState();setRoom("b");setPhase("countdown");PLAYERS.forEach(p=>{UNITS.forEach(u=>{p.cards[u.id].hidden=!DECK[p.team].has(u.id)})});refreshUI();
+  {const I=vsInfo();startVSHalf(I,"b");playVS(I,runCountdown)}}
+function runCountdown(){
   const ov=$("cdOv"),n=$("cdNum");ov.hidden=false;let k=3;n.textContent=k;play("beep");const it=setInterval(()=>{k--;if(k>0){n.textContent=k;play("beep")}else if(k===0){n.textContent="START!";play("go")}else{clearInterval(it);ov.hidden=true;setPhase("battle")}},900)}
 function showResult(){const ov=$("resOv"),w=S.over.team;$("rWin").textContent=w==="b"?"青軍の勝利！":"赤軍の勝利！";$("rWin").style.color=w==="b"?COL.b:COL.r;$("rWhy").textContent=S.over.why;
   const g=[];for(const t of ["b","r"])for(const n in S.gf[t])g.push([n,S.gf[t][n],t]);g.sort((a,b)=>b[1]-a[1]);
@@ -1208,19 +1315,22 @@ function showResult(){const ov=$("resOv"),w=S.over.team;$("rWin").textContent=w=
 $("doneBtn").onclick=()=>{$("resOv").hidden=true;resTimer=null;if(PRAC.on){PRAC.on=false;AG.b=AG.r=true;GR.r=1;wrapEl.classList.remove("prac","practest");setPhase("lobby");lobbyUI();return}LB.rdB=LB.rdR=false;setPhase("lobby");lobbyUI();setTimeout(()=>{if(PH==="lobby"&&LB.inR&&!LB.rdR){LB.rdR=true;lobbyUI();tryStart()}},4000)};
 // ---------- online (server runs the battle; this page draws it and sends your actions) ----------
 const UMAP={};UNITS.forEach(u=>UMAP[u.id]=u);
+let INV="";try{const q=new URLSearchParams(location.search);const v=q.get("inv");if(v){INV=v;try{localStorage.setItem("giftwar_inv",v)}catch(e){}if(!q.get("stream")){q.delete("inv");history.replaceState(null,"",location.pathname+(q.toString()?"?"+q:"")+location.hash)}}else INV=localStorage.getItem("giftwar_inv")||""}catch(e){}
 const STREAM_NAME=(new URLSearchParams(location.search).get("stream")||"").replace(/^@/,"").trim();
 if(STREAM_NAME){document.documentElement.classList.add("streamonly");stCv.style.width=stCv.style.height="";document.title="ギフト攻城戦 配信用画面"}
 var NETX={ok:false,url:null,tries:0,dt:66,lastSnap:0,you:"b",room:null,rival:"",avatars:{}};
-function wsURL(){const q=new URLSearchParams(location.search).get("server");if(q)return q.replace(/^http/,"ws").replace(/\/$/,"")+"/ws";if(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent|anthropic/.test(location.hostname))return null;return (location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws"}
+function wsURL(){const q=new URLSearchParams(location.search).get("server");if(q)return q.replace(/^http/,"ws").replace(/\/$/,"")+"/ws";if(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent|anthropic/.test(location.hostname))return null;return (location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws?inv="+encodeURIComponent(INV)}
 function gfor(id){const n=CFG.gifts[id];const g=gInfo(n);return {id:(CFG.gid&&CFG.gid[id])||(g&&g[3])||"",name:n||"",alt:(g&&g[4])||""}}
 function cfgMsg(){const gifts={};for(const k of ["archer","rider","shield","bomber","mage","golem","dragon","glove"])gifts[k]=gfor(k);return {name:$("ttB").value.trim().replace(/^@/,""),gifts,cheer:CFG.cheer,deck:[...DECK.b],cap:CFG.cap}}
 let cfgT=null;function sendCfg(){if(!NETX.ok)return;clearTimeout(cfgT);cfgT=setTimeout(()=>NET.send(Object.assign({t:"cfg"},cfgMsg())),500)}
+async function netGate(){const u=wsURL();if(!u)return;try{const r=await fetch("/api/whoami?inv="+encodeURIComponent(INV),{cache:"no-store"});const j=await r.json();if(j.gate&&!j.ok){showGate();return}}catch(e){}netConnect()}
+function showGate(){const d=document.createElement("div");d.className="gate";d.innerHTML=`<div class="gbox2"><div class="gi2">🔒</div><h2>このゲームは招待制です</h2><p>招待してくれた人から届いたURLを開いてください。<br>一度開けば、このブラウザでは次から普通に開けます。</p></div>`;document.body.appendChild(d)}
 function netConnect(){const u=wsURL();if(!u)return;NETX.url=u;let ws;try{ws=new WebSocket(u)}catch(e){return}
   NET.ws=ws;ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}netMsg(m)};
   ws.onopen=()=>{NETX.tries=0};
   ws.onclose=()=>{const was=NETX.ok;NETX.ok=false;NET.on=false;netBadge();if(was&&PH!=="lobby"){log("s","サーバーとの接続が切れました。つなぎ直しています…")}setTimeout(netConnect,Math.min(10000,1000*(++NETX.tries)))}}
 function updStreamLink(){const n=$("ttB").value.trim().replace(/^@/,"");const base=NETX&&NETX.ok?location.origin:"https://gift-war.onrender.com";const c=$("stCopy");
-  if(!n){$("stUrl").textContent="下の「あなた」の欄にユーザー名を入れると出ます";c.disabled=true;return}$("stUrl").textContent=`${base}/?stream=${encodeURIComponent(n)}`+(stA!==.5725?`&r=${stA}`:"");c.disabled=false}
+  if(!n){$("stUrl").textContent="下の「あなた」の欄にユーザー名を入れると出ます";c.disabled=true;return}$("stUrl").textContent=`${base}/?stream=${encodeURIComponent(n)}`+(stA!==.5725?`&r=${stA}`:"")+(INV?`&inv=${encodeURIComponent(INV)}`:"");c.disabled=false}
 function netBadge(){const el=$("netSt");if(!el)return;el.className="netst"+(NETX.ok?"":" off");el.innerHTML=NETX.ok?"<b>●</b> サーバー接続中":"<b>●</b> サーバー未接続（見本モード）"}
 function setAv(el,url,name){if(url){el.innerHTML=`<img src="${url}" alt="" referrerpolicy="no-referrer">`;el.classList.add("on","live")}else{el.innerHTML="";el.classList.remove("live");el.style.background="";avatar(el,name)}}
 function ttInfo(slot,info,name){const st=info&&info.st||"";TT[slot]=st;const el=$(slot==="b"?"tsB":"tsR");
@@ -1246,11 +1356,16 @@ function netStart(m){const you=m.you;NET.team=you;NET.on=true;setRoom(you);{cons
   const myDeck=new Set(DECK.b);PLAYERS.forEach(p=>UNITS.forEach(u=>{p.cards[u.id].hidden=p.team===you?!myDeck.has(u.id):false}));
   $("resOv").hidden=true;resTimer&&clearTimeout(resTimer);resTimer=null;refreshUI();
   if(m.resume){setPhase(S.over?"battle":"battle");return}
-  setPhase("countdown");const ov=$("cdOv"),n=$("cdNum");ov.hidden=false;let k=3;n.textContent=k;play("beep");
-  const it=setInterval(()=>{k--;if(k>0){n.textContent=k;play("beep")}else if(k===0){n.textContent="START!";play("go")}else{clearInterval(it);ov.hidden=true;setPhase("battle")}},900)}
+  setPhase("countdown");
+  const P2=t=>m.room.players[t]||{},nm=t=>t===you&&!STREAM_NAME?($("ttB").value.trim().replace(/^@/,"")||P2(t).name):(P2(t).cpu?"CPU":P2(t).name||"相手");
+  const info={};for(const t of ["b","r"])info[t]={name:nm(t),avatar:P2(t).live&&P2(t).live.avatar||null,deck:(P2(t).deck&&P2(t).deck.length?P2(t).deck:t===you?[...DECK.b]:UNITS.map(u=>u.id))};
+  startVSHalf(info,you);
+  if(STREAM_NAME){setTimeout(()=>setPhase("battle"),6300);return}
+  playVS(info,()=>{const ov=$("cdOv"),n=$("cdNum");ov.hidden=false;let k=3;n.textContent=k;play("beep");
+  const it=setInterval(()=>{k--;if(k>0){n.textContent=k;play("beep")}else if(k===0){n.textContent="START!";play("go")}else{clearInterval(it);ov.hidden=true;setPhase("battle")}},900)})}
 function netBackToLobby(){NET.on=false;PRAC.on=false;wrapEl.classList.remove("net-b","net-r","prac","practest","offl");$("resOv").hidden=true;resTimer=null;setRoom("b");setPhase("lobby");newState();refreshUI();lobbyUI()}
 function netMsg(m){
-  if(m.t==="hi"){NETX.ok=true;netBadge();if(STREAM_NAME){NET.send({t:"watch",name:STREAM_NAME});return}NET.send(Object.assign({t:"hello"},cfgMsg()));loadGiftCatalog();updStreamLink();return}
+  if(m.t==="hi"){NETX.ok=true;netBadge();NETX.owner=!!m.owner;$("invCard").hidden=!m.owner||!!STREAM_NAME;if(STREAM_NAME){NET.send({t:"watch",name:STREAM_NAME});return}NET.send(Object.assign({t:"hello"},cfgMsg()));loadGiftCatalog();updStreamLink();return}
   if(m.t==="tt"){if(!NETX.room||NETX.room.practice)ttInfo("b",m.info,$("ttB").value.trim());lobbyUI();if(m.info&&m.info.st==="ok")loadGiftCatalog();return}
   if(m.t==="joined"||m.t==="lobby"){if(m.room.practice){NETX.room=m.room;return}if(PH!=="lobby"&&(m.room.phase!=="lobby"||!$("resOv").hidden||(S&&S.over))){NETX.room=m.room;NETX.you=m.you;return}netLobby(m.room,m.you);if(PH!=="lobby")netBackToLobby();return}
   if(m.t==="start"){NETX.room=m.room;netStart(m);return}
@@ -1358,7 +1473,10 @@ buildMU();
  tabs.forEach(b=>b.onclick=()=>setMode(b.dataset.mode));let m0="battle";try{m0=localStorage.getItem("giftwar_mode")||"battle"}catch(e){}setMode(m0);updStreamLink();}
 $("pracStop").onclick=()=>{if(NETX.ok&&NET.on){NET.send({t:"done"});return}
   PRAC.on=false;AG.b=AG.r=true;GR.r=1;wrapEl.classList.remove("prac","practest");$("cdOv").hidden=true;$("resOv").hidden=true;resTimer&&clearTimeout(resTimer);resTimer=null;setPhase("lobby");newState();refreshUI();lobbyUI()};
+$("invMake").onclick=async()=>{const n=$("invName").value.trim();if(!n)return;try{const r=await fetch(`/api/invite?inv=${encodeURIComponent(INV)}&name=${encodeURIComponent(n)}`);const j=await r.json();if(!j.ok)return;
+  const row=document.createElement("div");row.innerHTML=`<b></b><code></code><button type="button" class="lbtn">コピー</button>`;row.querySelector("b").textContent=j.name;row.querySelector("code").textContent=j.url;
+  row.querySelector("button").onclick=e=>{try{navigator.clipboard.writeText(j.url);e.target.textContent="コピーしました"}catch(x){}};$("invList").prepend(row);$("invName").value=""}catch(e){}};
 function frame(){const now=performance.now();fpsAcc+=now-lastT;lastT=now;fpsN++;if(cardsDirty&&imgLeft===0){cardsDirty=false;PLAYERS.forEach(p=>UNITS.forEach(u=>drawCard(p.pcs[u.id],u,p.team)))}const t0=performance.now();if(PH==="battle"&&!NET.on)for(let i=0;i<speed;i++){tick++;step()}else tick++;if(NET.on)netLerp(now);if(PH==="battle"&&S.over&&!resTimer)resTimer=setTimeout(showResult,1500);simAcc+=performance.now()-t0;if(fpsN>=30){document.getElementById("fps").textContent=Math.round(1000/(fpsAcc/fpsN));document.getElementById("simms").textContent=(simAcc/fpsN).toFixed(1);document.getElementById("ucount").textContent=S.units.length;fpsAcc=simAcc=fpsN=0}dexStep();for(let i=LFX.length-1;i>=0;i--)if(--LFX[i].life<=0)LFX.splice(i,1);CANVAS.forEach(renderCanvas);if(STREAM_NAME&&(!NET.on||(S.over&&(NETX.overAt=NETX.overAt||performance.now())&&performance.now()-NETX.overAt>15000))){stG.setTransform(1,0,0,1,0,0);stG.clearRect(0,0,stCv.width,stCv.height)}else if(uiT%2===0){if(!S.over)NETX.overAt=0;drawStream()}if(++uiT%6===0)refreshUI();requestAnimationFrame(frame)}
-refreshUI();netConnect();frame();
+refreshUI();netGate();frame();
 })();
 </script>
