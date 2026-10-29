@@ -162,6 +162,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .gc .gi{font-size:34px;line-height:1.1}.gc b{font-size:12px}.gc span{font-size:11px;color:var(--gold)}
 .gc.sel{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold) inset}.gc.used{opacity:.45}
 .gc em{font-style:normal;font-size:10px;color:var(--muted)}
+.gc{position:relative}.gc .galb{position:absolute;top:3px;left:3px;font-style:normal;font-size:9.5px;font-weight:800;color:#2a2000;background:var(--gold);border-radius:4px;padding:0 4px}
 .gc .gjp{font-size:10.5px;color:var(--muted)}
 .prac .lrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12.5px;color:var(--muted)}
 .prac select{font-family:var(--f-body);font-size:13px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
@@ -244,6 +245,22 @@ html.streamonly .stbar{display:none!important}
 html.streamonly .invcard{display:none!important}
 .vsov{position:fixed;inset:0;z-index:60;background:#05070d}.vsov[hidden]{display:none}.vsov canvas{display:block;width:100%;height:100%}
 .vsskip{position:absolute;right:16px;bottom:16px;font-family:var(--f-body);font-size:13px;font-weight:800;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:7px 14px;cursor:pointer}
+table.coin{border-collapse:collapse;width:100%;font-size:12.5px;margin:4px 0 8px}
+table.coin th{text-align:left;font-size:11px;color:var(--muted);padding:4px 8px;border-bottom:1px solid var(--line)}
+table.coin td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle}
+table.coin td.cc{font-family:var(--f-disp);font-size:15px;color:var(--gold);white-space:nowrap;width:5.5em;text-align:right}
+table.coin .cgi{display:inline-flex;align-items:center;gap:4px;margin:0 10px 0 0;white-space:nowrap}table.coin .cgi img{width:26px;height:26px;object-fit:contain}table.coin .cgi .gi{font-size:20px}
+table.coin .cu{display:inline-flex;align-items:center;gap:3px;margin-right:8px;font-weight:700;white-space:nowrap}table.coin .cu img{width:24px;height:24px;object-fit:contain}
+table.coin .free{color:var(--muted);font-size:11px}table.coin tr.has{background:rgba(255,207,63,.08)}
+#recApply{margin-bottom:12px}
+table.rec{border-collapse:separate;border-spacing:3px;margin:4px 0 14px;font-size:11.5px}
+table.rec th{font-size:11px;color:var(--muted);font-weight:700;padding:2px 4px;text-align:center;white-space:nowrap}
+table.rec th img{width:30px;height:30px;object-fit:contain;display:block;margin:0 auto 1px}
+table.rec td{background:var(--panel2);border-radius:6px;padding:4px 3px;text-align:center;min-width:64px;vertical-align:top}
+table.rec td img{width:30px;height:30px;object-fit:contain;display:block;margin:0 auto}table.rec td b{display:block;font-size:11px;line-height:1.25}table.rec td small{color:var(--gold)}
+table.rec td.out{background:repeating-linear-gradient(45deg,var(--panel2) 0 5px,#2a2f45 5px 10px)}table.rec td.out em{display:block;font-style:normal;font-size:9.5px;color:#ff9aa8}
+table.rec td.tier{background:none;font-family:var(--f-disp);font-size:16px;color:var(--fg);min-width:52px}table.rec td.tier small{display:block;font-family:var(--f-body);font-size:10px;color:var(--muted)}
+table.rec td.act{background:none;vertical-align:middle}
 section.spec{background:var(--panel);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px}
 section.spec h2{font-size:14px;margin:0;letter-spacing:.06em}
 section.spec p{margin:0;font-size:13px;line-height:1.7;color:var(--muted)}
@@ -257,7 +274,7 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
 <div class="wrap" id="wrap" data-phase="lobby">
 <header>
   <h1>ギフト攻城戦</h1>
-  <div class="snd"><button type="button" id="sndBtn" aria-pressed="true">効果音 ON</button><label for="vol">音量</label><input id="vol" type="range" min="0" max="1" step="0.05" value="0.5"><span class="tag">見本 v37・VS演出（全画面＋配信の半分）</span></div>
+  <div class="snd"><button type="button" id="sndBtn" aria-pressed="true">効果音 ON</button><label for="vol">音量</label><input id="vol" type="range" min="0" max="1" step="0.05" value="0.5"><span class="tag">見本 v40・コイン見本表</span></div>
 </header>
 <p class="lead">バトル中、視聴者には2人の映像が左右に並んで見えます。各自のゲーム画面は「自分の陣地の半分」だけを映し、真ん中の川でつながります。兵は川沿いのゲートに入ると、相手の画面のゲートから出てきます。中央の砦は2つの画面にまたがっていて、2人で取り合います。</p>
 
@@ -378,6 +395,8 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
 
 <section class="spec" id="settings">
   <h2>設定（あとから変更できます）</h2>
+  <h3 class="dexh">コイン見本表 <small>キャラの強さは「何コイン相当」で決まっています。表の左がコイン、右がそのコインのギフトの例です。キャラが増えたときも、この表の値段から選べます。「この見本で割り当てる」で、いまのキャラを相当するコインの1つ目のギフトにします</small></h3>
+  <div class="scroll"><table class="coin" id="recTable"></table></div><button type="button" class="lbtn" id="recApply">この見本で割り当てる</button>
   <p>キャラごとに使うギフトの名前と、応援コメントの言葉を決められます。ここで変えた内容は、このブラウザに保存されます。</p>
   <div class="scroll"><table>
     <thead><tr><th>キャラ</th><th>ギフトの名前</th><th>コイン</th></tr></thead>
@@ -1130,18 +1149,29 @@ function drawBtn(g,team,x,y,w,h,cmp){
 // ---------- TikTok gift catalog (見本用の仮リスト。本番はサーバーから全ギフトを取得) ----------
 const GIFTS=[["Rose","🌹",1,"5655","バラ"],["TikTok","🎵",1,"",""],["GG","🎮",1,"",""],["Ice Cream Cone","🍦",1,"","アイスクリーム"],["Heart Me","💗",1,"","ハートミー"],["Finger Heart","🫰",5,"","指ハート"],["Rosa","🌷",10,"","ローザ"],["Perfume","🧴",20,"","香水"],["Doughnut","🍩",30,"","ドーナツ"],["Hat and Mustache","🎩",99,"","帽子とひげ"],["Hand Hearts","🫶",100,"","ハンドハート"],["Confetti","🎊",100,"","紙吹雪"],["Corgi","🐕",299,"","コーギー"],["Boxing Gloves","🥊",299,"","グローブ"],["Money Gun","💸",500,"","マネーガン"],["Galaxy","🌌",1000,"","ギャラクシー"],["Fireworks","🎆",1088,"","花火"],["Lion","🦁",29999,"","ライオン"],["Universe","🪐",34999,"","ユニバース"]];
 {const JP={"バラ":"Rose","アイスクリーム":"Ice Cream Cone","指ハート":"Finger Heart","ローザ":"Rosa","香水":"Perfume","ドーナツ":"Doughnut","帽子とひげ":"Hat and Mustache","ハンドハート":"Hand Hearts","紙吹雪":"Confetti","グローブ":"Boxing Gloves","ゆきだるま":"Corgi","太陽":"Hand Hearts","マネーガン":"Money Gun","ギャラクシー":"Galaxy","花火":"Fireworks","ライオン":"Lion","ユニバース":"Universe"};for(const k in CFG.gifts)if(JP[CFG.gifts[k]])CFG.gifts[k]=JP[CFG.gifts[k]]}
+// (gift galleries by league tier: kept for reference, not shown)
+const GALS={A:new Set(["5655","5879","170506","5660","5586","6267","8914","7168","5897","11046","6090","6820","6646","9500","10669","8503","11586","6369","7823","9101","9072"]),
+ B1:new Set(["5655","5487","5879","170506","5660","5586","6267","7168","5897","6233","11046","6090","6820","6563","6646","9500","10669","6149","8503","6369"]),
+ B3:new Set(["5655","5487","5879","170506","5660","5586","6267","7168","5897","6233","11046","6090","6820","6563","6646","9500","10669","6149","8503","11586"]),
+ B5:new Set(["5655","5487","5879","170506","5660","5586","6267","7168","5897","6233","11046","6090","6820","6563","6646","9500","10669","6149","8503"]),
+ C1:new Set(["5655","5487","5879","170506","5660","5586","6267","7168","5897","6233","11046","6090","6563","9500"]),
+ C4:new Set(["5655","5487","5879","170506","5660","5586","6267","7168","5897","6233","11046","6090","6820","6563"]),
+ D:new Set(["5655","5487","5879","170506","5660","5586","6267","7168"])};
+let GTIER="A";try{GTIER=localStorage.getItem("giftwar_tier")||"A"}catch(e){}
+const inGal=id=>!!(GALS[GTIER]&&GALS[GTIER].has(id));
 const gInfo=n=>GIFTS.find(g=>g[0]===n);let GIFTS_REAL=false,paintGifts=null;const GIMG={};
 const isUrl=x=>typeof x==="string"&&/^https?:/.test(x);
 const gIcon=(x,cls)=>isUrl(x)?`<img src="${x}" alt="" referrerpolicy="no-referrer">`:`<span class="gi">${x}</span>`;
 function gImg(u){if(!GIMG[u]){const im=new Image();im.referrerPolicy="no-referrer";im.src=u;GIMG[u]=im}return GIMG[u]}
 const DEFG={archer:"Rose",rider:"Finger Heart",shield:"Rosa",bomber:"Doughnut",mage:"Hat and Mustache",golem:"Corgi",dragon:"Galaxy",glove:"Boxing Gloves"};
 const DEFGID={archer:"5655",rider:"5487",shield:"8913",bomber:"5879",mage:"6427",golem:"6267",dragon:"11046",glove:"6007"};
+const GLOVE_ID="6007";/* 進撃グローブ: fixed */
 try{const gc=JSON.parse(localStorage.getItem("giftwar_gifts")||"null");if(gc&&gc.length){for(const g of gc){const e=GIFTS.find(x=>(g.id&&x[3]===g.id)||x[0]===g.name);if(e){if(g.id)e[3]=g.id;if(g.img)e[1]=g.img}else GIFTS.push([g.name,g.img||"🎁",g.coins,g.id||""])}GIFTS.sort((a,b)=>a[2]-b[2])}}catch(e){}
 for(const k in DEFG)if(!CFG.gifts[k]||!gInfo(CFG.gifts[k])){const want=k==="glove"?299:COINV[k];const g=gInfo(DEFG[k])||GIFTS.find(x=>x[2]===want)||GIFTS.find(x=>x[2]>=want);if(g){CFG.gifts[k]=g[0];if(g[3])CFG.gid[k]=g[3]}}
 // ---------- settings UI ----------
 {const tb=document.getElementById("giftRows");const rows=[...UNITS.map(u=>[u.id,u.name,u.id==="rookie"?"いいね100":COINV[u.id]]),["glove","グローブ（逆転用）",299]];
- const paint=paintGifts=()=>{tb.innerHTML=rows.map(([id,nm,c])=>{if(id==="rookie")return `<tr><td>${nm}</td><td>いいね100回</td><td class="n">—</td></tr>`;const gi=gInfo(CFG.gifts[id])||[CFG.gifts[id]||"未設定","❔",0];return `<tr><td>${nm}</td><td><button type="button" class="gpick" data-id="${id}">${gIcon(gi[1])}${gi[0]}<small>変更 ▸</small></button></td><td class="n">${gi[2]}</td></tr>`}).join("");
-  tb.querySelectorAll(".gpick").forEach(b=>b.onclick=()=>openPicker(b.dataset.id,nm=>{CFG.gifts[b.dataset.id]=nm;const gg=gInfo(nm);CFG.gid[b.dataset.id]=gg&&gg[3]||"";saveCfg();paint();drawDeck();sendCfg();buildDex()}))};
+ const paint=paintGifts=()=>{{const g=GIFTS.find(x=>x[3]===GLOVE_ID);if(g){CFG.gifts.glove=g[0];CFG.gid.glove=GLOVE_ID}}tb.innerHTML=rows.map(([id,nm,c])=>{if(id==="rookie")return `<tr><td>${nm}</td><td>いいね100回</td><td class="n">—</td></tr>`;const gi=gInfo(CFG.gifts[id])||[CFG.gifts[id]||"未設定","❔",0];return `<tr><td>${nm}</td><td><button type="button" class="gpick" data-id="${id}">${gIcon(gi[1])}${gi[0]}<small>変更 ▸</small></button></td><td class="n">${gi[2]}</td></tr>`}).join("");
+  tb.querySelectorAll(".gpick[data-id=glove]").forEach(b=>{b.disabled=true;b.style.cursor="default";const sm=b.querySelector("small");if(sm)sm.textContent="固定"});tb.querySelectorAll(".gpick:not([data-id=glove])").forEach(b=>b.onclick=()=>openPicker(b.dataset.id,nm=>{CFG.gifts[b.dataset.id]=nm;const gg=gInfo(nm);CFG.gid[b.dataset.id]=gg&&gg[3]||"";saveCfg();paint();drawDeck();sendCfg();buildDex()}))};
  paint();
  const cw=document.getElementById("cheerWord");cw.value=CFG.cheer;cw.oninput=()=>{CFG.cheer=cw.value.trim()||"がんばれ";saveCfg();sendCfg()};
  const cn=document.getElementById("capN");cn.value=CFG.cap;cn.onchange=()=>{CFG.cap=Math.max(10,Math.min(200,+cn.value||60));cn.value=CFG.cap;saveCfg()};
@@ -1151,13 +1181,21 @@ for(const k in DEFG)if(!CFG.gifts[k]||!gInfo(CFG.gifts[k])){const want=k==="glov
  try{const v=localStorage.getItem("giftwar_snd");if(v){const o=JSON.parse(v);sfxOn=o.on!==false;sfxVol=o.vol??.5}}catch(e){}
  const sync=()=>{sb.setAttribute("aria-pressed",sfxOn);sb.textContent=sfxOn?"効果音 ON":"効果音 OFF";vl.value=sfxVol;if(master)master.gain.value=sfxVol;try{localStorage.setItem("giftwar_snd",JSON.stringify({on:sfxOn,vol:sfxVol}))}catch(e){}};
  sb.onclick=()=>{au();sfxOn=!sfxOn;sync();play("ready")};vl.oninput=()=>{au();sfxVol=+vl.value;sync()};vl.onchange=()=>play("deploy");sync();}
+// coin reference chart: example gifts for each coin value (characters are defined by "how many coins they are worth")
+const COINREF=[[1,["5655","5269","7934"]],[5,["5487"]],[10,["8913"]],[30,["5879","5780"]],[99,["6427","170506","5659"]],[100,["5660","8343","5585"]],[199,["5586"]],[299,["6267","6007"]],[399,["8914"]],[500,["7168"]],[699,["5897"]],[999,["6233"]],[1000,["11046","5680"]],[1088,["6090"]],[2150,["6820"]],[3000,["6563"]],[4888,["6646"]],[5000,["9500"]],[6000,["10669"]],[10000,["6149"]],[10999,["8503"]],[15000,["11586"]],[29999,["6369"]],[34000,["7823"]],[44999,["9101"]]];
+function unitCoin(k){return k==="glove"?299:COINV[k]}
+function buildRec(){const T=document.getElementById("recTable");if(!T)return;const byId=id=>GIFTS.find(x=>x[3]===id);
+  const users=c=>[...UNITS.filter(u=>u.id!=="rookie"&&COINV[u.id]===c).map(u=>`<span class="cu"><img src="img/${u.id}_b.webp" alt="">${u.name}</span>`),...(c===299?['<span class="cu">🥊 グローブ（固定）</span>']:[])].join("");
+  T.innerHTML="<thead><tr><th>コイン</th><th>ギフトの例</th><th>いまのキャラ</th></tr></thead><tbody>"+COINREF.map(([c,ids])=>{const u=users(c);return `<tr class="${u?"has":""}"><td class="cc">${c.toLocaleString()}</td><td class="cg">${ids.map(id=>{const g=byId(id);return g?`<span class="cgi">${gIcon(g[1])}${g[0]}</span>`:""}).join("")}</td><td class="cus">${u||'<span class="free">空き</span>'}</td></tr>`}).join("")+"</tbody>"}
+document.getElementById("recApply").onclick=e=>{const byId=id=>GIFTS.find(x=>x[3]===id);for(const u of UNITS){if(u.id==="rookie")continue;const row=COINREF.find(r=>r[0]===COINV[u.id]);const g=row&&byId(row[1][0]);if(g){CFG.gifts[u.id]=g[0];CFG.gid[u.id]=g[3]}}
+  saveCfg();paintGifts&&paintGifts();drawDeck();buildDex();sendCfg();e.target.textContent="割り当てました";setTimeout(()=>e.target.textContent="この見本で割り当てる",1500)};
 function openPicker(id,cb){const m=document.getElementById("gm"),G=document.getElementById("gmG"),q=document.getElementById("gmQ"),so=document.getElementById("gmS"),fi=document.getElementById("gmF");
  const nm=id==="glove"?"グローブ（逆転用）":UNITS.find(u=>u.id===id).name;document.getElementById("gmT").textContent=`${nm} に使うギフトを選ぶ`;
- const draw=()=>{let L=GIFTS.filter(g=>!q.value||g[0].includes(q.value.trim()));const f=+fi.value;L=L.filter(g=>f===0||(f===1&&g[2]<100)||(f===2&&g[2]>=100&&g[2]<1000)||(f===3&&g[2]>=1000));L.sort((a,b)=>so.value==="a"?a[2]-b[2]:b[2]-a[2]);
+ const draw=()=>{let L=GIFTS.filter(g=>!q.value||g[0].includes(q.value.trim()));const f=fi.value[0]==="g"?fi.value:+fi.value;L=L.filter(g=>(typeof f==="string"&&GALS[f.slice(1)].has(g[3]))||f===0||(f===1&&g[2]<100)||(f===2&&g[2]>=100&&g[2]<1000)||(f===3&&g[2]>=1000));L.sort((a,b)=>so.value==="a"?a[2]-b[2]:b[2]-a[2]);
   const used=new Set(Object.entries(CFG.gifts).filter(([k])=>k!==id).map(([,v])=>v));
   G.innerHTML=L.map(g=>`<button type="button" class="gc${CFG.gifts[id]===g[0]?" sel":""}${used.has(g[0])?" used":""}" data-n="${g[0]}">${gIcon(g[1])}<b>${g[0]}</b>${g[4]?`<small class="gjp">${g[4]}</small>`:""}<span>${g[2]}コイン</span>${used.has(g[0])?"<em>使用中</em>":""}</button>`).join("")||"<p class='note'>見つかりません</p>";
   G.querySelectorAll(".gc").forEach(b=>b.onclick=()=>{cb(b.dataset.n);m.hidden=true})};
- q.value="";q.oninput=draw;so.onchange=draw;fi.onchange=draw;document.getElementById("gmX").onclick=()=>m.hidden=true;draw();m.hidden=false}
+ q.value="";fi.value="0";q.oninput=draw;so.onchange=draw;fi.onchange=()=>{if(fi.value[0]==="g"){GTIER=fi.value.slice(1);try{localStorage.setItem("giftwar_tier",GTIER)}catch(e){}}draw()};document.getElementById("gmX").onclick=()=>m.hidden=true;draw();m.hidden=false}
 // ---------- controls & loop ----------
 let speed=1;
 const tog=(id,get,set)=>{const b=document.getElementById(id);b.onclick=()=>{set(!get());b.setAttribute("aria-pressed",get())}};
@@ -1377,7 +1415,7 @@ async function loadBundledCatalog(){try{const r=await fetch("gift-catalog.json",
   const extra=GIFTS.filter(x=>x[3]&&!j.gifts.some(g=>g.id===x[3])&&isUrl(x[1]));GIFTS.length=0;j.gifts.forEach(g=>GIFTS.push([g.name,g.img||"🎁",g.coins,g.id,""]));extra.forEach(x=>GIFTS.push(x));GIFTS.sort((a,b)=>a[2]-b[2]);catOk=true;
   const byId=id=>GIFTS.find(x=>x[3]===id);
   for(const k in DEFGID){const cur=(CFG.gid[k]&&byId(CFG.gid[k]))||GIFTS.find(x=>x[0]===CFG.gifts[k]);const g=cur||byId(DEFGID[k]);if(g){CFG.gifts[k]=g[0];CFG.gid[k]=g[3]}}
-  saveCfg();paintGifts&&paintGifts();drawDeck();buildDex();sendCfg()}catch(e){}}
+  saveCfg();paintGifts&&paintGifts();drawDeck();buildDex();buildRec();sendCfg()}catch(e){}}
 loadBundledCatalog();
 setInterval(()=>loadGiftCatalog(),120000);
 let catT=0,catOk=false;async function loadGiftCatalog(){if(!NETX.ok||Date.now()-catT<(catOk?600000:4000))return;catT=Date.now();try{const r=await fetch("/api/gifts?u="+encodeURIComponent($("ttB").value.trim()));const j=await r.json();if(j.ok&&j.gifts.length){if(j.partial||j.gifts.length<GIFTS.length){for(const g of j.gifts){const e=GIFTS.find(x=>(g.id&&x[3]===g.id)||x[0]===g.name);if(e){if(!e[3])e[3]=g.id;if(g.img&&!isUrl(e[1]))e[1]=g.img}else GIFTS.push([g.name,g.img||"🎁",g.coins,g.id])}GIFTS.sort((a,b)=>a[2]-b[2]);try{localStorage.setItem("giftwar_gifts",JSON.stringify(GIFTS.map(x=>({name:x[0],img:isUrl(x[1])?x[1]:null,coins:x[2],id:x[3]}))))}catch(e){}}else{catOk=true;try{localStorage.setItem("giftwar_gifts",JSON.stringify(j.gifts))}catch(e){}const jp={},em={};GIFTS.forEach(x=>{if(x[4])jp[x[0]]=x[4];if(!isUrl(x[1]))em[x[0]]=x[1]});GIFTS.length=0;j.gifts.forEach(g=>GIFTS.push([g.name,g.img||em[g.name]||"🎁",g.coins,g.id,jp[g.name]||""]))}GIFTS_REAL=true;
