@@ -24,7 +24,7 @@ function load() {
     ${body}
     return {
       get S(){return S}, newState, step, addStock, sendGlove, cheer, doAct, gloveOK, mult, end,
-      DECK, MODE, CFG, AG, GR, PRAC, OFF, UNITS, COINV, SKILLS,
+      DECK, MODE, CFG, OVF, AG, GR, PRAC, OFF, UNITS, COINV, SKILLS,
       tick(){tick++}, setAuto(r,b){autoR=r;autoB=b}, setAutoGift(v){autoGift=v}
     };
   })`;

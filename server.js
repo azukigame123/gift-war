@@ -35,7 +35,7 @@ const server = http.createServer(async (req, res) => {
 const ROOMS = new Map();
 const CODE_CH = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const newCode = () => { let c; do { c = Array.from({ length: 6 }, () => CODE_CH[Math.random() * CODE_CH.length | 0]).join(""); } while (ROOMS.has(c)); return c; };
-const UNIT_IDS = ["rookie", "archer", "shield", "rider", "bomber", "mage", "golem", "dragon"];
+const UNIT_IDS = ["rookie", "soldier", "archer", "shield", "rider", "bomber", "mage", "golem", "dragon"];
 const send = (ws, o) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
 const other = t => t === "b" ? "r" : "b";
 
