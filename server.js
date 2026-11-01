@@ -4,6 +4,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const { WebSocketServer } = require("ws");
+const crypto = require("crypto");
 const { createSim, snapshot } = require("./sim");
 const TT = require("./tiktok");
 
@@ -12,10 +13,42 @@ const SPEED = Math.max(1, Math.min(20, +process.env.GAME_SPEED || 1)); // testin
 const PUB = path.join(__dirname, "public");
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".webp": "image/webp", ".png": "image/png", ".json": "application/json", ".svg": "image/svg+xml", ".ico": "image/x-icon" };
 
+// ---------- invites: only people with a link made by the owner can play ----------
+// Tokens are "name.signature"; the signature is an HMAC, so nothing has to be stored.
+// Change INVITE_VERSION on Render to cancel every invite at once.
+const INV_SECRET = crypto.createHash("sha256").update("gift-war-invite:" + (process.env.INVITE_SECRET || process.env.EULER_API_KEY || "dev-secret") + ":" + (process.env.INVITE_VERSION || "1")).digest();
+const GATE = process.env.INVITE_OFF !== "1";
+const PUBLIC_URL = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || "http://localhost:" + PORT).replace(/\/$/, "");
+const sig = name => crypto.createHmac("sha256", INV_SECRET).update(name).digest("base64url").slice(0, 16);
+const makeInv = name => encodeURIComponent(name) + "." + sig(name);
+function checkInv(tok) {
+  if (!GATE) return { name: "guest", owner: true };
+  tok = String(tok || ""); const i = tok.lastIndexOf("."); if (i <= 0) return null;
+  let name; try { name = decodeURIComponent(tok.slice(0, i)); } catch (e) { return null; }
+  const a = Buffer.from(tok.slice(i + 1)), b = Buffer.from(sig(name));
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  return { name, owner: name === "owner" };
+}
+const ownerUrl = PUBLIC_URL + "/?inv=" + makeInv("owner");
+console.log("[invite] owner URL (keep it private): " + ownerUrl);
+
 // ---------- http ----------
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, "http://x");
   if (u.pathname === "/healthz") { res.writeHead(200, { "content-type": "text/plain" }); return res.end("ok"); }
+  if (u.pathname === "/api/whoami") {
+    const who = checkInv(u.searchParams.get("inv"));
+    res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
+    return res.end(JSON.stringify(who ? { ok: true, name: who.name, owner: !!who.owner, gate: GATE } : { ok: false, gate: GATE }));
+  }
+  if (u.pathname === "/api/invite") {
+    const who = checkInv(u.searchParams.get("inv"));
+    res.writeHead(who && who.owner ? 200 : 403, { "content-type": "application/json", "cache-control": "no-store" });
+    if (!who || !who.owner) return res.end(JSON.stringify({ ok: false }));
+    const name = String(u.searchParams.get("name") || "").trim().slice(0, 24).replace(/[.\s]/g, "_");
+    if (!name || name === "owner") return res.end(JSON.stringify({ ok: false, msg: "名前を入れてください" }));
+    return res.end(JSON.stringify({ ok: true, name, url: PUBLIC_URL + "/?inv=" + makeInv(name) }));
+  }
   if (u.pathname === "/api/gifts") {
     const list = await TT.giftCatalog(u.searchParams.get("u") || "");
     res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
@@ -121,7 +154,7 @@ function startMatch(room) {
   room.phase = "countdown";
   broadcast(room, { t: "start", room: roomView(room), s: snapshot(sim.S) });
   clearTimeout(room.cdT);
-  room.cdT = setTimeout(() => { room.phase = "battle"; runLoop(room); }, 6300); /* VS intro 3.6s + countdown 2.7s */
+  room.cdT = setTimeout(() => { room.phase = "battle"; runLoop(room); }, 6300); // VS intro 3.6s + countdown 2.7s
 }
 function runLoop(room) {
   clearInterval(room.loop);
@@ -145,8 +178,9 @@ function maybeClose(room) {
 }
 
 // ---------- websocket ----------
-const wss = new WebSocketServer({ server, path: "/ws", perMessageDeflate: { threshold: 512 } , maxPayload: 64 * 1024 });
-wss.on("connection", ws => {
+const wss = new WebSocketServer({ server, path: "/ws", verifyClient: (info, cb) => { const q = new URL(info.req.url, "http://x").searchParams; const who = checkInv(q.get("inv")); if (!who) return cb(false, 401, "invite required"); info.req.who = who; cb(true); }, perMessageDeflate: { threshold: 512 } , maxPayload: 64 * 1024 });
+wss.on("connection", (ws, req) => {
+  const WHO = req.who || { name: "guest", owner: false };
   const C = { ws, name: "", gifts: {}, cheer: "がんばれ", deck: UNIT_IDS.slice(), room: null, team: null, live: null, on: null, rate: 0 };
   let solo = null; // TikTok status while not in a room
   const soloLive = () => {
@@ -242,7 +276,7 @@ wss.on("connection", ws => {
   });
   const rt = setInterval(() => { C.rate = 0; }, 1000);
   ws.on("close", () => { clearInterval(rt); if (C.watch) { const W = WATCH.get(C.watch); if (W) { W.delete(ws); if (!W.size) WATCH.delete(C.watch); } } leave(); dropSolo(); });
-  send(ws, { t: "hi", mock: TT.MOCK, version: 1 });
+  send(ws, { t: "hi", mock: TT.MOCK, version: 1, who: WHO.name, owner: !!WHO.owner });
 });
 
 // keep idle connections alive behind proxies
