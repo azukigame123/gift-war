@@ -52,6 +52,13 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
     return res.end(JSON.stringify(who ? { ok: true, name: who.name, owner: !!who.owner, gate: GATE } : { ok: false, gate: GATE }));
   }
+  if (u.pathname === "/api/ttdebug") {
+    const who = checkInv(u.searchParams.get("inv"));
+    res.writeHead(who && who.owner ? 200 : 403, { "content-type": "application/json", "cache-control": "no-store" });
+    if (!who || !who.owner) return res.end("{}");
+    const rooms = [...ROOMS.values()].map(r => ({ code: r.code, phase: r.phase, practice: !!r.practice, src: r.src || "", offline: !!r.offline, players: Object.fromEntries(["b", "r"].map(t => { const P = r.players[t]; return [t, P ? { name: P.name, cpu: !!P.cpu, live: P.live ? P.live.st : "", gifts: Object.fromEntries(Object.entries(P.gifts || {}).map(([k, v]) => [k, v && (v.id + "/" + v.name)])) } : null]; })) }));
+    return res.end(JSON.stringify(Object.assign({ rooms }, TT.debugInfo()), null, 1));
+  }
   if (u.pathname.startsWith("/api/invite")) {
     const who = checkInv(u.searchParams.get("inv"));
     res.writeHead(who && who.owner ? 200 : 403, { "content-type": "application/json", "cache-control": "no-store" });
@@ -138,12 +145,13 @@ function detachLive(P) { if (P && P.live) { for (const k in P.on || {}) P.live.o
 
 function battling(room) { return room.phase === "battle" && room.sim && room.sim.S && !room.sim.S.over && !room.offline; }
 function onGift(room, team, g) {
-  if (!battling(room)) return; if (room.practice && team === "b" && room.src !== "live") return;
+  if (!battling(room)) { TT.dbg(g.nick, "gift-ignored", `phase=${room.phase} offline=${!!room.offline}`); return; } if (room.practice && team === "b" && room.src !== "live") { TT.dbg(g.nick, "gift-ignored", "practice without live source"); return; }
   const P = room.players[team], sim = room.sim, gn = g.giftName.toLowerCase();
   const match = k => { const m = P.gifts[k]; return m && ((m.id && m.id === g.giftId) || (m.name && m.name === gn) || (m.alt && m.alt === gn)); };
   if (match("glove")) { sim.sendGlove(team); return; }
   const unit = UNIT_IDS.find(k => k !== "rookie" && match(k));
-  if (!unit) return;
+  if (!unit) { TT.dbg(g.nick, "gift-unmatched", `${g.giftId} ${g.giftName}`); return; }
+  TT.dbg(g.nick, "gift-unit", `${g.giftName} -> ${unit} x${g.count}`);
   for (let i = 0; i < g.count; i++) sim.addStock(team, unit, g.nick);
 }
 function onLike(room, team, l) {

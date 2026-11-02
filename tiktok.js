@@ -10,6 +10,9 @@ if (!MOCK) { try { TT = require("tiktok-live-connector"); } catch (e) { console.
 const pick = (...xs) => xs.find(x => x !== undefined && x !== null && x !== "");
 const urlOf = o => o && pick(o.url_list && o.url_list[0], o.urlList && o.urlList[0], o.url && o.url[0], typeof o === "string" ? o : undefined);
 
+// recent activity for troubleshooting (owner-only /api/ttdebug)
+const DBG = [];
+function dbg(name, ev, info) { DBG.push({ at: new Date().toISOString(), name, ev, info: String(info || "").slice(0, 200) }); if (DBG.length > 200) DBG.shift(); if (ev !== "like" && ev !== "chat") console.log("[tt]", name, ev, String(info || "").slice(0, 160)); }
 class Live extends EventEmitter {
   constructor(name) {
     super();
@@ -18,7 +21,7 @@ class Live extends EventEmitter {
     this.setMaxListeners(50);
   }
   info() { return { st: this.st, msg: this.msg, avatar: this.avatar }; }
-  set(st, msg) { this.st = st; this.msg = msg || ""; this.emit("state", this.info()); }
+  set(st, msg) { if (st !== this.st || msg !== this.msg) dbg(this.name, "state", st + " " + (msg || "")); this.st = st; this.msg = msg || ""; this.emit("state", this.info()); }
   start() { if (MOCK) return this.startMock(); this.connect(); }
   async connect() {
     if (this.closed) return;
@@ -30,8 +33,8 @@ class Live extends EventEmitter {
     const c = new TikTokLiveConnection(this.name, { signApiKey: API_KEY, processInitialData: false, enableExtendedGiftInfo: false });
     this.conn = c;
     c.on(WebcastEvent.GIFT, d => this.onGift(d));
-    c.on(WebcastEvent.LIKE, d => { const n = +d.likeCount || 0; if (n > 0) this.emit("like", { n, nick: nickOf(d.user) }); });
-    c.on(WebcastEvent.CHAT, d => this.emit("chat", { nick: nickOf(d.user), text: String(d.comment || "") }));
+    c.on(WebcastEvent.LIKE, d => { const n = +d.likeCount || 0; dbg(this.name, "like", n); if (n > 0) this.emit("like", { n, nick: nickOf(d.user) }); });
+    c.on(WebcastEvent.CHAT, d => { dbg(this.name, "chat", d.comment); this.emit("chat", { nick: nickOf(d.user), text: String(d.comment || "") }); });
     c.on(WebcastEvent.STREAM_END || "streamEnd", () => { this.set("ng", "配信が終わりました"); this.retry(60); });
     c.on("disconnected", () => { if (!this.closed && this.st === "ok") { this.set("wait", "つなぎ直しています"); this.retry(5); } });
     try {
@@ -41,7 +44,7 @@ class Live extends EventEmitter {
       this.avatar = urlOf(owner.avatar_thumb) || urlOf(owner.avatarThumb) || urlOf(owner.avatar_medium) || null;
       this.set("ok");
     } catch (e) {
-      const m = String((e && (e.message || e.name)) || e);
+      const m = String((e && (e.message || e.name)) || e); dbg(this.name, "error", (e && e.name) + ": " + m);
       if (/offline|not.*live|isn.?t online|not online|UserOffline/i.test(m) || (e && e.name === "UserOfflineError")) { this.set("ng", "配信していません"); this.retry(45); }
       else if (/rate|limit|429/i.test(m)) { this.set("err", "接続の回数制限に達しました。少し待ってください"); this.retry(90); }
       else if (/api.?key|unauthor|401|403/i.test(m)) { this.set("err", "Euler Stream のAPIキーを確認してください"); this.retry(120); }
@@ -63,6 +66,7 @@ class Live extends EventEmitter {
       if (this.streak.size > 500) this.streak.clear();
     }
     if (giftId && giftName) learn({ id: giftId, name: giftName, coins, img: urlOf(g.giftImage && (g.giftImage.giftPictureUrl || g.giftImage)) || urlOf(g.image) || urlOf(g.icon) || null });
+    dbg(this.name, "gift", `id=${giftId} name=${giftName} rc=${rc} streak=${streakable} end=${!!d.repeatEnd} -> ${count}`);
     if (count > 0) this.emit("gift", { giftId, giftName, coins, count: Math.min(count, 200), nick: nickOf(user) });
   }
   async gifts() {
@@ -128,4 +132,4 @@ async function giftCatalog(name) {
 // warm the gift list at start-up so it is ready before anyone goes live
 setTimeout(() => giftCatalog("").catch(() => { }), 3000);
 setInterval(() => giftCatalog("").catch(() => { }), 6 * 3600 * 1000);
-module.exports = { acquire, release, giftCatalog, clean, MOCK, giftErr: () => GIFT_ERR, version: "gw-5" };
+module.exports = { dbg, debugInfo: () => ({ lives: [...LIVES.values()].map(l => ({ name: l.name, st: l.st, msg: l.msg, refs: l.refs, avatar: !!l.avatar })), events: DBG.slice(-120), key: !!API_KEY }), acquire, release, giftCatalog, clean, MOCK, giftErr: () => GIFT_ERR, version: "gw-5" };
