@@ -104,7 +104,7 @@ const other = t => t === "b" ? "r" : "b";
 function cleanDeck(d) { const s = new Set((Array.isArray(d) ? d : []).filter(x => UNIT_IDS.includes(x))); return s.size >= 1 ? [...s] : [...UNIT_IDS]; }
 function cleanGifts(g) {
   const o = {}; if (!g || typeof g !== "object") return o;
-  for (const k of [...UNIT_IDS, "glove"]) { const v = g[k]; if (v && typeof v === "object") o[k] = { id: String(v.id || "").slice(0, 32), name: String(v.name || "").slice(0, 40).toLowerCase(), alt: String(v.alt || "").slice(0, 40).toLowerCase() }; }
+  for (const k of [...UNIT_IDS, "glove"]) { const v = g[k]; if (v && typeof v === "object") o[k] = { id: String(v.id || "").slice(0, 32), name: String(v.name || "").slice(0, 40).toLowerCase(), alt: String(v.alt || "").slice(0, 40).toLowerCase(), coins: Math.max(0, Math.min(1e6, +v.coins || 0)) }; }
   return o;
 }
 
@@ -170,6 +170,7 @@ function startMatch(room) {
   const sim = room.sim;
   for (const t of ["b", "r"]) { const P = room.players[t]; sim.DECK[t].clear(); cleanDeck(P && P.deck).forEach(x => sim.DECK[t].add(x)); sim.MODE[t] = "5"; }
   sim.CFG.cap = room.cap || 60;
+  for (const t of ["b", "r"]) { const P = room.players[t]; sim.SM[t] = {}; if (P && !P.cpu) for (const k of UNIT_IDS) { const g = P.gifts && P.gifts[k]; const m = sim.smOf(k, g && g.coins); if (m !== 1) sim.SM[t][k] = m; } }
   sim.newState();
   for (const t of ["b", "r"]) { for (const id in sim.S.stock[t]) sim.S.stock[t][id] = sim.S.stock[t][id].map(() => "はじめの兵"); sim.S.q[t].forEach(e => e.name = "はじめの兵"); }
   sim.S.gf = { b: {}, r: {} };

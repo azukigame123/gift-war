@@ -270,6 +270,7 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertic
 th{color:var(--muted);font-size:12px}
 td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
 .ceBox{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:44px;border:1px dashed #6a7aa0;border-radius:8px;padding:0 6px;font-size:12px}.ceBox img{width:40px;height:40px;object-fit:contain}.ceWait{color:#ffcf3f}
+.smb{display:block;font-size:10px;font-weight:800;margin-top:2px}.smb.up,.smx.up,.cst.up{color:#ffb35c}.smb.dn,.smx.dn,.cst.dn{color:#7fc8ff}.smx{white-space:nowrap;font-style:normal;font-size:10px;margin-left:4px;font-weight:800}.smr{font-size:10px;color:var(--muted)}
 </style>
 
 <div class="wrap" id="wrap" data-phase="lobby">
@@ -615,18 +616,23 @@ let CE_WAIT=false;
 function ceUI(){const b=document.getElementById("ceBox");if(!b)return;const e=CFG.cheerEmote;b.innerHTML="";if(e){if(e.img){const im=new Image();im.src=e.img;im.alt="応援スタンプ";im.referrerPolicy="no-referrer";b.appendChild(im)}else b.textContent="登録ずみ"}else b.textContent="なし";
  const L=document.getElementById("ceLearn");L.textContent=CE_WAIT?"やめる":e?"登録しなおす":"スタンプを登録";document.getElementById("ceClr").hidden=!e||CE_WAIT;
  const M=document.getElementById("ceMsg");if(CE_WAIT){M.textContent="待っています…自分の配信のコメント欄から、そのスタンプを1回送ってください（2分まで）";M.className="ceWait"}else{M.className="";if(e)M.textContent="このスタンプが届くと応援コメントと同じく攻撃アップ"}}
-function saveCfg(){try{localStorage.setItem("giftwar_cfg",JSON.stringify(CFG))}catch(e){}}
+function applySM(){if(typeof gInfo!=="function")return;SM.b={};for(const u of UNITS){if(u.id==="rookie")continue;const gi=gInfo(CFG.gifts[u.id]);const m=gi?smOf(u.id,gi[2]):1;if(m!==1)SM.b[u.id]=m}}
+function smTag(id){const m=SM.b[id]||1;if(m===1)return "";const u=UNITS.find(x=>x.id===id);const f=v=>(Math.round(v*100)/100).toString();return `<small class="smb ${m>1?"up":"dn"}">強さ×${f(m)}・コスト${u.cost}→${costOf("b",id)}</small>`}
+function saveCfg(){try{applySM();localStorage.setItem("giftwar_cfg",JSON.stringify(CFG))}catch(e){}}
 const mult=team=>1+(S.dbl[team]>0?1:0)+(S.glv[team]>0?1:0);
 const tscore=team=>S.towers.filter(t=>t.team===team).reduce((a,t)=>a+Math.max(0,t.hp)/t.max*(t.king?2:1),0);
 const losing=team=>tscore(team)<tscore(other(team))-.001;
 const gloveOK=team=>S.t<=60&&!S.over&&losing(team);
 function sendGlove(team){if(!gloveOK(team)){log("s",`グローブは残り1分で負けている側だけ使えます`);return false}play("glove");S.glv[team]=60*30;log("s",`${team==="b"?"青軍":"赤軍"}にグローブ！30秒間${mult(team)}倍`);return true}
 function cheer(team){S.cheer[team]=Math.min(20,S.cheer[team]+1)}
-const OVF={coin:10,k:.5,max:100,dec:2};const MODE={b:"5",r:"5"};const AUTO_SEC=10;
+const OVF={coin:10,k:.5,max:100,dec:2};const MODE={b:"5",r:"5"};
+/* gift-price scaling: a gift worth m× the reference coin gives HP×m and attack×m (fair per coin, tested); deck cost×√m */
+const SMR=[.5,2];const SM={b:{},r:{}};function smOf(id,coins){const b=COINV[id];if(!b||!coins||id==="rookie")return 1;return Math.max(SMR[0],Math.min(SMR[1],coins/b))}function costOf(team,id){const u=UNITS.find(x=>x.id===id);return u?Math.round(u.cost*Math.sqrt(SM[team][id]||1)):0}
+const SMT={b:{},r:{}};function tplFor(team,id){const t=UNITS.find(u=>u.id===id),m=SM[team][id];if(!m||m===1||!t)return t;const c=SMT[team][id];if(c&&c.m===m)return c.t;const k=m,n=Object.assign({},t,{hp:Math.round(t.hp*k),atk:+(t.atk*k).toFixed(2),sm:m});SMT[team][id]={m,t:n};return n}const AUTO_SEC=10;
 const isAuto=(team,id)=>MODE[team]==="all"||(MODE[team]==="5"&&COINV[id]<=5);
 const CAPW={rookie:0,soldier:.5,archer:.5,rider:1,shield:1,bomber:1,mage:1.5,golem:3,dragon:3};const capW=(id,mini)=>mini?1:(CAPW[id]??1);
 function capCnt(team){return S.units.reduce((n,u)=>n+(u.team===team&&(!CFG.capHome||u.field===team)?capW(u.t.id,u.mini):0),0)}
-function addStock(team,id,name){if(id!=="rookie"){S.gf[team][name]=(S.gf[team][name]||0)+COINV[id]}id=deckMap(team,id);S.gt=S.gt||{b:null,r:null};S.gt[team]={name,id,t:S.t};if(isAuto(team,id)){autoDeploy(team,id,name);return}S.stock[team][id].push(name);S.q[team].push({id,name,t:S.t})}
+function addStock(team,id,name){if(id!=="rookie"){S.gf[team][name]=(S.gf[team][name]||0)+Math.round(COINV[id]*(SM[team][id]||1))}id=deckMap(team,id);S.gt=S.gt||{b:null,r:null};S.gt[team]={name,id,t:S.t};if(isAuto(team,id)){autoDeploy(team,id,name);return}S.stock[team][id].push(name);S.q[team].push({id,name,t:S.t})}
 function takeStock(team,id){const name=S.stock[team][id].shift();const i=S.q[team].findIndex(e=>e.id===id);if(i>=0)S.q[team].splice(i,1);return name}
 function lanePos(team,lane){const y=[GATES[0],FORT.y,GATES[1]][lane]+(Math.random()-.5)*36;return{d:40+Math.random()*(DEP-70),y:Math.max(30,Math.min(FH-30,y))}}
 function autoDeploy(team,id,name,lane){if(lane===undefined)lane=Math.random()*3|0;const n=mult(team);
@@ -659,9 +665,9 @@ function doAct(team,a){if(!S||S.over||!a)return;
 function spawn(team,id,name,field,d,y,force){
   if(!force&&capCnt(team)+capW(id)>CFG.cap){if(COINV[id]<=OVF.coin){S.ovf=S.ovf||{b:0,r:0};S.ovf[team]=Math.min(OVF.max,S.ovf[team]+Math.max(1,COINV[id])*OVF.k);return}S.wait[team].push([team,id,name,field,d,y]);return}
   play("deploy");
-  const t=UNITS.find(u=>u.id===id);
+  const t=tplFor(team,id);
   const lane=y<188?0:y>296?2:1;
-  S.uid=(S.uid||0)+1;S.units.push({uid:S.uid,team,field,t,name,d,y,lane,fd:field===team?1:-1,hp:t.hp,cd:0,bob:Math.random()*9});
+  S.uid=(S.uid||0)+1;S.units.push({uid:S.uid,team,field,t,name,d,y,lane,fd:field===team?1:-1,hp:t.hp,maxhp:t.hp,cd:0,bob:Math.random()*9});
   log(team,`${name} の${t.name}が出撃`);
 }
 let FIELD=null;const inField=f=>FIELD?FIELD[f]:S.units.filter(u=>u.field===f&&u.hp>0);
@@ -1270,9 +1276,10 @@ const DEFGID={soldier:"5655",archer:"12238",rider:"5487",shield:"8913",bomber:"5
 const GLOVE_ID="6007";/* 進撃グローブ: fixed */
 try{const gc=JSON.parse(localStorage.getItem("giftwar_gifts")||"null");if(gc&&gc.length){for(const g of gc){const e=GIFTS.find(x=>(g.id&&x[3]===g.id)||x[0]===g.name);if(e){if(g.id)e[3]=g.id;if(g.img)e[1]=g.img}else GIFTS.push([g.name,g.img||"🎁",g.coins,g.id||""])}GIFTS.sort((a,b)=>a[2]-b[2])}}catch(e){}
 for(const k in DEFG)if(!CFG.gifts[k]||!gInfo(CFG.gifts[k])){const want=k==="glove"?299:COINV[k];const g=gInfo(DEFG[k])||GIFTS.find(x=>x[2]===want)||GIFTS.find(x=>x[2]>=want);if(g){CFG.gifts[k]=g[0];if(g[3])CFG.gid[k]=g[3]}}
+applySM();
 // ---------- settings UI ----------
 {const tb=document.getElementById("giftRows");const rows=[...UNITS.map(u=>[u.id,u.name,COINV[u.id]]),["glove","グローブ（逆転用）",299]];
- const paint=paintGifts=()=>{{const g=GIFTS.find(x=>x[3]===GLOVE_ID);if(g){CFG.gifts.glove=g[0];CFG.gid.glove=GLOVE_ID}}tb.innerHTML=rows.map(([id,nm,c])=>{if(id==="rookie")return `<tr><td>${nm}</td><td>いいね100回</td><td class="n">—</td></tr>`;const gi=gInfo(CFG.gifts[id])||[CFG.gifts[id]||"未設定","❔",0];return `<tr><td>${nm}</td><td><button type="button" class="gpick" data-id="${id}">${gIcon(gi[1])}${gi[0]}<small>変更 ▸</small></button></td><td class="n">${gi[2]}</td></tr>`}).join("");
+ const paint=paintGifts=()=>{{const g=GIFTS.find(x=>x[3]===GLOVE_ID);if(g){CFG.gifts.glove=g[0];CFG.gid.glove=GLOVE_ID}}tb.innerHTML=rows.map(([id,nm,c])=>{if(id==="rookie")return `<tr><td>${nm}</td><td>いいね100回</td><td class="n">—</td></tr>`;const gi=gInfo(CFG.gifts[id])||[CFG.gifts[id]||"未設定","❔",0];return `<tr><td>${nm}</td><td><button type="button" class="gpick" data-id="${id}">${gIcon(gi[1])}${gi[0]}<small>変更 ▸</small></button></td><td class="n">${gi[2]}${id!=="glove"?`<div class="smr">基準 ${COINV[id]}</div>`:""}${id!=="glove"?smTag(id):""}</td></tr>`}).join("");
   tb.querySelectorAll(".gpick[data-id=glove]").forEach(b=>{b.disabled=true;b.style.cursor="default";const sm=b.querySelector("small");if(sm)sm.textContent="固定"});tb.querySelectorAll(".gpick:not([data-id=glove])").forEach(b=>b.onclick=()=>openPicker(b.dataset.id,nm=>{CFG.gifts[b.dataset.id]=nm;const gg=gInfo(nm);CFG.gid[b.dataset.id]=gg&&gg[3]||"";saveCfg();paint();drawDeck();sendCfg();buildDex()}))};
  paint();
  const cw=document.getElementById("cheerWord");cw.value=CFG.cheer;cw.oninput=()=>{CFG.cheer=cw.value.trim()||"がんばれ";saveCfg();sendCfg()};
@@ -1293,10 +1300,10 @@ function buildRec(){const T=document.getElementById("recTable");if(!T)return;con
 document.getElementById("recApply").onclick=e=>{const byId=id=>GIFTS.find(x=>x[3]===id);const used={};for(const u of UNITS){if(u.id==="rookie")continue;const c=COINV[u.id];const row=COINREF.find(r=>r[0]===c);used[c]=(used[c]||0);const g=row&&byId(row[1][Math.min(used[c]++,row[1].length-1)]);if(g){CFG.gifts[u.id]=g[0];CFG.gid[u.id]=g[3]}}
   saveCfg();paintGifts&&paintGifts();drawDeck();buildDex();sendCfg();e.target.textContent="割り当てました";setTimeout(()=>e.target.textContent="この見本で割り当てる",1500)};
 function openPicker(id,cb){const m=document.getElementById("gm"),G=document.getElementById("gmG"),q=document.getElementById("gmQ"),so=document.getElementById("gmS"),fi=document.getElementById("gmF");
- const nm=id==="glove"?"グローブ（逆転用）":UNITS.find(u=>u.id===id).name;document.getElementById("gmT").textContent=`${nm} に使うギフトを選ぶ`;
- const draw=()=>{let L=GIFTS.filter(g=>!q.value||g[0].includes(q.value.trim()));const f=fi.value[0]==="g"?fi.value:+fi.value;L=L.filter(g=>(typeof f==="string"&&GALS[f.slice(1)].has(g[3]))||f===0||(f===1&&g[2]<100)||(f===2&&g[2]>=100&&g[2]<1000)||(f===3&&g[2]>=1000));L.sort((a,b)=>so.value==="a"?a[2]-b[2]:b[2]-a[2]);
+ const nm=id==="glove"?"グローブ（逆転用）":UNITS.find(u=>u.id===id).name;const bc=COINV[id],lo=id==="glove"?0:bc*SMR[0],hi=id==="glove"?1e9:bc*SMR[1];document.getElementById("gmT").textContent=id==="glove"?`${nm} に使うギフトを選ぶ`:`${nm} に使うギフトを選ぶ（${Math.ceil(lo)}〜${hi}コイン。基準${bc}コインより高いと強く、安いと弱くなる）`;
+ const draw=()=>{let L=GIFTS.filter(g=>(!q.value||g[0].includes(q.value.trim())||(g[4]||"").includes(q.value.trim()))&&g[2]>=lo&&g[2]<=hi);const f=fi.value[0]==="g"?fi.value:+fi.value;L=L.filter(g=>(typeof f==="string"&&GALS[f.slice(1)].has(g[3]))||f===0||(f===1&&g[2]<100)||(f===2&&g[2]>=100&&g[2]<1000)||(f===3&&g[2]>=1000));L.sort((a,b)=>so.value==="a"?a[2]-b[2]:b[2]-a[2]);
   const used=new Set(Object.entries(CFG.gifts).filter(([k])=>k!==id).map(([,v])=>v));
-  G.innerHTML=L.map(g=>`<button type="button" class="gc${CFG.gifts[id]===g[0]?" sel":""}${used.has(g[0])?" used":""}" data-n="${g[0]}">${gIcon(g[1])}<b>${g[0]}</b>${g[4]?`<small class="gjp">${g[4]}</small>`:""}<span>${g[2]}コイン</span>${used.has(g[0])?"<em>使用中</em>":""}</button>`).join("")||"<p class='note'>見つかりません</p>";
+  G.innerHTML=L.map(g=>`<button type="button" class="gc${CFG.gifts[id]===g[0]?" sel":""}${used.has(g[0])?" used":""}" data-n="${g[0]}">${gIcon(g[1])}<b>${g[0]}</b>${g[4]?`<small class="gjp">${g[4]}</small>`:""}<span>${g[2]}コイン${id!=="glove"&&g[2]!==bc?`<i class="smx ${g[2]>bc?"up":"dn"}">強さ×${Math.round(smOf(id,g[2])*100)/100}</i>`:""}</span>${used.has(g[0])?"<em>使用中</em>":""}</button>`).join("")||"<p class='note'>見つかりません</p>";
   G.querySelectorAll(".gc").forEach(b=>b.onclick=()=>{cb(b.dataset.n);m.hidden=true})};
  q.value="";fi.value="0";q.oninput=draw;so.onchange=draw;fi.onchange=()=>{if(fi.value[0]==="g"){GTIER=fi.value.slice(1);try{localStorage.setItem("giftwar_tier",GTIER)}catch(e){}}draw()};document.getElementById("gmX").onclick=()=>m.hidden=true;draw();m.hidden=false}
 // ---------- controls & loop ----------
@@ -1337,9 +1344,9 @@ $("mkRoom").onclick=()=>{const c=Array.from({length:6},()=>"ABCDEFGHJKLMNPQRSTUV
 $("joinRoom").onclick=()=>{const c=$("codeIn").value.trim().toUpperCase();if(c.length<4){$("roomStat").textContent="入室コードを入れてください（4〜6文字）";return}enterRoom(c)};
 $("ttB").oninput=()=>{lobbyUI();clearTimeout(ttTimer);const n=$("ttB").value.trim().replace(/^@/,"");if(!n){setTT("b","");lobbyUI();return}setTT("b","wait",n);lobbyUI();ttTimer=setTimeout(()=>{setTT("b",/off/i.test(n)?"ng":"ok",n);lobbyUI()},1400)};
 $("readyBtn").onclick=()=>{if($("readyBtn").disabled)return;au();play("ready");LB.rdB=true;lobbyUI();tryStart()};
-function deckCost(){return UNITS.filter(u=>DECK.b.has(u.id)).reduce((a,u)=>a+u.cost,0)}
+function deckCost(){return UNITS.filter(u=>DECK.b.has(u.id)).reduce((a,u)=>a+costOf("b",u.id),0)}
 function deckValid(){return DECK.b.size>=DECK_MIN&&deckCost()<=DECK_CAP}
-function drawDeck(){const g=$("dgrid");g.innerHTML=UNITS.map(u=>`<button type="button" class="dc ${DECK.b.has(u.id)?"in":"out"}" data-id="${u.id}" aria-pressed="${DECK.b.has(u.id)}"><span class="cst">${u.cost}</span><span class="chk">${DECK.b.has(u.id)?"✓":""}</span><img src="img/${u.id}_b.webp" alt=""><span class="nm">${u.name}</span><span class="gf">${u.id==="rookie"?"いいね100（固定）":(CFG.gifts[u.id]||COINV[u.id]+"コイン")}</span></button>`).join("");
+function drawDeck(){const g=$("dgrid");g.innerHTML=UNITS.map(u=>`<button type="button" class="dc ${DECK.b.has(u.id)?"in":"out"}" data-id="${u.id}" aria-pressed="${DECK.b.has(u.id)}"><span class="cst${SM.b[u.id]?(SM.b[u.id]>1?" up":" dn"):""}">${costOf("b",u.id)}</span><span class="chk">${DECK.b.has(u.id)?"✓":""}</span><img src="img/${u.id}_b.webp" alt=""><span class="nm">${u.name}</span><span class="gf">${u.id==="rookie"?"いいね100（固定）":(CFG.gifts[u.id]||COINV[u.id]+"コイン")}</span></button>`).join("");
   g.querySelectorAll(".dc").forEach(b=>b.onclick=()=>{const id=b.dataset.id;if(id==="rookie")return;if(DECK.b.has(id))DECK.b.delete(id);else DECK.b.add(id);drawDeck();lobbyUI();sendCfg()});
   const c=deckCost();$("deckCost").textContent=`${DECK.b.size}体・コスト ${c} / ${DECK_CAP}`;$("deckCost").style.color=deckValid()?"":"#ff5468"}
 drawDeck();lobbyUI();
@@ -1520,7 +1527,7 @@ const STREAM_NAME=(new URLSearchParams(location.search).get("stream")||"").repla
 if(STREAM_NAME){document.documentElement.classList.add("streamonly");stCv.style.width=stCv.style.height="";document.title="ギフト攻城戦 配信用画面"}
 var NETX={ok:false,url:null,tries:0,dt:66,lastSnap:0,you:"b",room:null,rival:"",avatars:{}};
 function wsURL(){const q=new URLSearchParams(location.search).get("server");if(q)return q.replace(/^http/,"ws").replace(/\/$/,"")+"/ws";if(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent|anthropic/.test(location.hostname))return null;return (location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws?inv="+encodeURIComponent(INV)}
-function gfor(id){const n=CFG.gifts[id];const g=gInfo(n);return {id:(CFG.gid&&CFG.gid[id])||(g&&g[3])||"",name:n||"",alt:(g&&g[4])||""}}
+function gfor(id){const n=CFG.gifts[id];const g=gInfo(n);return {id:(CFG.gid&&CFG.gid[id])||(g&&g[3])||"",name:n||"",alt:(g&&g[4])||"",coins:(g&&g[2])||0}}
 function cfgMsg(){const gifts={};for(const k of ["soldier","archer","rider","shield","bomber","mage","golem","dragon","glove"])gifts[k]=gfor(k);return {name:$("ttB").value.trim().replace(/^@/,""),disp:CFG.disp||"",icon:CFG.icon||"",gifts,cheer:CFG.cheer,cheerEmote:CFG.cheerEmote||null,deck:[...DECK.b],cap:CFG.cap}}
 let cfgT=null;function sendCfg(){if(!NETX.ok)return;clearTimeout(cfgT);cfgT=setTimeout(()=>NET.send(Object.assign({t:"cfg"},cfgMsg())),500)}
 async function netGate(){const u=wsURL();if(!u)return;try{const r=await fetch("/api/whoami?inv="+encodeURIComponent(INV),{cache:"no-store"});const j=await r.json();if(j.gate&&!j.ok){showGate();return}}catch(e){}netConnect()}
@@ -1646,7 +1653,7 @@ function buildDex(){const box=$("dex");if(!box)return;
   box.innerHTML=UNITS.map(u=>{const gi=u.id==="rookie"?null:gInfo(CFG.gifts[u.id]);const gtxt=u.id==="rookie"?"♥ いいね100":gi?`${isUrl(gi[1])?`<img src="${gi[1]}" alt="" referrerpolicy="no-referrer">`:gi[1]} ${gi[0]}`:u.src;
     return `<div class="dexc" data-id="${u.id}"><canvas width="600" height="360" aria-label="${u.name}の動き"></canvas>
     <div class="dtabs" role="group" aria-label="${u.name}の見本の切り替え">${DMODES.map(([k,l],i)=>`<button type="button" data-m="${k}" aria-pressed="${k==="attack"}">${l}</button>`).join("")}</div>
-    <div class="dh"><b>${u.name}</b><span class="cst">コスト${u.cost}</span><span class="gf">${gtxt}</span></div>
+    <div class="dh"><b>${u.name}</b><span class="cst">コスト${costOf("b",u.id)}</span>${smTag(u.id)}<span class="gf">${gtxt}</span></div>
     <dl><dt>役割</dt><dd>${u.role}</dd><dt data-m="attack">通常攻撃</dt><dd data-m="attack">${u.atkTxt}</dd><dt data-m="trait">体質</dt><dd data-m="trait">${u.trait}</dd><dt data-m="skill">必殺技</dt><dd data-m="skill"><span class="skn">${u.sk.replace("！","")}</span>（${u.G}秒でたまる）：${u.skill.replace(/^[^：]*：/,"")}</dd></dl></div>`}).join("");
   DEX.cards=[...box.querySelectorAll(".dexc")].map(el=>{const cv=el.querySelector("canvas");const c={id:el.dataset.id,el,cv,g:cv.getContext("2d"),S:null,t:0,mode:"attack"};
     const setM=m=>{c.mode=m;c.S=null;el.querySelectorAll(".dtabs button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===m));el.querySelectorAll("dt[data-m],dd[data-m]").forEach(x=>x.classList.toggle("on",x.dataset.m===m))};
