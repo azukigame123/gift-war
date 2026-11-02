@@ -240,7 +240,7 @@ html.streamonly .stbar{display:none!important}
 .gate{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:16px}
 .gbox2{max-width:440px;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px 22px}.gbox2 h2{margin:6px 0 10px;font-family:var(--f-disp)}.gbox2 p{color:var(--muted);line-height:1.7;margin:0}.gi2{font-size:44px}
 .invcard{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px dashed var(--gold);border-radius:10px;padding:10px 12px}
-.stsz{color:var(--gold)!important}.invcard[hidden]{display:none}.invmsg{flex-basis:100%;margin:0;font-size:12px;color:var(--gold)}.invtbl{flex-basis:100%;overflow-x:auto;max-height:320px;overflow-y:auto;border:1px solid var(--line);border-radius:8px}.invtbl table{border-collapse:collapse;width:100%;min-width:520px;font-size:13px}.invtbl th,.invtbl td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.invtbl th{font-size:11px;color:var(--muted);background:var(--panel2);position:sticky;top:0}.invtbl a{color:var(--gold);font-weight:700;text-decoration:none}.invtbl a:hover{text-decoration:underline}.invtbl td.op{text-align:right}.invtbl td.op .lbtn{margin-left:6px}.invtbl .lbtn{padding:4px 9px;font-size:12px}.invtbl .del{color:#ffc2ca}.invcard input{font-family:var(--f-body);font-size:13px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:7px 10px;width:160px}
+.stsz{color:var(--gold)!important}#dispB{margin-top:4px}.icrow{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}.icrow .lbtn{padding:4px 9px;font-size:11px}.invcard[hidden]{display:none}.invmsg{flex-basis:100%;margin:0;font-size:12px;color:var(--gold)}.invtbl{flex-basis:100%;overflow-x:auto;max-height:320px;overflow-y:auto;border:1px solid var(--line);border-radius:8px}.invtbl table{border-collapse:collapse;width:100%;min-width:520px;font-size:13px}.invtbl th,.invtbl td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.invtbl th{font-size:11px;color:var(--muted);background:var(--panel2);position:sticky;top:0}.invtbl a{color:var(--gold);font-weight:700;text-decoration:none}.invtbl a:hover{text-decoration:underline}.invtbl td.op{text-align:right}.invtbl td.op .lbtn{margin-left:6px}.invtbl .lbtn{padding:4px 9px;font-size:12px}.invtbl .del{color:#ffc2ca}.invcard input{font-family:var(--f-body);font-size:13px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:7px 10px;width:160px}
 .invlist{flex-basis:100%;display:flex;flex-direction:column;gap:6px}.invlist:empty{display:none}.invlist div{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px}.invlist b{min-width:5em}.invlist code{flex:1;min-width:200px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px;word-break:break-all;user-select:all}
 html.streamonly .invcard{display:none!important}
 .vsov{position:fixed;inset:0;z-index:60;background:#05070d}.vsov[hidden]{display:none}.vsov canvas{display:block;width:100%;height:100%}
@@ -296,7 +296,7 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
         <p class="lstat" id="roomStat">部屋を作るか、相手から聞いた入室コードを入れてください。</p>
       </div>
       <div class="players">
-        <div class="pcard b" id="pcB"><div class="av" id="avB">?</div><div class="pinfo"><b>あなた（青軍）</b><input id="ttB" type="text" maxlength="24" placeholder="TikTokのユーザー名" autocomplete="off"><span class="tts" id="tsB">TikTok 未接続</span><span class="pst" id="stB">未入室</span></div></div>
+        <div class="pcard b" id="pcB"><div class="av" id="avB">?</div><div class="pinfo"><b>あなた（青軍）</b><input id="ttB" type="text" maxlength="24" placeholder="TikTokのユーザー名" autocomplete="off"><input id="dispB" type="text" maxlength="16" placeholder="対戦で出す名前（空ならTikTok名）" autocomplete="off"><span class="icrow"><button type="button" class="lbtn" id="icPick">アイコンを選ぶ</button><button type="button" class="lbtn" id="icClr" hidden>TikTokのアイコンに戻す</button><input type="file" id="icFile" accept="image/png,image/jpeg,image/webp" hidden></span><span class="tts" id="tsB">TikTok 未接続</span><span class="pst" id="stB">未入室</span></div></div>
         <div class="pcard r" id="pcR"><div class="av" id="avR">?</div><div class="pinfo"><b>相手（赤軍）</b><span class="ttn" id="ttR">—</span><span class="tts" id="tsR">—</span><span class="pst" id="stR">未入室</span></div></div>
       </div>
       <button type="button" id="readyBtn" class="ready bonly" disabled>準備完了</button>
@@ -608,7 +608,7 @@ const DECK={b:new Set(["rookie","soldier","archer","rider","shield","bomber","ma
 const DECK_CAP=30,DECK_MIN=6;
 function deckMap(team,id){if(DECK[team].has(id))return id;const order=["rookie","soldier","archer","rider","shield","bomber","mage","golem","dragon"];let i=order.indexOf(id);while(i>0){i--;if(DECK[team].has(order[i]))return order[i]}return "rookie"}
 const CFG={gifts:{soldier:"バラ",archer:"",rider:"",shield:"",bomber:"",mage:"",golem:"",dragon:"",glove:"グローブ"},cheer:"がんばれ",cap:60};
-CFG.gid={};try{const sv=JSON.parse(localStorage.getItem("giftwar_cfg")||"null");if(sv){if(sv.gid)Object.assign(CFG.gid,sv.gid);Object.assign(CFG.gifts,sv.gifts||{});if(sv.cheer)CFG.cheer=sv.cheer;if(sv.cap)CFG.cap=sv.cap}}catch(e){}
+CFG.gid={};try{const sv=JSON.parse(localStorage.getItem("giftwar_cfg")||"null");if(sv){if(sv.gid)Object.assign(CFG.gid,sv.gid);Object.assign(CFG.gifts,sv.gifts||{});if(sv.cheer)CFG.cheer=sv.cheer;if(sv.disp)CFG.disp=sv.disp;if(sv.icon)CFG.icon=sv.icon;if(sv.cap)CFG.cap=sv.cap}}catch(e){}
 function saveCfg(){try{localStorage.setItem("giftwar_cfg",JSON.stringify(CFG))}catch(e){}}
 const mult=team=>1+(S.dbl[team]>0?1:0)+(S.glv[team]>0?1:0);
 const tscore=team=>S.towers.filter(t=>t.team===team).reduce((a,t)=>a+Math.max(0,t.hp)/t.max*(t.king?2:1),0);
@@ -1292,7 +1292,7 @@ function avImg(name,team){const c=document.createElement("canvas");c.width=c.hei
 function setTT(team,st,name){TT[team]=st;const el=$(team==="b"?"tsB":"tsR"),av=$(team==="b"?"avB":"avR");el.className="tts"+(st==="wait"?" wait":st==="ok"?" ok":st==="ng"?" ng":"");
  el.textContent=st==="wait"?"TikTok 接続中…":st==="ok"?"配信中":st==="ng"?"配信していません":"TikTok 未接続";
  if(st==="ok"){av.style.background=`url(${avImg(name,team)}) center/cover`;av.classList.add("live")}else{av.style.background="";av.classList.remove("live")}}
-function avatar(el,name,team){const n=(name||"").replace(/^@/,"");el.textContent=n?n[0].toUpperCase():"?";el.classList.toggle("on",!!n)}
+function avatar(el,name,team){if(el&&el.id==="avB"&&CFG.icon){el.innerHTML=`<img src="${CFG.icon}" alt="">`;el.classList.add("on","live");return}const n=(name||"").replace(/^@/,"");el.textContent=n?n[0].toUpperCase():"?";el.classList.toggle("on",!!n)}
 function lobbyUI(){
   $("stB").textContent=LB.rdB?"準備完了！":LB.inB?"入室しました":"未入室";$("stB").className="pst"+(LB.rdB?" rd":LB.inB?" ok":"");
   $("stR").textContent=LB.rdR?"準備完了！":LB.inR?"入室しました":"未入室";$("stR").className="pst"+(LB.rdR?" rd":LB.inR?" ok":"");
@@ -1347,7 +1347,7 @@ function vsFrame(g,W,H,t,dpr,st,sound){
     for(const [S2,dir] of [[st.L,-1],[st.R,1]]){const p=back((t-.2)/.5),x=W*.5+dir*W*.28+dir*W*.6*(1-p);
       g.save();g.translate(x,ay);g.fillStyle="rgba(0,0,0,.35)";g.beginPath();g.arc(0,ar*.1,ar*1.08,0,7);g.fill();g.save();g.beginPath();g.arc(0,0,ar,0,7);g.clip();try{g.drawImage(S2.av,-ar,-ar,ar*2,ar*2)}catch(e){}g.restore();
       g.lineWidth=ar*.1;g.strokeStyle=dir<0?"#7cc4ff":"#ff8a9a";g.beginPath();g.arc(0,0,ar,0,7);g.stroke();
-      const fs=ar*.34;g.font=`900 ${fs}px 'Dela Gothic One','M PLUS 1p',sans-serif`;g.textAlign="center";g.textBaseline="middle";const nm="@"+String(S2.name).replace(/^@/,"");const tw=Math.min(W*.4,g.measureText(nm).width+fs);
+      const fs=ar*.34;g.font=`900 ${fs}px 'Dela Gothic One','M PLUS 1p',sans-serif`;g.textAlign="center";g.textBaseline="middle";const nm=atn(S2.name);const tw=Math.min(W*.4,g.measureText(nm).width+fs);
       g.fillStyle="rgba(0,0,0,.55)";g.beginPath();g.roundRect?g.roundRect(-tw/2,ar*1.25,tw,fs*1.5,fs*.75):g.rect(-tw/2,ar*1.25,tw,fs*1.5);g.fill();g.fillStyle="#fff";g.fillText(nm,0,ar*1.25+fs*.78,tw-fs*.6);
       g.font=`900 ${fs*.62}px 'M PLUS 1p',sans-serif`;g.fillStyle=dir<0?"#9fd3ff":"#ffb0bb";g.fillText(dir<0?"青軍":"赤軍",0,-ar*1.22);g.restore()}
     // troops: march in, face off, charge, clash
@@ -1387,7 +1387,7 @@ function playVS(info,done){const ov=$("vsOv"),cv=$("vsCv");ov.hidden=false;const
   requestAnimationFrame(loop)}
 // half-screen pattern: one streamer's own frame (TikTok battle shows each streamer's half side by side)
 let VSH=null;
-let VSF=null;function startVSFull(info,you){const o=other(you);VSF={t0:performance.now(),L:{name:info[you].name||"あなた",av:vsAvatar(info[you].name,info[you].avatar),deck:(info[you].deck||[]).slice()},R:{name:info[o].name||"相手",av:vsAvatar(info[o].name,info[o].avatar),deck:(info[o].deck||[]).slice()},lt:you,snd:{}}}
+const atn=n=>{n=String(n||"").replace(/^@/,"");return /^[A-Za-z0-9._]+$/.test(n)&&n!=="CPU"?"@"+n:n};let VSF=null;function startVSFull(info,you){const o=other(you);VSF={t0:performance.now(),L:{name:info[you].name||"あなた",av:vsAvatar(info[you].name,info[you].avatar),deck:(info[you].deck||[]).slice()},R:{name:info[o].name||"相手",av:vsAvatar(info[o].name,info[o].avatar),deck:(info[o].deck||[]).slice()},lt:you,snd:{}}}
 function startVSHalf(info,you){VSH={t0:performance.now(),own:{name:info[you].name,av:vsAvatar(info[you].name,info[you].avatar),deck:(info[you].deck||[]).slice()},opp:{name:info[other(you)].name,av:vsAvatar(info[other(you)].name,info[other(you)].avatar)},team:you,snd:{}}}
 function drawVSHalf(g,W,H){const t=(performance.now()-VSH.t0)/1000;if(t>3.6){VSH=null;return false}
   const ease=x=>1-Math.pow(1-Math.max(0,Math.min(1,x)),3),back=x=>{x=Math.max(0,Math.min(1,x));const c=1.7;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
@@ -1400,13 +1400,13 @@ function drawVSHalf(g,W,H){const t=(performance.now()-VSH.t0)/1000;if(t>3.6){VSH
   const ar=W*.2,ax=W*.5,ay=H*.2,p=back((t-.15)/.5);
   g.save();g.translate(ax-W*(1-p),ay);g.fillStyle="rgba(0,0,0,.35)";g.beginPath();g.arc(0,ar*.1,ar*1.08,0,7);g.fill();g.save();g.beginPath();g.arc(0,0,ar,0,7);g.clip();try{g.drawImage(VSH.own.av,-ar,-ar,ar*2,ar*2)}catch(e){}g.restore();
   g.lineWidth=ar*.1;g.strokeStyle=blue?"#7cc4ff":"#ff8a9a";g.beginPath();g.arc(0,0,ar,0,7);g.stroke();
-  let fs=ar*.32;g.font=`900 ${fs}px 'Dela Gothic One','M PLUS 1p',sans-serif`;g.textAlign="center";g.textBaseline="middle";const nm="@"+String(VSH.own.name).replace(/^@/,"");const tw=Math.min(W*.9,g.measureText(nm).width+fs);
+  let fs=ar*.32;g.font=`900 ${fs}px 'Dela Gothic One','M PLUS 1p',sans-serif`;g.textAlign="center";g.textBaseline="middle";const nm=atn(VSH.own.name);const tw=Math.min(W*.9,g.measureText(nm).width+fs);
   g.fillStyle="rgba(0,0,0,.55)";g.beginPath();g.roundRect?g.roundRect(-tw/2,ar*1.22,tw,fs*1.5,fs*.75):g.rect(-tw/2,ar*1.22,tw,fs*1.5);g.fill();g.fillStyle="#fff";g.fillText(nm,0,ar*1.22+fs*.78,tw-fs*.6);g.restore();
   // VS + opponent (small)
   if(t>1.2){const q=ease((t-1.2)/.25),sc=2.6-1.6*q;g.save();g.translate(W*.34,H*.52);g.scale(sc,sc);g.globalAlpha=a*Math.min(1,(t-1.2)/.12);fs=W*.22;
     g.font=`900 ${fs}px 'Dela Gothic One',sans-serif`;g.textAlign="center";g.textBaseline="middle";g.lineWidth=fs*.12;g.strokeStyle="#2a1600";g.strokeText("VS",0,0);const vg=g.createLinearGradient(0,-fs/2,0,fs/2);vg.addColorStop(0,"#fff6c0");vg.addColorStop(1,"#ffb31f");g.fillStyle=vg;g.fillText("VS",0,0);g.restore()}
   {const q=back((t-1.3)/.4),r2=W*.1;g.save();g.translate(W*.72+W*.5*(1-q),H*.52);g.save();g.beginPath();g.arc(0,0,r2,0,7);g.clip();try{g.drawImage(VSH.opp.av,-r2,-r2,r2*2,r2*2)}catch(e){}g.restore();
-    g.lineWidth=r2*.12;g.strokeStyle=blue?"#ff8a9a":"#7cc4ff";g.beginPath();g.arc(0,0,r2,0,7);g.stroke();fs=r2*.42;g.font=`900 ${fs}px 'M PLUS 1p',sans-serif`;g.textAlign="center";g.fillStyle="#fff";g.fillText("@"+String(VSH.opp.name).replace(/^@/,""),0,r2*1.5,W*.5);g.restore()}
+    g.lineWidth=r2*.12;g.strokeStyle=blue?"#ff8a9a":"#7cc4ff";g.beginPath();g.arc(0,0,r2,0,7);g.stroke();fs=r2*.42;g.font=`900 ${fs}px 'M PLUS 1p',sans-serif`;g.textAlign="center";g.fillStyle="#fff";g.fillText(atn(VSH.opp.name),0,r2*1.5,W*.5);g.restore()}
   // own troops: march in from the left, then charge out to the right edge (toward the opponent's frame)
   const usz=W*.0038,n=VSH.own.deck.length;
   VSH.own.deck.forEach((id,i)=>{const row=i%2,col=Math.floor(i/2);const home=W*.82-col*W*.19-row*W*.08;const enter=ease((t-.45-i*.05)/.6);let x=home-W*1.1*(1-enter);
@@ -1417,9 +1417,9 @@ function drawVSHalf(g,W,H){const t=(performance.now()-VSH.t0)/1000;if(t>3.6){VSH
     const rg=g.createRadialGradient(cx,cy,0,cx,cy,W*.7);rg.addColorStop(0,`rgba(255,250,220,${Math.max(0,.9-k)})`);rg.addColorStop(1,"rgba(255,200,80,0)");g.fillStyle=rg;g.fillRect(0,0,W,H);g.restore()}
   const fl=t>1.3&&t<1.45?(1.45-t)/.15:t>2.33&&t<2.5?(2.5-t)/.17:0;if(fl>0){g.setTransform(1,0,0,1,0,0);g.fillStyle=`rgba(255,255,255,${fl*.8})`;g.fillRect(0,0,W,H)}
   g.globalAlpha=1;g.setTransform(1,0,0,1,0,0);return true}
-function vsInfo(){const myName=$("ttB").value.trim().replace(/^@/,"")||"あなた";const r=NETX&&NETX.room;const you=NET.team||"b";
+function vsInfo(){const myName=CFG.disp||$("ttB").value.trim().replace(/^@/,"")||"あなた";const r=NETX&&NETX.room;const you=NET.team||"b";
   const pl=t=>r&&r.players&&r.players[t];const nm=t=>t===you?myName:(pl(t)&&pl(t).name)||(r&&r.practice?"CPU":LB.nameR||"相手");
-  const av=t=>{const p=pl(t);return p&&p.live&&p.live.avatar||null};
+  const av=t=>{if(t===you&&CFG.icon)return CFG.icon;const p=pl(t);return p&&(p.icon||p.live&&p.live.avatar)||null};
   return {b:{name:nm("b"),avatar:av("b"),deck:[...DECK.b]},r:{name:nm("r"),avatar:av("r"),deck:[...(DECK.r&&DECK.r.size?DECK.r:DECK.b)]}}}
 function startCountdown(){newState();setRoom("b");setPhase("countdown");PLAYERS.forEach(p=>{UNITS.forEach(u=>{p.cards[u.id].hidden=!DECK[p.team].has(u.id)})});refreshUI();
   {const I=vsInfo();startVSHalf(I,"b");startVSFull(I,"b");vsWait(runCountdown)}}
@@ -1441,7 +1441,7 @@ if(STREAM_NAME){document.documentElement.classList.add("streamonly");stCv.style.
 var NETX={ok:false,url:null,tries:0,dt:66,lastSnap:0,you:"b",room:null,rival:"",avatars:{}};
 function wsURL(){const q=new URLSearchParams(location.search).get("server");if(q)return q.replace(/^http/,"ws").replace(/\/$/,"")+"/ws";if(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent|anthropic/.test(location.hostname))return null;return (location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws?inv="+encodeURIComponent(INV)}
 function gfor(id){const n=CFG.gifts[id];const g=gInfo(n);return {id:(CFG.gid&&CFG.gid[id])||(g&&g[3])||"",name:n||"",alt:(g&&g[4])||""}}
-function cfgMsg(){const gifts={};for(const k of ["soldier","archer","rider","shield","bomber","mage","golem","dragon","glove"])gifts[k]=gfor(k);return {name:$("ttB").value.trim().replace(/^@/,""),gifts,cheer:CFG.cheer,deck:[...DECK.b],cap:CFG.cap}}
+function cfgMsg(){const gifts={};for(const k of ["soldier","archer","rider","shield","bomber","mage","golem","dragon","glove"])gifts[k]=gfor(k);return {name:$("ttB").value.trim().replace(/^@/,""),disp:CFG.disp||"",icon:CFG.icon||"",gifts,cheer:CFG.cheer,deck:[...DECK.b],cap:CFG.cap}}
 let cfgT=null;function sendCfg(){if(!NETX.ok)return;clearTimeout(cfgT);cfgT=setTimeout(()=>NET.send(Object.assign({t:"cfg"},cfgMsg())),500)}
 async function netGate(){const u=wsURL();if(!u)return;try{const r=await fetch("/api/whoami?inv="+encodeURIComponent(INV),{cache:"no-store"});const j=await r.json();if(j.gate&&!j.ok){showGate();return}}catch(e){}netConnect()}
 function showGate(){const d=document.createElement("div");d.className="gate";d.innerHTML=`<div class="gbox2"><div class="gi2">🔒</div><h2>このゲームは招待制です</h2><p>招待してくれた人から届いたURLを開いてください。<br>一度開けば、このブラウザでは次から普通に開けます。</p></div>`;document.body.appendChild(d)}
@@ -1452,11 +1452,11 @@ function netConnect(){const u=wsURL();if(!u)return;NETX.url=u;let ws;try{ws=new 
 function updStreamLink(){const n=$("ttB").value.trim().replace(/^@/,"");const base=NETX&&NETX.ok?location.origin:"https://gift-war.onrender.com";const c=$("stCopy");
   if(!n){$("stUrl").textContent=$("stUrl2").textContent="下の「あなた」の欄にユーザー名を入れると出ます";c.disabled=true;$("stCopy2").disabled=true;return}const iv=INV?`&inv=${encodeURIComponent(INV)}`:"";$("stUrl").textContent=`${base}/?stream=${encodeURIComponent(n)}`+(BV?`&v=${BV}`:stA!==.5725?`&r=${stA}`:"")+iv;c.disabled=false;$("stUrl2").textContent=`${base}/?stream=${encodeURIComponent(n)}&v=full`+(FC?"&c=1":"")+iv;$("stCopy2").disabled=false;const z1=viewSize(BV,false),z2=viewSize("full",FC);$("stSz1").textContent=`余白なしにするには、LIVE Studioの「リンク」の大きさを 幅${z1[0]}×高さ${z1[1]} に`;$("stSz2").textContent=`余白なしにするには、LIVE Studioの「リンク」の大きさを 幅${z2[0]}×高さ${z2[1]} に`}
 function netBadge(){const el=$("netSt");if(!el)return;el.className="netst"+(NETX.ok?"":" off");el.innerHTML=NETX.ok?"<b>●</b> サーバー接続中":"<b>●</b> サーバー未接続（見本モード）"}
-function setAv(el,url,name){if(url){el.innerHTML=`<img src="${url}" alt="" referrerpolicy="no-referrer">`;el.classList.add("on","live")}else{el.innerHTML="";el.classList.remove("live");el.style.background="";avatar(el,name)}}
+function setAv(el,url,name){if(el&&el.id==="avB"&&CFG.icon)url=CFG.icon;if(url){el.innerHTML=`<img src="${url}" alt="" referrerpolicy="no-referrer">`;el.classList.add("on","live")}else{el.innerHTML="";el.classList.remove("live");el.style.background="";avatar(el,name)}}
 function ttInfo(slot,info,name){const st=info&&info.st||"";TT[slot]=st;const el=$(slot==="b"?"tsB":"tsR");
   el.className="tts"+(st==="wait"?" wait":st==="ok"?" ok":st==="ng"||st==="err"?" ng":"");
   el.textContent=st==="wait"?(info.msg||"TikTok 接続中…"):st==="ok"?"配信中":st==="ng"?(info.msg||"配信していません"):st==="err"?(info.msg||"つながりませんでした"):(slot==="b"?"TikTok 未接続":"—");
-  setAv($(slot==="b"?"avB":"avR"),st==="ok"&&info.avatar,name)}
+  if(slot==="b")LASTAV=st==="ok"&&info.avatar||"";setAv($(slot==="b"?"avB":"avR"),st==="ok"&&info.avatar,name)}let LASTAV="";
 function netLobby(room,you){NETX.room=room;NETX.you=you;const me=room.players[you],rv=room.players[other(you)];
   LB.code=room.practice?null:room.code;LB.inB=!!(me&&me.here);LB.inR=!!(rv&&rv.here);LB.rdB=!!(me&&me.ready);LB.rdR=!!(rv&&rv.ready);LB.nameR=rv?rv.name:"";
   $("pcB").className="pcard "+you;$("pcR").className="pcard "+other(you);
@@ -1477,8 +1477,8 @@ function netStart(m){const you=m.you;NET.team=you;NET.on=true;setRoom(you);{cons
   $("resOv").hidden=true;resTimer&&clearTimeout(resTimer);resTimer=null;refreshUI();
   if(m.resume){setPhase(S.over?"battle":"battle");return}
   setPhase("countdown");
-  const P2=t=>m.room.players[t]||{},nm=t=>t===you&&!STREAM_NAME?($("ttB").value.trim().replace(/^@/,"")||P2(t).name):(P2(t).cpu?"CPU":P2(t).name||"相手");
-  const info={};for(const t of ["b","r"])info[t]={name:nm(t),avatar:P2(t).live&&P2(t).live.avatar||null,deck:(P2(t).deck&&P2(t).deck.length?P2(t).deck:t===you?[...DECK.b]:UNITS.map(u=>u.id))};
+  const P2=t=>m.room.players[t]||{},nm=t=>t===you&&!STREAM_NAME?(CFG.disp||$("ttB").value.trim().replace(/^@/,"")||P2(t).name):(P2(t).cpu?"CPU":P2(t).disp||P2(t).name||"相手");
+  const info={};for(const t of ["b","r"])info[t]={name:nm(t),avatar:(t===you&&!STREAM_NAME&&CFG.icon)||P2(t).icon||P2(t).live&&P2(t).live.avatar||null,deck:(P2(t).deck&&P2(t).deck.length?P2(t).deck:t===you?[...DECK.b]:UNITS.map(u=>u.id))};
   startVSHalf(info,you);startVSFull(info,you);
   if(STREAM_NAME){setTimeout(()=>setPhase("battle"),6300);return}
   vsWait(()=>{const ov=$("cdOv"),n=$("cdNum");ov.hidden=false;let k=3;n.textContent=k;play("beep");
@@ -1607,6 +1607,10 @@ async function invLoad(){try{const j=await invApi("invites");if(j.ok){invLoad.pe
 $("invMake").onclick=async()=>{const n=$("invName").value.trim();if(!n)return;try{const j=await invApi("invite",`&name=${encodeURIComponent(n)}&memo=${encodeURIComponent($("invMemo").value.trim())}`);if(!j.ok){invMsg(j.msg||"作れませんでした");return}
   invRender(j.users,invLoad.persist);try{await navigator.clipboard.writeText(j.url);invMsg(`@${j.name} の招待URLを作って、コピーしました`)}catch(x){invMsg(`@${j.name} の招待URLを作りました（一覧の「URLをコピー」でコピーできます）`)}$("invName").value="";$("invMemo").value=""}catch(e){}};
 function frame(){const now=performance.now();fpsAcc+=now-lastT;lastT=now;fpsN++;if(cardsDirty&&imgLeft===0){cardsDirty=false;PLAYERS.forEach(p=>UNITS.forEach(u=>drawCard(p.pcs[u.id],u,p.team)))}const t0=performance.now();if(PH==="battle"&&!NET.on)for(let i=0;i<speed;i++){tick++;step()}else tick++;if(NET.on)netLerp(now);if(PH==="battle"&&S.over&&!resTimer)resTimer=setTimeout(showResult,1500);simAcc+=performance.now()-t0;if(fpsN>=30){document.getElementById("fps").textContent=Math.round(1000/(fpsAcc/fpsN));document.getElementById("simms").textContent=(simAcc/fpsN).toFixed(1);document.getElementById("ucount").textContent=S.units.length;fpsAcc=simAcc=fpsN=0}dexStep();for(let i=LFX.length-1;i>=0;i--)if(--LFX[i].life<=0)LFX.splice(i,1);CANVAS.forEach(renderCanvas);if(STREAM_NAME&&(!NET.on||(S.over&&(NETX.overAt=NETX.overAt||performance.now())&&performance.now()-NETX.overAt>15000))){stG.setTransform(1,0,0,1,0,0);stG.clearRect(0,0,stCv.width,stCv.height)}else if(uiT%2===0){if(!S.over)NETX.overAt=0;drawStream()}if(++uiT%6===0)refreshUI();requestAnimationFrame(frame)}
+{const d=$("dispB");d.value=CFG.disp||"";d.oninput=()=>{CFG.disp=d.value.trim().slice(0,16);saveCfg();sendCfg()};
+ const f=$("icFile"),clr=$("icClr"),paint=()=>{clr.hidden=!CFG.icon;avatar($("avB"),$("ttB").value,"b")};paint();
+ $("icPick").onclick=()=>f.click();clr.onclick=()=>{CFG.icon="";saveCfg();sendCfg();clr.hidden=true;setAv($("avB"),TT.b==="ok"&&LASTAV,$("ttB").value)};
+ f.onchange=()=>{const file=f.files&&f.files[0];if(!file)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement("canvas");c.width=c.height=160;const s=Math.min(im.width,im.height);c.getContext("2d").drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,160,160);CFG.icon=c.toDataURL("image/jpeg",.85);saveCfg();sendCfg();paint();f.value=""};im.src=rd.result};rd.readAsDataURL(file)}}
 refreshUI();netGate();frame();
 })();
 </script>

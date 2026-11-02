@@ -102,7 +102,7 @@ function cleanGifts(g) {
 }
 
 function roomView(room) {
-  const pv = t => { const P = room.players[t]; if (!P) return null; return { name: P.name, live: P.live ? P.live.info() : { st: "", msg: "", avatar: null }, here: !!P.ws, ready: !!P.ready, cpu: !!P.cpu, deck: cleanDeck(P.deck) }; };
+  const pv = t => { const P = room.players[t]; if (!P) return null; return { name: P.name, disp: P.disp || "", icon: P.icon || "", live: P.live ? P.live.info() : { st: "", msg: "", avatar: null }, here: !!P.ws, ready: !!P.ready, cpu: !!P.cpu, deck: cleanDeck(P.deck) }; };
   return { code: room.code, phase: room.phase, practice: room.practice, offline: !!room.offline, players: { b: pv("b"), r: pv("r") } };
 }
 // stream-only pages (LIVE Studio "link" source) watch a streamer by TikTok username
@@ -228,7 +228,7 @@ wss.on("connection", (ws, req) => {
     dropSolo();
     let P = room.players[team];
     if (!P) P = room.players[team] = { name: "", gifts: {}, cheer: "", deck: [], ready: false };
-    P.ws = ws; P.name = C.name; P.gifts = C.gifts; P.cheer = C.cheer; P.deck = C.deck; P.ready = false;
+    P.ws = ws; P.name = C.name; P.disp = C.disp || ""; P.icon = C.icon || ""; P.gifts = C.gifts; P.cheer = C.cheer; P.deck = C.deck; P.ready = false;
     C.room = room; C.team = team; clearTimeout(room.dieT);
     attachLive(room, team);
     send(ws, { t: "joined", you: team, room: roomView(room) });
@@ -245,9 +245,11 @@ wss.on("connection", (ws, req) => {
         if (typeof m.name === "string") C.name = TT.clean(m.name);
         if (m.gifts) C.gifts = cleanGifts(m.gifts);
         if (typeof m.cheer === "string") C.cheer = m.cheer.slice(0, 12);
+        if (typeof m.icon === "string") C.icon = (m.icon.length <= 40000 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(m.icon)) ? m.icon : "";
+        if (typeof m.disp === "string") C.disp = m.disp.replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 16);
         if (m.deck) C.deck = cleanDeck(m.deck);
         const P = me();
-        if (P) { const nameChanged = P.name !== C.name; P.name = C.name; P.gifts = C.gifts; P.cheer = C.cheer; P.deck = C.deck; if (nameChanged) attachLive(C.room, C.team); lobbyUpdate(C.room); }
+        if (P) { const nameChanged = P.name !== C.name; P.name = C.name; P.disp = C.disp || ""; P.icon = C.icon || ""; P.gifts = C.gifts; P.cheer = C.cheer; P.deck = C.deck; if (nameChanged) attachLive(C.room, C.team); lobbyUpdate(C.room); }
         else soloLive();
         break;
       }
