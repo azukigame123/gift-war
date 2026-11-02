@@ -38,7 +38,7 @@ class Live extends EventEmitter {
     this.cnt = {}; let lastCnt = Date.now();
     c.on("decodedData", (type, data) => { this.cnt[type] = (this.cnt[type] || 0) + 1; if (!this.sampled) this.sampled = {}; if (!this.sampled[type] && Object.keys(this.sampled).length < 12) { this.sampled[type] = 1; dbg(this.name, "sample", type + " keys=" + Object.keys(data || {}).slice(0, 14).join(",")); } if (Date.now() - lastCnt > 20000) { lastCnt = Date.now(); dbg(this.name, "counts", JSON.stringify(this.cnt)); } });
     c.on(WebcastEvent.GIFT, d => this.onGift(d));
-    c.on(WebcastEvent.LIKE, d => { const n = +d.likeCount || 0; dbg(this.name, "like", n); if (n > 0) this.emit("like", { n, nick: nickOf(d.user) }); });
+    c.on(WebcastEvent.LIKE, d => { if (!this.likeDump) { this.likeDump = 1; dbg(this.name, "like-raw", JSON.stringify(d, (k, v) => typeof v === "bigint" ? String(v) : v).slice(0, 190)); } const n = +pick(d.likeCount, d.count, d.like_count, 0) || 0; dbg(this.name, "like", n); if (n > 0) this.emit("like", { n, nick: nickOf(d.user) }); });
     c.on(WebcastEvent.CHAT, d => { dbg(this.name, "chat", (d.content || d.comment || "") + " | keys=" + Object.keys(d || {}).slice(0, 10).join(",")); this.emit("chat", { nick: nickOf(d.user), text: String(d.content || d.comment || "") }); });
     c.on(WebcastEvent.STREAM_END || "streamEnd", () => { this.set("ng", "配信が終わりました"); this.retry(60); });
     c.on("disconnected", () => { if (!this.closed && this.st === "ok") { this.set("wait", "つなぎ直しています"); this.retry(5); } });
@@ -58,6 +58,7 @@ class Live extends EventEmitter {
   }
   retry(sec) { if (this.closed) return; clearTimeout(this.timer); this.timer = setTimeout(() => this.connect(), sec * 1000); }
   onGift(d) {
+    if ((this.giftDump = (this.giftDump || 0) + 1) <= 2) { const j = JSON.stringify(d, (k, v) => typeof v === "bigint" ? String(v) : v); for (let i = 0; i < Math.min(j.length, 1900); i += 190) dbg(this.name, "gift-raw", j.slice(i, i + 190)); }
     const g = d.giftDetails || d.extendedGiftInfo || {};
     const giftId = String(pick(d.giftId, g.id, "")), giftName = String(pick(g.giftName, g.name, d.extendedGiftInfo && d.extendedGiftInfo.name, ""));
     const coins = +pick(g.diamondCount, g.diamond_count, d.extendedGiftInfo && d.extendedGiftInfo.diamond_count, 0);
