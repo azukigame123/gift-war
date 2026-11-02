@@ -271,6 +271,14 @@ th{color:var(--muted);font-size:12px}
 td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
 .ceBox{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:44px;border:1px dashed #6a7aa0;border-radius:8px;padding:0 6px;font-size:12px}.ceBox img{width:40px;height:40px;object-fit:contain}.ceWait{color:#ffcf3f}
 .smb{display:block;font-size:10px;font-weight:800;margin-top:2px}.smb.up,.smx.up,.cst.up{color:#ffb35c}.smb.dn,.smx.dn,.cst.dn{color:#7fc8ff}.smx{white-space:nowrap;font-style:normal;font-size:10px;margin-left:4px;font-weight:800}.smr{font-size:10px;color:var(--muted)}
+.ptabs{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 0;border-bottom:2px solid var(--line);padding-bottom:0}
+.ptabs button{font:inherit;font-weight:800;font-size:14px;color:var(--muted);background:transparent;border:1px solid transparent;border-bottom:none;border-radius:10px 10px 0 0;padding:9px 14px;cursor:pointer;margin-bottom:-2px}
+.ptabs button[aria-selected=true]{color:var(--fg);background:var(--panel);border-color:var(--line);border-bottom:2px solid var(--panel)}
+.ptabs button:hover{color:var(--fg)}
+.ppanes{background:var(--panel);border:1px solid var(--line);border-top:none;border-radius:0 0 14px 14px;padding:14px;margin-bottom:16px}
+.ppane>*:first-child{margin-top:0}.ppane section.spec,.ppane section.streamsec{margin:0}
+.ppane .stbar,.ppane .invcard{margin:0 0 12px}
+.histpane h2{margin:0 0 6px;font-size:18px}.histpane p{margin:0 0 10px}.hbtns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}.hbtns a{text-decoration:none;display:inline-flex}
 </style>
 
 <div class="wrap" id="wrap" data-phase="lobby">
@@ -667,6 +675,7 @@ function spawn(team,id,name,field,d,y,force){
   play("deploy");
   const t=tplFor(team,id);
   const lane=y<188?0:y>296?2:1;
+  S.cnt=S.cnt||{b:{},r:{}};S.cnt[team][id]=(S.cnt[team][id]||0)+1;
   S.uid=(S.uid||0)+1;S.units.push({uid:S.uid,team,field,t,name,d,y,lane,fd:field===team?1:-1,hp:t.hp,maxhp:t.hp,cd:0,bob:Math.random()*9});
   log(team,`${name} の${t.name}が出撃`);
 }
@@ -1701,5 +1710,34 @@ function frame(){const now=performance.now();fpsAcc+=now-lastT;lastT=now;fpsN++;
  $("icPick").onclick=()=>f.click();clr.onclick=()=>{CFG.icon="";saveCfg();sendCfg();clr.hidden=true;setAv($("avB"),TT.b==="ok"&&LASTAV,$("ttB").value)};
  f.onchange=()=>{const file=f.files&&f.files[0];if(!file)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement("canvas");c.width=c.height=160;const s=Math.min(im.width,im.height);c.getContext("2d").drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,160,160);CFG.icon=c.toDataURL("image/jpeg",.85);saveCfg();sendCfg();paint();f.value=""};im.src=rd.result};rd.readAsDataURL(file)}}
 refreshUI();netGate();frame();
+})();
+
+// ---------- tabs under the match area ----------
+(function(){
+  if(document.documentElement.classList.contains("streamonly")||(typeof IS_STREAM!=="undefined"&&IS_STREAM))return;
+  const feed=document.getElementById("feed");if(!feed||document.getElementById("ptabs"))return;
+  const specs=[...document.querySelectorAll("section.spec")];
+  const T=[
+    ["url","📺 配信URL",[document.getElementById("stLink"),document.getElementById("stLink2"),document.querySelector("section.streamsec")]],
+    ["gift","🎁 ギフト・応援",[document.getElementById("settings")]],
+    ["dex","📖 キャラ図鑑・ルール",[specs.find(x=>x.id!=="settings")]],
+    ["hist","📜 戦歴",[]],
+    ["inv","🔑 招待",[document.getElementById("invCard")]],
+  ];
+  const bar=document.createElement("div");bar.className="ptabs";bar.id="ptabs";bar.setAttribute("role","tablist");bar.setAttribute("aria-label","メニュー");
+  const box=document.createElement("div");box.className="ppanes";
+  feed.after(bar);bar.after(box);
+  const hp=document.createElement("div");hp.className="histpane";hp.innerHTML=`<h2>戦歴</h2><p>最後まで終わった試合が残ります（対戦・練習とも）。日時、試合の長さ、ギフトの内訳（だれが・どのギフトを・何個・何コイン）、いいね、応援、出たキャラが見られます。</p><div class="hbtns"><a class="lbtn" id="histGo" href="history.html">📜 自分の戦歴を開く</a></div><p class="note" id="histNote">別のページで開きます。</p>`;
+  T[3][2].push(hp);
+  const panes={};
+  for(const [k,l,els] of T){const b=document.createElement("button");b.type="button";b.setAttribute("role","tab");b.dataset.k=k;b.textContent=l;bar.appendChild(b);
+    const pn=document.createElement("div");pn.className="ppane";pn.dataset.k=k;pn.setAttribute("role","tabpanel");els.filter(Boolean).forEach(e=>pn.appendChild(e));box.appendChild(pn);panes[k]={b,pn}}
+  let cur="url";try{cur=localStorage.getItem("giftwar_tab")||"url"}catch(e){}
+  const sel=k=>{if(!panes[k]||panes[k].b.hidden)k="url";cur=k;for(const x in panes){const on=x===k;panes[x].b.setAttribute("aria-selected",on);panes[x].pn.hidden=!on}try{localStorage.setItem("giftwar_tab",k)}catch(e){}window.dispatchEvent(new Event("resize"))};
+  bar.onclick=e=>{const b=e.target.closest("button[data-k]");if(b)sel(b.dataset.k)};
+  const inv=document.getElementById("invCard");
+  const syncInv=()=>{const own=inv&&!inv.hidden;panes.inv.b.hidden=!own;const go=document.getElementById("histGo");go.textContent=own?"📜 配信者の戦歴を見る（オーナー）":"📜 自分の戦歴を開く";if(!own&&cur==="inv")sel("url")};
+  if(inv){new MutationObserver(syncInv).observe(inv,{attributes:true,attributeFilter:["hidden"]})}
+  syncInv();sel(cur);
 })();
 </script>

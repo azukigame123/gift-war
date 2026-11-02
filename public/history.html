@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ギフト攻城戦 戦歴</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+1p:wght@400;700;800&display=swap">
+<style>
+:root{
+  --bg:#1a2233; --panel:#25304a; --panel2:#2e3b5a; --line:#3b4a6e; --fg:#f3f5fb; --muted:#a9b3cf;
+  --blue:#3d9bff; --red:#ff5468; --gold:#ffcf3f; --green:#6fe08a; --purple:#b78bff;
+  --f-disp:"Dela Gothic One","M PLUS 1p",system-ui,sans-serif;
+  --f-body:"M PLUS 1p","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg);margin:0}
+body{font-family:var(--f-body);font-size:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+.wrap{max-width:980px;margin:0 auto;display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between}
+h1{font-family:var(--f-disp);font-weight:400;font-size:clamp(22px,4.5vw,30px);margin:0;letter-spacing:.03em}
+h1 small{font-family:var(--f-body);font-size:14px;color:var(--muted);font-weight:700;margin-left:8px}
+a{color:var(--blue)}
+.btn{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:8px 14px;font:inherit;font-weight:800;text-decoration:none;cursor:pointer}
+.btn:hover{border-color:var(--blue)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.sum div{background:var(--panel2);border-radius:10px;padding:10px 12px}
+.sum b{display:block;font-family:var(--f-disp);font-weight:400;font-size:22px;color:var(--gold)}
+.sum span{font-size:12px;color:var(--muted);font-weight:700}
+.note{color:var(--muted);font-size:12px;margin:0}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:800}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.m{cursor:pointer}
+tr.m:hover td{background:rgba(255,255,255,.03)}
+.tag{display:inline-block;font-size:11px;font-weight:800;border-radius:6px;padding:1px 7px;background:var(--panel2);color:var(--muted)}
+.tag.bt{color:var(--gold)} .tag.pr{color:var(--purple)}
+.w{font-weight:800}.w.win{color:var(--green)}.w.lose{color:var(--red)}.w.draw{color:var(--muted)}
+.det td{background:var(--panel2);padding:12px 14px}
+.det h3{font-size:13px;margin:0 0 6px}
+.dgrid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px}
+@media (max-width:640px){.dgrid{grid-template-columns:1fr}}
+.det table{min-width:0}
+.det td,.det th{padding:5px 8px;background:transparent}
+.gi{width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:4px}
+.units{display:flex;flex-wrap:wrap;gap:6px}
+.units span{display:inline-flex;align-items:center;gap:4px;background:var(--panel);border-radius:8px;padding:3px 8px 3px 3px;font-size:12px;font-weight:700}
+.units img{width:26px;height:26px;object-fit:contain;image-rendering:pixelated}
+.empty{padding:30px;text-align:center;color:var(--muted)}
+.ulist a{color:var(--fg);text-decoration:none;font-weight:800}
+.ulist a:hover{color:var(--blue)}
+.err{color:var(--red);font-weight:800}
+</style></head>
+<body><div class="wrap">
+<header><h1>戦歴<small id="who"></small></h1><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" id="backU" href="#" hidden>← 配信者の一覧</a><a class="btn" id="backG" href="/">ゲームに戻る</a></div></header>
+<div id="main"><div class="card empty">読み込み中…</div></div>
+</div>
+<script>
+const UNAME={rookie:"見習い兵",soldier:"兵士",archer:"弓使い",rider:"騎兵",shield:"盾兵",bomber:"爆弾工兵",mage:"魔法使い",golem:"ゴーレム",dragon:"ドラゴン",glove:"グローブ"};
+const ORDER=["rookie","soldier","archer","rider","shield","bomber","mage","golem","dragon"];
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const q=new URLSearchParams(location.search);
+let INV=q.get("inv")||"";try{if(INV)localStorage.setItem("giftwar_inv",INV);else INV=localStorage.getItem("giftwar_inv")||""}catch(e){}
+const U=q.get("u")||"";
+const fmtD=s=>{const d=new Date(s);return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`};
+const fmtLen=n=>`${Math.floor(n/60)}分${String(n%60).padStart(2,"0")}秒`;
+const num=n=>(+n||0).toLocaleString("ja-JP");
+let CAT={};
+async function cat(){try{const j=await fetch("/gift-catalog.json").then(r=>r.json());for(const g of j.gifts||[])CAT[g.id]=g}catch(e){}}
+const api=p=>fetch(`/api/history?inv=${encodeURIComponent(INV)}${p||""}`,{cache:"no-store"}).then(r=>r.json());
+const main=document.getElementById("main");
+function oppTxt(r){if(!r.opp)return "—";if(r.opp.cpu)return `CPU（${r.opp.lvl>=1.6?"強い":r.opp.lvl<=.6?"弱い":"ふつう"}）`;return esc(r.opp.disp||r.opp.name)+(r.opp.disp&&r.opp.name?` <span class="note">@${esc(r.opp.name)}</span>`:"")}
+function winTxt(r){return r.win===1?'<span class="w win">勝ち</span>':r.win===0?'<span class="w lose">負け</span>':'<span class="w draw">引き分け</span>'}
+function giftSum(r){return (r.gifts||[]).reduce((a,g)=>a+(g.coins||0),0)}
+function detail(r){
+  const gs=r.gifts||[];
+  const gt=gs.length?`<table><thead><tr><th>だれが</th><th>ギフト</th><th class="n">個数</th><th class="n">コイン</th></tr></thead><tbody>${gs.map(g=>{const c=CAT[g.id];return `<tr><td>${esc(g.nick)}</td><td>${c&&c.img?`<img class="gi" src="${esc(c.img)}" alt="" referrerpolicy="no-referrer">`:""}${esc(g.gift)}${g.unit?` <span class="note">→ ${UNAME[g.unit]||""}</span>`:""}</td><td class="n">${num(g.n)}</td><td class="n">${num(g.coins)}</td></tr>`}).join("")}</tbody></table>`
+    :`<p class="note">${r.mode==="practice"&&r.src!=="live"?"練習のギフトは自動（またはテストボタン）なので、内訳はありません":"この試合ではギフトが届きませんでした"}</p>`;
+  const us=ORDER.filter(k=>r.units&&r.units[k]).map(k=>`<span><img src="img/${k}_b.webp" alt="">${UNAME[k]} ${r.units[k]}体</span>`).join("")||'<span class="note">なし</span>';
+  return `<div class="dgrid"><div><h3>ギフトの内訳</h3>${gt}</div><div><h3>出たキャラ</h3><div class="units">${us}</div></div></div>`;
+}
+function showList(j){
+  const L=j.list||[];
+  document.getElementById("who").textContent=j.name?"@"+j.name:"";
+  if(j.owner){const b=document.getElementById("backU");b.hidden=false;b.href="history.html"}
+  if(!L.length){main.innerHTML=`<div class="card empty">まだ戦歴がありません。試合が最後まで終わると、ここに残ります。</div>`;return}
+  const w=L.filter(r=>r.win===1).length,bt=L.filter(r=>r.mode==="battle").length,coins=L.reduce((a,r)=>a+giftSum(r),0),likes=L.reduce((a,r)=>a+(r.likes||0),0);
+  main.innerHTML=`<div style="display:grid;gap:16px">
+  <div class="sum"><div><b>${L.length}</b><span>試合（対戦${bt}・練習${L.length-bt}）</span></div><div><b>${w}</b><span>勝ち（勝率${Math.round(w/L.length*100)}%）</span></div><div><b>${num(coins)}</b><span>ギフトの合計コイン</span></div><div><b>${num(likes)}</b><span>いいねの合計</span></div></div>
+  <div class="card scroll"><table><thead><tr><th>日時</th><th>種類</th><th>相手</th><th>結果</th><th class="n">長さ</th><th class="n">ギフト</th><th class="n">いいね</th><th class="n">応援</th></tr></thead><tbody id="tb"></tbody></table>
+  <p class="note" style="margin-top:8px">行を押すと、ギフトの内訳と出たキャラが開きます。最新200試合まで残ります。</p></div></div>`;
+  const tb=document.getElementById("tb");
+  tb.innerHTML=L.map((r,i)=>`<tr class="m" data-i="${i}"><td>${fmtD(r.at)}</td><td>${r.mode==="battle"?'<span class="tag bt">対戦</span>':'<span class="tag pr">練習</span>'}</td><td>${oppTxt(r)}</td><td>${winTxt(r)}</td><td class="n">${fmtLen(r.len||0)}</td><td class="n">${num(giftSum(r))}コイン</td><td class="n">${num(r.likes)}</td><td class="n">${num(r.cheers)}回</td></tr>`).join("");
+  tb.querySelectorAll("tr.m").forEach(tr=>tr.onclick=()=>{const nx=tr.nextElementSibling;if(nx&&nx.classList.contains("det")){nx.remove();return}const d=document.createElement("tr");d.className="det";d.innerHTML=`<td colspan="8">${detail(L[+tr.dataset.i])}</td>`;tr.after(d)});
+}
+function showUsers(j){
+  document.getElementById("who").textContent="オーナー";
+  const L=j.users||[];
+  if(!L.length){main.innerHTML=`<div class="card empty">まだ配信者がいません。</div>`;return}
+  main.innerHTML=`<div class="card scroll"><table class="ulist"><thead><tr><th>配信者</th><th>メモ</th><th class="n">試合</th><th class="n">勝ち</th><th>最後の試合</th></tr></thead><tbody>${L.map(u=>`<tr><td><a href="history.html?u=${encodeURIComponent(u.name)}">@${esc(u.name)}</a>${u.invited?"":' <span class="tag">招待なし</span>'}</td><td class="note">${esc(u.memo)}</td><td class="n">${u.n}</td><td class="n">${u.wins}</td><td>${u.last?fmtD(u.last):"—"}</td></tr>`).join("")}</tbody></table>
+  <p class="note" style="margin-top:8px">名前を押すと、その人の戦歴が開きます。「招待なし」はオーナー用URLで遊んだときの名前です。</p></div>`;
+}
+(async()=>{
+  if(!INV){main.innerHTML=`<div class="card empty err">招待URLから開いてください。</div>`;return}
+  await cat();
+  try{const j=await api(U?`&u=${encodeURIComponent(U)}`:"");
+    if(!j||(!j.list&&!j.users)){main.innerHTML=`<div class="card empty err">戦歴を開けませんでした（招待URLが使えなくなっている可能性があります）</div>`;return}
+    if(j.users)showUsers(j);else showList(j)}
+  catch(e){main.innerHTML=`<div class="card empty err">サーバーにつながりませんでした</div>`}
+})();
+</script>
+</body></html>

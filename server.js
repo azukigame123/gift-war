@@ -38,6 +38,31 @@ let INVDB = { users: [], revoked: [] };
 try { INVDB = Object.assign(INVDB, JSON.parse(fs.readFileSync(INV_FILE, "utf8"))); } catch (e) {}
 function saveInvDB() { try { fs.mkdirSync(DATA_DIR, { recursive: true }); const tmp = INV_FILE + ".tmp"; fs.writeFileSync(tmp, JSON.stringify(INVDB, null, 1)); fs.renameSync(tmp, INV_FILE); } catch (e) { console.log("[invite] save failed", e.message); } }
 const PERSIST = !!process.env.DATA_DIR || DATA_DIR === "/var/data";
+// ---------- match history (per streamer, newest first, max 200) ----------
+const HIST_FILE = pathM.join(DATA_DIR, "history.json");
+let HIST = {}; try { HIST = JSON.parse(fs.readFileSync(HIST_FILE, "utf8")) || {}; } catch (e) {}
+let histT = null;
+function saveHist() { clearTimeout(histT); histT = setTimeout(() => { try { fs.mkdirSync(DATA_DIR, { recursive: true }); const tmp = HIST_FILE + ".tmp"; fs.writeFileSync(tmp, JSON.stringify(HIST)); fs.renameSync(tmp, HIST_FILE); } catch (e) { console.log("[hist] save failed", e.message); } }, 1500); }
+const histKey = n => String(n || "").trim().toLowerCase();
+function recordMatch(room) {
+  const S = room.sim && room.sim.S; if (!S || !S.over || room.recorded) return; room.recorded = true;
+  const len = Math.max(0, Math.round((Date.now() - (room.t0 || Date.now())) / 1000));
+  for (const t of ["b", "r"]) {
+    const P = room.players[t]; if (!P || P.cpu || !P.name) continue;
+    const o = room.players[t === "b" ? "r" : "b"], st = (room.stat && room.stat[t]) || { g: {}, likes: 0, cheers: 0 };
+    const key = histKey(P.who && !P.who.owner ? P.who.name : P.name); if (!key) continue;
+    const rec = {
+      at: new Date().toISOString(), mode: room.practice ? "practice" : "battle", len, src: room.practice ? room.src : (room.offline ? "offline" : "live"),
+      me: { name: P.name, disp: P.disp || "" }, opp: o ? (o.cpu ? { cpu: true, lvl: room.lvl } : { name: o.name || "", disp: o.disp || "" }) : null,
+      win: S.over.team === t ? 1 : S.over.team ? 0 : 0.5,
+      gifts: Object.values(st.g).sort((a, b) => b.coins - a.coins).slice(0, 300),
+      likes: st.likes, cheers: st.cheers, units: (S.cnt && S.cnt[t]) || {}
+    };
+    const L = HIST[key] = HIST[key] || []; L.unshift(rec); if (L.length > 200) L.length = 200;
+  }
+  saveHist();
+}
+function statOf(room, team) { room.stat = room.stat || {}; return room.stat[team] = room.stat[team] || { g: {}, likes: 0, cheers: 0 }; }
 console.log("[invite] storage " + INV_FILE + (PERSIST ? " (persistent disk)" : " (NOT persistent: set DATA_DIR to a Render disk)") + ", users " + INVDB.users.length);
 const cleanTT = n => String(n || "").trim().replace(/^@/, "").toLowerCase().replace(/[^a-z0-9._]/g, "").slice(0, 24);
 const ownerUrl = PUBLIC_URL + "/?inv=" + makeInv("owner");
@@ -51,6 +76,14 @@ const server = http.createServer(async (req, res) => {
     const who = checkInv(u.searchParams.get("inv"));
     res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
     return res.end(JSON.stringify(who ? { ok: true, name: who.name, owner: !!who.owner, gate: GATE } : { ok: false, gate: GATE }));
+  }
+  if (u.pathname === "/api/history") {
+    const who = checkInv(u.searchParams.get("inv"));
+    res.writeHead(who ? 200 : 403, { "content-type": "application/json", "cache-control": "no-store" });
+    if (!who) return res.end("{}");
+    if (who.owner && !u.searchParams.get("u")) { const names = new Set([...INVDB.users.map(x => histKey(x.name)), ...Object.keys(HIST)]); return res.end(JSON.stringify({ owner: true, users: [...names].filter(Boolean).map(n => { const L = HIST[n] || [], inv = INVDB.users.find(x => histKey(x.name) === n); return { name: n, memo: inv ? inv.memo || "" : "", invited: !!inv, n: L.length, wins: L.filter(r => r.win === 1).length, last: L[0] ? L[0].at : null }; }).sort((a, b) => String(b.last || "").localeCompare(String(a.last || ""))) })); }
+    const name = histKey(who.owner ? u.searchParams.get("u") : who.name);
+    return res.end(JSON.stringify({ owner: !!who.owner, name, list: HIST[name] || [] }));
   }
   if (u.pathname === "/api/ttdebug") {
     const who = checkInv(u.searchParams.get("inv"));
@@ -148,21 +181,22 @@ function onGift(room, team, g) {
   if (!battling(room)) { TT.dbg(g.nick, "gift-ignored", `phase=${room.phase} offline=${!!room.offline}`); return; } if (room.practice && team === "b" && room.src !== "live") { TT.dbg(g.nick, "gift-ignored", "practice without live source"); return; }
   const P = room.players[team], sim = room.sim, gn = g.giftName.toLowerCase();
   const match = k => { const m = P.gifts[k]; return m && ((m.id && m.id === g.giftId) || (m.name && m.name === gn) || (m.alt && m.alt === gn)); };
-  if (match("glove")) { sim.sendGlove(team); return; }
+  const note = u => { const st = statOf(room, team), k = g.nick + "\u0000" + g.giftId, cf = P.gifts[u] || {}; const e = st.g[k] = st.g[k] || { nick: String(g.nick || "").slice(0, 24), id: String(g.giftId || ""), gift: String(cf.alt || g.giftName || "").slice(0, 40), unit: u, n: 0, coins: 0 }; e.n += g.count; e.coins += (+g.coins || 0) * g.count; };
+  if (match("glove")) { note("glove"); sim.sendGlove(team); return; }
   const unit = UNIT_IDS.find(k => k !== "rookie" && match(k));
   if (!unit) { TT.dbg(g.nick, "gift-unmatched", `${g.giftId} ${g.giftName}`); return; }
-  TT.dbg(g.nick, "gift-unit", `${g.giftName} -> ${unit} x${g.count}`);
+  TT.dbg(g.nick, "gift-unit", `${g.giftName} -> ${unit} x${g.count}`); note(unit);
   for (let i = 0; i < g.count; i++) sim.addStock(team, unit, g.nick);
 }
 function onLike(room, team, l) {
   if (!battling(room)) return; if (room.practice && team === "b" && room.src !== "live") return;
-  const S = room.sim.S; S.charge[team] += l.n; S.likesAcc[team] += l.n;
+  const S = room.sim.S; S.charge[team] += l.n; S.likesAcc[team] += l.n; statOf(room, team).likes += l.n;
   while (S.likesAcc[team] >= 100) { S.likesAcc[team] -= 100; room.sim.addStock(team, "rookie", l.nick || "いいね"); }
 }
 function onChat(room, team, c) {
   if (!battling(room)) return; if (room.practice && team === "b" && room.src !== "live") return;
   const P = room.players[team]; const w = (P.cheer || "").trim(), ce = P.cheerEmote && P.cheerEmote.id;
-  if ((w && c.text.includes(w)) || (ce && (c.emotes || []).some(e => e.id === ce))) room.sim.cheer(team);
+  if ((w && c.text.includes(w)) || (ce && (c.emotes || []).some(e => e.id === ce))) { room.sim.cheer(team); statOf(room, team).cheers++; }
 }
 
 function startMatch(room) {
@@ -181,11 +215,11 @@ function startMatch(room) {
     sim.setAutoGift(sim.AG.b || sim.AG.r);
   }
   if (room.practice) { sim.OFF.b = sim.OFF.r = false; }
-  room.ev = [];
+  room.ev = []; room.stat = {}; room.recorded = false;
   room.phase = "countdown";
   broadcast(room, { t: "start", room: roomView(room), s: snapshot(sim.S) });
   clearTimeout(room.cdT);
-  room.cdT = setTimeout(() => { room.phase = "battle"; runLoop(room); }, 6300); // VS intro 3.6s + countdown 2.7s
+  room.cdT = setTimeout(() => { room.phase = "battle"; room.t0 = Date.now(); runLoop(room); }, 6300); // VS intro 3.6s + countdown 2.7s
 }
 function runLoop(room) {
   clearInterval(room.loop);
@@ -199,7 +233,7 @@ function runLoop(room) {
       const ev = room.ev; room.ev = [];
       broadcast(room, { t: "snap", s: snapshot(sim.S), ev });
     }
-    if (sim.S.over) { clearInterval(room.loop); room.loop = null; room.phase = "result"; for (const t of ["b", "r"]) if (room.players[t]) room.players[t].ready = false; }
+    if (sim.S.over) { clearInterval(room.loop); room.loop = null; room.phase = "result"; for (const t of ["b", "r"]) if (room.players[t]) room.players[t].ready = false; try { recordMatch(room); } catch (e) { console.log("[hist]", e.message); } }
   }, 1000 / 60);
 }
 function stopRoom(room) { clearInterval(room.loop); clearTimeout(room.cdT); for (const t of ["b", "r"]) detachLive(room.players[t]); ROOMS.delete(room.code); }
@@ -237,7 +271,7 @@ wss.on("connection", (ws, req) => {
     dropSolo();
     let P = room.players[team];
     if (!P) P = room.players[team] = { name: "", gifts: {}, cheer: "", deck: [], ready: false };
-    P.ws = ws; P.name = C.name; P.disp = C.disp || ""; P.icon = C.icon || ""; P.gifts = C.gifts; P.cheer = C.cheer; P.cheerEmote = C.cheerEmote || null; P.deck = C.deck; P.ready = false;
+    P.ws = ws; P.who = WHO; P.name = C.name; P.disp = C.disp || ""; P.icon = C.icon || ""; P.gifts = C.gifts; P.cheer = C.cheer; P.cheerEmote = C.cheerEmote || null; P.deck = C.deck; P.ready = false;
     C.room = room; C.team = team; clearTimeout(room.dieT);
     attachLive(room, team);
     send(ws, { t: "joined", you: team, room: roomView(room) });
