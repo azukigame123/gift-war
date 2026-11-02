@@ -39,7 +39,7 @@ class Live extends EventEmitter {
     c.on("decodedData", (type, data) => { this.cnt[type] = (this.cnt[type] || 0) + 1; if (!this.sampled) this.sampled = {}; if (!this.sampled[type] && Object.keys(this.sampled).length < 12) { this.sampled[type] = 1; dbg(this.name, "sample", type + " keys=" + Object.keys(data || {}).slice(0, 14).join(",")); } if (Date.now() - lastCnt > 20000) { lastCnt = Date.now(); dbg(this.name, "counts", JSON.stringify(this.cnt)); } });
     c.on(WebcastEvent.GIFT, d => this.onGift(d));
     c.on(WebcastEvent.LIKE, d => { const n = +d.likeCount || 0; dbg(this.name, "like", n); if (n > 0) this.emit("like", { n, nick: nickOf(d.user) }); });
-    c.on(WebcastEvent.CHAT, d => { dbg(this.name, "chat", (d.comment || "") + " | keys=" + Object.keys(d || {}).slice(0, 10).join(",")); this.emit("chat", { nick: nickOf(d.user), text: String(d.comment || "") }); });
+    c.on(WebcastEvent.CHAT, d => { dbg(this.name, "chat", (d.content || d.comment || "") + " | keys=" + Object.keys(d || {}).slice(0, 10).join(",")); this.emit("chat", { nick: nickOf(d.user), text: String(d.content || d.comment || "") }); });
     c.on(WebcastEvent.STREAM_END || "streamEnd", () => { this.set("ng", "配信が終わりました"); this.retry(60); });
     c.on("disconnected", () => { if (!this.closed && this.st === "ok") { this.set("wait", "つなぎ直しています"); this.retry(5); } });
     try {
@@ -61,8 +61,8 @@ class Live extends EventEmitter {
     const g = d.giftDetails || d.extendedGiftInfo || {};
     const giftId = String(pick(d.giftId, g.id, "")), giftName = String(pick(g.giftName, g.name, d.extendedGiftInfo && d.extendedGiftInfo.name, ""));
     const coins = +pick(g.diamondCount, g.diamond_count, d.extendedGiftInfo && d.extendedGiftInfo.diamond_count, 0);
-    const user = d.user || {}, uid = String(pick(user.userId, user.uniqueId, "?"));
-    const rc = Math.max(1, +d.repeatCount || 1), streakable = +pick(g.giftType, d.giftType, 0) === 1;
+    const user = d.user || {}, uid = String(pick(user.userId, user.id, user.uniqueId, "?"));
+    const rc = Math.max(1, +d.repeatCount || 1), streakable = !!g.combo || +pick(g.giftType, g.type, d.giftType, 0) === 1;
     let count = rc;
     if (streakable) {
       const key = uid + ":" + giftId, last = this.streak.get(key) || 0;
