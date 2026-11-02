@@ -27,8 +27,19 @@ function checkInv(tok) {
   let name; try { name = decodeURIComponent(tok.slice(0, i)); } catch (e) { return null; }
   const a = Buffer.from(tok.slice(i + 1)), b = Buffer.from(sig(name));
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  if (name !== "owner" && INVDB.revoked.includes(name)) return null;
   return { name, owner: name === "owner" };
 }
+// invited users are kept on disk (DATA_DIR) so they survive restarts when a persistent disk is mounted
+const pathM = path;
+const DATA_DIR = process.env.DATA_DIR || pathM.join(__dirname, "data");
+const INV_FILE = pathM.join(DATA_DIR, "invites.json");
+let INVDB = { users: [], revoked: [] };
+try { INVDB = Object.assign(INVDB, JSON.parse(fs.readFileSync(INV_FILE, "utf8"))); } catch (e) {}
+function saveInvDB() { try { fs.mkdirSync(DATA_DIR, { recursive: true }); const tmp = INV_FILE + ".tmp"; fs.writeFileSync(tmp, JSON.stringify(INVDB, null, 1)); fs.renameSync(tmp, INV_FILE); } catch (e) { console.log("[invite] save failed", e.message); } }
+const PERSIST = !!process.env.DATA_DIR;
+console.log("[invite] storage " + INV_FILE + (PERSIST ? " (persistent disk)" : " (NOT persistent: set DATA_DIR to a Render disk)") + ", users " + INVDB.users.length);
+const cleanTT = n => String(n || "").trim().replace(/^@/, "").toLowerCase().replace(/[^a-z0-9._]/g, "").slice(0, 24);
 const ownerUrl = PUBLIC_URL + "/?inv=" + makeInv("owner");
 console.log("[invite] owner URL (keep it private): " + ownerUrl);
 
@@ -41,13 +52,24 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
     return res.end(JSON.stringify(who ? { ok: true, name: who.name, owner: !!who.owner, gate: GATE } : { ok: false, gate: GATE }));
   }
-  if (u.pathname === "/api/invite") {
+  if (u.pathname.startsWith("/api/invite")) {
     const who = checkInv(u.searchParams.get("inv"));
     res.writeHead(who && who.owner ? 200 : 403, { "content-type": "application/json", "cache-control": "no-store" });
     if (!who || !who.owner) return res.end(JSON.stringify({ ok: false }));
-    const name = String(u.searchParams.get("name") || "").trim().slice(0, 24).replace(/[.\s]/g, "_");
-    if (!name || name === "owner") return res.end(JSON.stringify({ ok: false, msg: "名前を入れてください" }));
-    return res.end(JSON.stringify({ ok: true, name, url: PUBLIC_URL + "/?inv=" + makeInv(name) }));
+    const list = () => INVDB.users.map(x => Object.assign({}, x, { url: PUBLIC_URL + "/?inv=" + makeInv(x.name), tiktok: "https://www.tiktok.com/@" + encodeURIComponent(x.name) }));
+    if (u.pathname === "/api/invites") return res.end(JSON.stringify({ ok: true, persist: PERSIST, users: list() }));
+    const name = cleanTT(u.searchParams.get("name"));
+    if (!name || name === "owner") return res.end(JSON.stringify({ ok: false, msg: "TikTokのユーザー名を入れてください" }));
+    if (u.pathname === "/api/invite/del") {
+      INVDB.users = INVDB.users.filter(x => x.name !== name); if (!INVDB.revoked.includes(name)) INVDB.revoked.push(name); saveInvDB();
+      return res.end(JSON.stringify({ ok: true, users: list() }));
+    }
+    INVDB.revoked = INVDB.revoked.filter(x => x !== name);
+    const memo = String(u.searchParams.get("memo") || "").slice(0, 40);
+    const ex = INVDB.users.find(x => x.name === name);
+    if (ex) { if (memo) ex.memo = memo; } else INVDB.users.unshift({ name, memo, at: new Date().toISOString() });
+    saveInvDB();
+    return res.end(JSON.stringify({ ok: true, name, url: PUBLIC_URL + "/?inv=" + makeInv(name), users: list() }));
   }
   if (u.pathname === "/api/gifts") {
     const list = await TT.giftCatalog(u.searchParams.get("u") || "");

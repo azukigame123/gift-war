@@ -240,7 +240,7 @@ html.streamonly .stbar{display:none!important}
 .gate{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:16px}
 .gbox2{max-width:440px;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px 22px}.gbox2 h2{margin:6px 0 10px;font-family:var(--f-disp)}.gbox2 p{color:var(--muted);line-height:1.7;margin:0}.gi2{font-size:44px}
 .invcard{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px dashed var(--gold);border-radius:10px;padding:10px 12px}
-.invcard[hidden]{display:none}.invcard input{font-family:var(--f-body);font-size:13px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:7px 10px;width:160px}
+.invcard[hidden]{display:none}.invmsg{flex-basis:100%;margin:0;font-size:12px;color:var(--gold)}.invtbl{flex-basis:100%;overflow-x:auto;max-height:320px;overflow-y:auto;border:1px solid var(--line);border-radius:8px}.invtbl table{border-collapse:collapse;width:100%;min-width:520px;font-size:13px}.invtbl th,.invtbl td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.invtbl th{font-size:11px;color:var(--muted);background:var(--panel2);position:sticky;top:0}.invtbl a{color:var(--gold);font-weight:700;text-decoration:none}.invtbl a:hover{text-decoration:underline}.invtbl td.op{text-align:right}.invtbl td.op .lbtn{margin-left:6px}.invtbl .lbtn{padding:4px 9px;font-size:12px}.invtbl .del{color:#ffc2ca}.invcard input{font-family:var(--f-body);font-size:13px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:7px 10px;width:160px}
 .invlist{flex-basis:100%;display:flex;flex-direction:column;gap:6px}.invlist:empty{display:none}.invlist div{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px}.invlist b{min-width:5em}.invlist code{flex:1;min-width:200px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px;word-break:break-all;user-select:all}
 html.streamonly .invcard{display:none!important}
 .vsov{position:fixed;inset:0;z-index:60;background:#05070d}.vsov[hidden]{display:none}.vsov canvas{display:block;width:100%;height:100%}
@@ -279,9 +279,10 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
 <p class="lead">バトル中、視聴者には2人の映像が左右に並んで見えます。各自のゲーム画面は「自分の陣地の半分」だけを映し、真ん中の川でつながります。兵は川沿いのゲートに入ると、相手の画面のゲートから出てきます。中央の砦は2つの画面にまたがっていて、2人で取り合います。</p>
 
 <div class="stbar" id="stLink"><span class="sti">📺</span><span class="stt">配信に映すURL<small>LIVE Studio の「リンク」に貼ると、バトルでも練習でも自分の画面が映ります</small></span><code id="stUrl">下の「あなた」の欄にユーザー名を入れると出ます</code><button type="button" class="lbtn" id="stCopy" disabled>コピー</button></div>
-<div class="invcard" id="invCard" hidden><span class="sti">🔑</span><span class="stt">友達を招待する<small>名前を入れると、その人専用の招待URLができます。このURLを持っている人だけが遊べます</small></span>
-  <input id="invName" type="text" maxlength="24" placeholder="友達の名前"><button type="button" class="lbtn" id="invMake">招待URLを作る</button>
-  <div class="invlist" id="invList"></div></div>
+<div class="invcard" id="invCard" hidden><span class="sti">🔑</span><span class="stt">配信者を招待する<small>TikTokのユーザー名を入れると、その人専用の招待URLができます。招待した人は下の一覧に保存されます</small></span>
+  <input id="invName" type="text" maxlength="25" style="width:230px" placeholder="TikTokのユーザー名（@なしでOK）"><input id="invMemo" type="text" maxlength="40" placeholder="メモ（任意）"><button type="button" class="lbtn" id="invMake">招待URLを作る</button>
+  <p class="invmsg" id="invMsg" hidden></p>
+  <div class="invtbl" id="invWrap" hidden><table><thead><tr><th>TikTok</th><th>招待した日</th><th>メモ</th><th></th></tr></thead><tbody id="invList"></tbody></table></div></div>
 <section class="lobby" id="lobby" data-mode="battle">
   <h2 class="lh">対戦の準備 <span class="netst off" id="netSt"><b>●</b> サーバー未接続（見本モード）</span></h2>
   <div class="modetabs" role="tablist" aria-label="遊び方"><button type="button" role="tab" data-mode="battle" aria-selected="true">⚔ バトル<small>友達と対戦</small></button><button type="button" role="tab" data-mode="prac" aria-selected="false">🎯 練習<small>ひとりでCPUと</small></button></div>
@@ -1407,7 +1408,7 @@ function netStart(m){const you=m.you;NET.team=you;NET.on=true;setRoom(you);{cons
   const it=setInterval(()=>{k--;if(k>0){n.textContent=k;play("beep")}else if(k===0){n.textContent="START!";play("go")}else{clearInterval(it);ov.hidden=true;setPhase("battle")}},900)})}
 function netBackToLobby(){NET.on=false;PRAC.on=false;wrapEl.classList.remove("net-b","net-r","prac","practest","offl");$("resOv").hidden=true;resTimer=null;setRoom("b");setPhase("lobby");newState();refreshUI();lobbyUI()}
 function netMsg(m){
-  if(m.t==="hi"){NETX.ok=true;netBadge();NETX.owner=!!m.owner;$("invCard").hidden=!m.owner||!!STREAM_NAME;if(STREAM_NAME){NET.send({t:"watch",name:STREAM_NAME});return}NET.send(Object.assign({t:"hello"},cfgMsg()));loadGiftCatalog();updStreamLink();return}
+  if(m.t==="hi"){NETX.ok=true;netBadge();NETX.owner=!!m.owner;$("invCard").hidden=!m.owner||!!STREAM_NAME;if(m.owner&&!STREAM_NAME)invLoad();if(STREAM_NAME){NET.send({t:"watch",name:STREAM_NAME});return}NET.send(Object.assign({t:"hello"},cfgMsg()));loadGiftCatalog();updStreamLink();return}
   if(m.t==="tt"){if(!NETX.room||NETX.room.practice)ttInfo("b",m.info,$("ttB").value.trim());lobbyUI();if(m.info&&m.info.st==="ok")loadGiftCatalog();return}
   if(m.t==="joined"||m.t==="lobby"){if(m.room.practice){NETX.room=m.room;return}if(PH!=="lobby"&&(m.room.phase!=="lobby"||!$("resOv").hidden||(S&&S.over))){NETX.room=m.room;NETX.you=m.you;return}netLobby(m.room,m.you);if(PH!=="lobby")netBackToLobby();return}
   if(m.t==="start"){NETX.room=m.room;netStart(m);return}
@@ -1515,9 +1516,19 @@ buildMU();
  tabs.forEach(b=>b.onclick=()=>setMode(b.dataset.mode));let m0="battle";try{m0=localStorage.getItem("giftwar_mode")||"battle"}catch(e){}setMode(m0);updStreamLink();}
 $("pracStop").onclick=()=>{if(NETX.ok&&NET.on){NET.send({t:"done"});return}
   PRAC.on=false;AG.b=AG.r=true;GR.r=1;wrapEl.classList.remove("prac","practest");$("cdOv").hidden=true;$("resOv").hidden=true;resTimer&&clearTimeout(resTimer);resTimer=null;setPhase("lobby");newState();refreshUI();lobbyUI()};
-$("invMake").onclick=async()=>{const n=$("invName").value.trim();if(!n)return;try{const r=await fetch(`/api/invite?inv=${encodeURIComponent(INV)}&name=${encodeURIComponent(n)}`);const j=await r.json();if(!j.ok)return;
-  const row=document.createElement("div");row.innerHTML=`<b></b><code></code><button type="button" class="lbtn">コピー</button>`;row.querySelector("b").textContent=j.name;row.querySelector("code").textContent=j.url;
-  row.querySelector("button").onclick=e=>{try{navigator.clipboard.writeText(j.url);e.target.textContent="コピーしました"}catch(x){}};$("invList").prepend(row);$("invName").value=""}catch(e){}};
+const invApi=(p,q)=>fetch(`/api/${p}?inv=${encodeURIComponent(INV)}`+(q||""),{cache:"no-store"}).then(r=>r.json());
+function invMsg(t){const m=$("invMsg");m.textContent=t||"";m.hidden=!t}
+function invRender(users,persist){const tb=$("invList");$("invWrap").hidden=!users.length;tb.innerHTML="";
+  users.forEach(u=>{const tr=document.createElement("tr");const d=new Date(u.at);tr.innerHTML=`<td><a target="_blank" rel="noopener"></a></td><td>${isNaN(d)?"—":`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`}</td><td class="mm"></td><td class="op"><button type="button" class="lbtn cp">URLをコピー</button><button type="button" class="lbtn del">消す</button></td>`;
+   const a=tr.querySelector("a");a.href=u.tiktok;a.textContent="@"+u.name;tr.querySelector(".mm").textContent=u.memo||"";
+   tr.querySelector(".cp").onclick=e=>{try{navigator.clipboard.writeText(u.url).then(()=>{e.target.textContent="コピーしました";setTimeout(()=>e.target.textContent="URLをコピー",1500)})}catch(x){}};
+   const del=tr.querySelector(".del");del.onclick=async()=>{if(del.dataset.k!=="1"){del.dataset.k="1";del.textContent="本当に消す";setTimeout(()=>{del.dataset.k="";del.textContent="消す"},3000);return}
+     const j=await invApi("invite/del",`&name=${encodeURIComponent(u.name)}`);if(j.ok){invRender(j.users,persist);invMsg(`@${u.name} を消しました。この人の招待URLはもう使えません`)}};
+   tb.appendChild(tr)});
+  if(persist===false)invMsg("※いまは保存用ディスクが付いていないので、サーバーを更新すると一覧が消えます")}
+async function invLoad(){try{const j=await invApi("invites");if(j.ok){invLoad.persist=j.persist;invRender(j.users,j.persist)}}catch(e){}}
+$("invMake").onclick=async()=>{const n=$("invName").value.trim();if(!n)return;try{const j=await invApi("invite",`&name=${encodeURIComponent(n)}&memo=${encodeURIComponent($("invMemo").value.trim())}`);if(!j.ok){invMsg(j.msg||"作れませんでした");return}
+  invRender(j.users,invLoad.persist);try{await navigator.clipboard.writeText(j.url);invMsg(`@${j.name} の招待URLを作って、コピーしました`)}catch(x){invMsg(`@${j.name} の招待URLを作りました（一覧の「URLをコピー」でコピーできます）`)}$("invName").value="";$("invMemo").value=""}catch(e){}};
 function frame(){const now=performance.now();fpsAcc+=now-lastT;lastT=now;fpsN++;if(cardsDirty&&imgLeft===0){cardsDirty=false;PLAYERS.forEach(p=>UNITS.forEach(u=>drawCard(p.pcs[u.id],u,p.team)))}const t0=performance.now();if(PH==="battle"&&!NET.on)for(let i=0;i<speed;i++){tick++;step()}else tick++;if(NET.on)netLerp(now);if(PH==="battle"&&S.over&&!resTimer)resTimer=setTimeout(showResult,1500);simAcc+=performance.now()-t0;if(fpsN>=30){document.getElementById("fps").textContent=Math.round(1000/(fpsAcc/fpsN));document.getElementById("simms").textContent=(simAcc/fpsN).toFixed(1);document.getElementById("ucount").textContent=S.units.length;fpsAcc=simAcc=fpsN=0}dexStep();for(let i=LFX.length-1;i>=0;i--)if(--LFX[i].life<=0)LFX.splice(i,1);CANVAS.forEach(renderCanvas);if(STREAM_NAME&&(!NET.on||(S.over&&(NETX.overAt=NETX.overAt||performance.now())&&performance.now()-NETX.overAt>15000))){stG.setTransform(1,0,0,1,0,0);stG.clearRect(0,0,stCv.width,stCv.height)}else if(uiT%2===0){if(!S.over)NETX.overAt=0;drawStream()}if(++uiT%6===0)refreshUI();requestAnimationFrame(frame)}
 refreshUI();netGate();frame();
 })();
