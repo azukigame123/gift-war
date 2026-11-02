@@ -1118,6 +1118,28 @@ function drawFieldStrip(g,team,x,y,w,h){
 // TikTok battle-frame block (chips + field + like strip): its height per unit width, from drawCam's own layout
 function camBlockRatio(){const W=1000,FA=(FW*.96)/(FH*.9),pad=W*.016,cw=W*.28,fw=W-cw,fh=fw/FA,crh0=(fh-pad*2)/4,ccw0=(cw-pad*3)/2,rkh=Math.min(crh0-pad*.6,ccw0*1.02),bh=Math.max(W*.12,rkh+pad*1.2);return (fh+bh)/W}
 const CAMFIT=IS_STREAM&&!STV&&(()=>{const r=+new URLSearchParams(location.search).get("r");return !r||r===.5725})();
+// result card for stream pages (same contents as the operator's result screen); shown until the operator presses 完了
+function drawResultCard(g,W,H){
+  if(!S||!S.over)return;g.setTransform(1,0,0,1,0,0);let oy=0;if(IS_STREAM&&CAMFIT&&!STV){const r=camBlockRatio();if(W/H<=1/r*1.08){const bh=Math.min(W,H/r)*r;oy=H-bh;H=bh}}
+  const port=W/H<.9,cw=Math.min(W*.94,port?W*.94:H*1.7),u0=cw/560,pad=18*u0;
+  const gl=[];for(const t of ["b","r"])for(const n in S.gf[t])gl.push([n,S.gf[t][n],t]);gl.sort((a,b)=>b[1]-a[1]);
+  const ul=[];for(const t of ["b","r"])for(const id in S.dm[t])ul.push([id,S.dm[t][id],t]);ul.sort((a,b)=>b[1]-a[1]);
+  const rowH=34*u0,colH=24*u0+rowH*3,head=88*u0,ch=head+(port?colH*2+pad:colH)+pad*1.4,cx=(W-cw)/2,cy=oy+(H-ch)/2;
+  g.save();g.fillStyle="rgba(28,36,62,.96)";g.strokeStyle="rgba(255,207,63,.8)";g.lineWidth=2*u0;g.beginPath();g.roundRect?g.roundRect(cx,cy,cw,ch,16*u0):g.rect(cx,cy,cw,ch);g.fill();g.stroke();
+  const w=S.over.team,fs=30*u0;g.textAlign="center";g.textBaseline="middle";g.font=`900 ${fs}px 'Dela Gothic One','M PLUS 1p',sans-serif`;g.fillStyle=w==="b"?COL.b:COL.r;g.fillText(w==="b"?"青軍の勝利！":"赤軍の勝利！",W/2,cy+36*u0);
+  g.font=`500 ${11*u0}px 'M PLUS 1p',sans-serif`;g.fillStyle="#a9b3cc";g.fillText(S.over.why||"",W/2,cy+66*u0);
+  const colW=port?cw-pad*2:(cw-pad*3)/2;
+  const col=(x,y,title,rows,kind)=>{g.textAlign="left";g.font=`800 ${12*u0}px 'M PLUS 1p',sans-serif`;g.fillStyle="#fff";g.fillText(title,x,y+8*u0);
+    if(!rows.length){g.font=`500 ${11*u0}px 'M PLUS 1p',sans-serif`;g.fillStyle="#a9b3cc";g.fillText(kind==="g"?"ギフトなし":"—",x+4*u0,y+24*u0+rowH/2);return}
+    rows.slice(0,3).forEach((r,i)=>{const ry=y+22*u0+i*rowH;g.fillStyle="rgba(255,255,255,.06)";g.beginPath();g.roundRect?g.roundRect(x,ry,colW,rowH-5*u0,7*u0):g.rect(x,ry,colW,rowH-5*u0);g.fill();
+      const my=ry+(rowH-5*u0)/2,rc=9*u0;g.fillStyle=["#ffcf3f","#d7dde8","#d99a5b"][i];g.beginPath();g.arc(x+16*u0,my,rc,0,7);g.fill();g.fillStyle="#1a1405";g.textAlign="center";g.font=`800 ${10*u0}px 'M PLUS 1p',sans-serif`;g.fillText(String(i+1),x+16*u0,my+.5);
+      let tx=x+34*u0;
+      if(kind==="g"){g.fillStyle=r[2]==="b"?COL.bd:COL.rd;g.beginPath();g.arc(tx+9*u0,my,9*u0,0,7);g.fill();g.fillStyle="#fff";g.fillText(String(r[0])[0].toUpperCase(),tx+9*u0,my+.5);tx+=24*u0;
+        g.textAlign="left";g.font=`600 ${11*u0}px 'M PLUS 1p',sans-serif`;g.fillStyle="#fff";g.fillText(r[0],tx,my,colW*.5);g.textAlign="right";g.fillStyle="#ffcf3f";g.font=`800 ${11*u0}px 'M PLUS 1p',sans-serif`;g.fillText(`${r[1]}コイン`,x+colW-10*u0,my)}
+      else{const im=IMG[r[0]+"_"+r[2]];if(ok(im)){const ih=rowH-9*u0,iw=ih*im.naturalWidth/im.naturalHeight;g.drawImage(im,tx,my-ih/2,iw,ih)}tx+=26*u0;const un=UNITS.find(k=>k.id===r[0]);
+        g.textAlign="left";g.font=`600 ${11*u0}px 'M PLUS 1p',sans-serif`;g.fillStyle="#fff";g.fillText(`${r[2]==="b"?"青":"赤"}の${un?un.name:r[0]}`,tx,my,colW*.5);g.textAlign="right";g.fillStyle="#ffcf3f";g.font=`800 ${11*u0}px 'M PLUS 1p',sans-serif`;g.fillText(String(Math.round(r[1])),x+colW-10*u0,my)}})};
+  const y0=cy+head;col(cx+pad,y0,"ギフトランキング",gl,"g");if(port)col(cx+pad,y0+colH+pad*.6,"活躍したキャラ",ul,"u");else col(cx+pad*2+colW,y0,"活躍したキャラ",ul,"u");
+  g.restore();g.textBaseline="alphabetic"}
 function drawCam(g,W,H,team,src0,FA0,left,noClear){
   STK.field=CANVAS[0].field;STK.mirror=CANVAS[0].mirror;OBJS=1.3;renderCanvas(STK);OBJS=1;const src=STK.cv;
   if(!noClear)g.clearRect(0,0,W,H);
@@ -1469,7 +1491,7 @@ function hydrate(str){const o=JSON.parse(str);const prev=new Map();if(S&&S.units
   if(!o.wait)o.wait={b:[],r:[]};if(!o.likesAcc)o.likesAcc={b:0,r:0};return o}
 function netLerp(now){if(!S||!S.units)return;const k=Math.min(1,(now-NETX.lastSnap)/NETX.dt);for(const u of S.units)if(u.nd!==undefined){u.d=u.pd+(u.nd-u.pd)*k;u.y=u.py+(u.ny-u.py)*k}}
 function netEvents(ev){for(const e of ev||[]){if(e[0]==="l")log(e[1],e[2]);else if(e[0]==="s"){const k=e[1];if(k==="win"||k==="lose")play(S.over&&S.over.team===NET.team?"win":"lose");else play(k)}}}
-function netStart(m){const you=m.you;NET.team=you;NET.on=true;setRoom(you);{const h=$(you==="b"?"plB":"plR").querySelector("h2 span");if(h)h.textContent=`あなたのデッキ（${you==="b"?"青軍":"赤軍"}）`}wrapEl.classList.remove("net-b","net-r");wrapEl.classList.add("net-"+you);
+function netStart(m){NETX.rdone=false;const you=m.you;NET.team=you;NET.on=true;setRoom(you);{const h=$(you==="b"?"plB":"plR").querySelector("h2 span");if(h)h.textContent=`あなたのデッキ（${you==="b"?"青軍":"赤軍"}）`}wrapEl.classList.remove("net-b","net-r");wrapEl.classList.add("net-"+you);
   if(m.room.practice){PRAC.on=true;wrapEl.classList.add("prac");wrapEl.classList.toggle("practest",NETX.psrc==="test")}
   feedEl.innerHTML="";S=hydrate(m.s);NETX.lastSnap=performance.now();
   PLAYERS.forEach(p=>{p.held=null;UNITS.forEach(u=>{p.cards[u.id].hidden=!S.stock[p.team]||!(m.room.players[p.team]&&true)})});
@@ -1485,6 +1507,7 @@ function netStart(m){const you=m.you;NET.team=you;NET.on=true;setRoom(you);{cons
   const it=setInterval(()=>{k--;if(k>0){n.textContent=k;play("beep")}else if(k===0){n.textContent="START!";play("go")}else{clearInterval(it);ov.hidden=true;setPhase("battle")}},900)})}
 function netBackToLobby(){NET.on=false;PRAC.on=false;wrapEl.classList.remove("net-b","net-r","prac","practest","offl");$("resOv").hidden=true;resTimer=null;setRoom("b");setPhase("lobby");newState();refreshUI();lobbyUI()}
 function netMsg(m){
+  if(m.t==="rdone"){NETX.rdone=true;return}
   if(m.t==="hi"){NETX.ok=true;netBadge();NETX.owner=!!m.owner;$("invCard").hidden=!m.owner||!!STREAM_NAME;if(m.owner&&!STREAM_NAME)invLoad();if(STREAM_NAME){NET.send({t:"watch",name:STREAM_NAME});return}NET.send(Object.assign({t:"hello"},cfgMsg()));loadGiftCatalog();updStreamLink();return}
   if(m.t==="tt"){if(!NETX.room||NETX.room.practice)ttInfo("b",m.info,$("ttB").value.trim());lobbyUI();if(m.info&&m.info.st==="ok")loadGiftCatalog();return}
   if(m.t==="joined"||m.t==="lobby"){if(m.room.practice){NETX.room=m.room;return}if(PH!=="lobby"&&(m.room.phase!=="lobby"||!$("resOv").hidden||(S&&S.over))){NETX.room=m.room;NETX.you=m.you;return}netLobby(m.room,m.you);if(PH!=="lobby")netBackToLobby();return}
@@ -1606,7 +1629,7 @@ function invRender(users,persist){const tb=$("invList");$("invWrap").hidden=!use
 async function invLoad(){try{const j=await invApi("invites");if(j.ok){invLoad.persist=j.persist;invRender(j.users,j.persist)}}catch(e){}}
 $("invMake").onclick=async()=>{const n=$("invName").value.trim();if(!n)return;try{const j=await invApi("invite",`&name=${encodeURIComponent(n)}&memo=${encodeURIComponent($("invMemo").value.trim())}`);if(!j.ok){invMsg(j.msg||"作れませんでした");return}
   invRender(j.users,invLoad.persist);try{await navigator.clipboard.writeText(j.url);invMsg(`@${j.name} の招待URLを作って、コピーしました`)}catch(x){invMsg(`@${j.name} の招待URLを作りました（一覧の「URLをコピー」でコピーできます）`)}$("invName").value="";$("invMemo").value=""}catch(e){}};
-function frame(){const now=performance.now();fpsAcc+=now-lastT;lastT=now;fpsN++;if(cardsDirty&&imgLeft===0){cardsDirty=false;PLAYERS.forEach(p=>UNITS.forEach(u=>drawCard(p.pcs[u.id],u,p.team)))}const t0=performance.now();if(PH==="battle"&&!NET.on)for(let i=0;i<speed;i++){tick++;step()}else tick++;if(NET.on)netLerp(now);if(PH==="battle"&&S.over&&!resTimer)resTimer=setTimeout(showResult,1500);simAcc+=performance.now()-t0;if(fpsN>=30){document.getElementById("fps").textContent=Math.round(1000/(fpsAcc/fpsN));document.getElementById("simms").textContent=(simAcc/fpsN).toFixed(1);document.getElementById("ucount").textContent=S.units.length;fpsAcc=simAcc=fpsN=0}dexStep();for(let i=LFX.length-1;i>=0;i--)if(--LFX[i].life<=0)LFX.splice(i,1);CANVAS.forEach(renderCanvas);if(STREAM_NAME&&(!NET.on||(S.over&&(NETX.overAt=NETX.overAt||performance.now())&&performance.now()-NETX.overAt>15000))){stG.setTransform(1,0,0,1,0,0);stG.clearRect(0,0,stCv.width,stCv.height)}else if(uiT%2===0){if(!S.over)NETX.overAt=0;drawStream()}if(++uiT%6===0)refreshUI();requestAnimationFrame(frame)}
+function frame(){const now=performance.now();fpsAcc+=now-lastT;lastT=now;fpsN++;if(cardsDirty&&imgLeft===0){cardsDirty=false;PLAYERS.forEach(p=>UNITS.forEach(u=>drawCard(p.pcs[u.id],u,p.team)))}const t0=performance.now();if(PH==="battle"&&!NET.on)for(let i=0;i<speed;i++){tick++;step()}else tick++;if(NET.on)netLerp(now);if(PH==="battle"&&S.over&&!resTimer)resTimer=setTimeout(showResult,1500);simAcc+=performance.now()-t0;if(fpsN>=30){document.getElementById("fps").textContent=Math.round(1000/(fpsAcc/fpsN));document.getElementById("simms").textContent=(simAcc/fpsN).toFixed(1);document.getElementById("ucount").textContent=S.units.length;fpsAcc=simAcc=fpsN=0}dexStep();for(let i=LFX.length-1;i>=0;i--)if(--LFX[i].life<=0)LFX.splice(i,1);CANVAS.forEach(renderCanvas);if(S.over&&!NETX.overAt)NETX.overAt=performance.now();if(!S.over)NETX.overAt=0;if(STREAM_NAME&&(!NET.on||NETX.rdone||(NETX.overAt&&performance.now()-NETX.overAt>600000))){stG.setTransform(1,0,0,1,0,0);stG.clearRect(0,0,stCv.width,stCv.height)}else if(uiT%2===0){drawStream();if(S.over&&NETX.overAt&&performance.now()-NETX.overAt>1500)drawResultCard(stG,stCv.width,stCv.height)}if(++uiT%6===0)refreshUI();requestAnimationFrame(frame)}
 {const d=$("dispB");d.value=CFG.disp||"";d.oninput=()=>{CFG.disp=d.value.trim().slice(0,16);saveCfg();sendCfg()};
  const f=$("icFile"),clr=$("icClr"),paint=()=>{clr.hidden=!CFG.icon;avatar($("avB"),$("ttB").value,"b")};paint();
  $("icPick").onclick=()=>f.click();clr.onclick=()=>{CFG.icon="";saveCfg();sendCfg();clr.hidden=true;setAv($("avB"),TT.b==="ok"&&LASTAV,$("ttB").value)};

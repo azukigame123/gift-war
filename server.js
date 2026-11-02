@@ -284,6 +284,7 @@ wss.on("connection", (ws, req) => {
       case "act": { const room = C.room; if (!room || room.phase !== "battle" || !room.sim) return; if (m.a && m.a.a === "like") { const n = Date.now(); if (n - (C.likeT || 0) < 80) return; C.likeT = n; } try { room.sim.doAct(C.team, m.a); } catch (e) { } break; }
       case "done": {
         const room = C.room; if (!room) return;
+        if (C.name) { const W = WATCH.get(wkey(C.name)); if (W) for (const w of W) if (w.readyState === 1) w.send(JSON.stringify({ t: "rdone" })); }
         if (room.practice) { leave(); soloLive(); send(ws, { t: "left" }); return; }
         if (room.phase === "result") { room.phase = "lobby"; for (const t of ["b", "r"]) if (room.players[t]) room.players[t].ready = false; }
         lobbyUpdate(room); break;
