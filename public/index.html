@@ -1126,7 +1126,7 @@ function drawResultCard(g,W,H){
   const ul=[];for(const t of ["b","r"])for(const id in S.dm[t])ul.push([id,S.dm[t][id],t]);ul.sort((a,b)=>b[1]-a[1]);
   const rowH=34*u0,colH=24*u0+rowH*3,head=88*u0,ch=head+(port?colH*2+pad:colH)+pad*1.4,cx=(W-cw)/2,cy=oy+(H-ch)/2;
   g.save();g.fillStyle="rgba(28,36,62,.96)";g.strokeStyle="rgba(255,207,63,.8)";g.lineWidth=2*u0;g.beginPath();g.roundRect?g.roundRect(cx,cy,cw,ch,16*u0):g.rect(cx,cy,cw,ch);g.fill();g.stroke();
-  const w=S.over.team,fs=30*u0;g.textAlign="center";g.textBaseline="middle";g.font=`900 ${fs}px 'Dela Gothic One','M PLUS 1p',sans-serif`;g.fillStyle=w==="b"?COL.b:COL.r;g.fillText(w==="b"?"青軍の勝利！":"赤軍の勝利！",W/2,cy+36*u0);
+  const w=S.over.team,fs=30*u0;g.textAlign="center";g.textBaseline="middle";g.font=`900 ${fs}px 'Dela Gothic One','M PLUS 1p',sans-serif`;g.fillStyle=w==="b"?COL.b:COL.r;{const tt=winTxt(w),lim=cw-pad*2;const mw=g.measureText(tt).width;if(mw>lim)g.font=`900 ${fs*lim/mw}px 'Dela Gothic One','M PLUS 1p',sans-serif`;g.fillText(tt,W/2,cy+36*u0)}
   g.font=`500 ${11*u0}px 'M PLUS 1p',sans-serif`;g.fillStyle="#a9b3cc";g.fillText(S.over.why||"",W/2,cy+66*u0);
   const colW=port?cw-pad*2:(cw-pad*3)/2;
   const col=(x,y,title,rows,kind)=>{g.textAlign="left";g.font=`800 ${12*u0}px 'M PLUS 1p',sans-serif`;g.fillStyle="#fff";g.fillText(title,x,y+8*u0);
@@ -1409,9 +1409,60 @@ function playVS(info,done){const ov=$("vsOv"),cv=$("vsCv");ov.hidden=false;const
   requestAnimationFrame(loop)}
 // half-screen pattern: one streamer's own frame (TikTok battle shows each streamer's half side by side)
 let VSH=null;
-const atn=n=>{n=String(n||"").replace(/^@/,"");return /^[A-Za-z0-9._]+$/.test(n)&&n!=="CPU"?"@"+n:n};let VSF=null;function startVSFull(info,you){const o=other(you);VSF={t0:performance.now(),L:{name:info[you].name||"あなた",av:vsAvatar(info[you].name,info[you].avatar),deck:(info[you].deck||[]).slice()},R:{name:info[o].name||"相手",av:vsAvatar(info[o].name,info[o].avatar),deck:(info[o].deck||[]).slice()},lt:you,snd:{}}}
-function startVSHalf(info,you){VSH={t0:performance.now(),own:{name:info[you].name,av:vsAvatar(info[you].name,info[you].avatar),deck:(info[you].deck||[]).slice()},opp:{name:info[other(you)].name,av:vsAvatar(info[other(you)].name,info[other(you)].avatar)},team:you,snd:{}}}
+const atn=n=>{n=String(n||"").replace(/^@/,"");return /^[A-Za-z0-9._]+$/.test(n)&&n!=="CPU"?"@"+n:n};let VSF=null,RESN={b:"",r:""};const winTxt=w=>{const n=String(RESN[w]||"").replace(/^@/,"");return (n?n+"軍":(w==="b"?"青軍":"赤軍"))+"の勝利！"};function startVSFull(info,you){RESN={b:info.b&&info.b.name||"",r:info.r&&info.r.name||""};const o=other(you);VSF={t0:performance.now(),L:{name:info[you].name||"あなた",av:vsAvatar(info[you].name,info[you].avatar),deck:(info[you].deck||[]).slice()},R:{name:info[o].name||"相手",av:vsAvatar(info[o].name,info[o].avatar),deck:(info[o].deck||[]).slice()},lt:you,snd:{}}}
+function startVSHalf(info,you){VSH={t0:performance.now(),own:{name:info[you].name,av:vsAvatar(info[you].name,info[you].avatar),deck:(info[you].deck||[]).slice()},opp:{name:info[other(you)].name,av:vsAvatar(info[other(you)].name,info[other(you)].avatar),deck:(info[other(you)].deck||[]).slice()},team:you,snd:{}}}
+const VS_STYLE=(()=>{try{const v=new URLSearchParams(location.search).get("vs");if(v==="ud"||v==="charge"||v==="old")return v}catch(e){}return "ud"})();
+function vsDisc(g,x,y,r,av,col,a){g.save();g.globalAlpha=a;g.translate(x,y);g.fillStyle="rgba(0,0,0,.35)";g.beginPath();g.arc(0,r*.1,r*1.08,0,7);g.fill();g.save();g.beginPath();g.arc(0,0,r,0,7);g.clip();try{g.drawImage(av,-r,-r,r*2,r*2)}catch(e){}g.restore();g.lineWidth=r*.1;g.strokeStyle=col;g.beginPath();g.arc(0,0,r,0,7);g.stroke();g.restore()}
+function vsTag(g,x,y,txt,fs,maxW,a){g.save();g.globalAlpha=a;g.font=`900 ${fs}px 'Dela Gothic One','M PLUS 1p',sans-serif`;g.textAlign="center";g.textBaseline="middle";const tw=Math.min(maxW,g.measureText(txt).width+fs);g.fillStyle="rgba(0,0,0,.55)";g.beginPath();g.roundRect?g.roundRect(x-tw/2,y-fs*.75,tw,fs*1.5,fs*.75):g.rect(x-tw/2,y-fs*.75,tw,fs*1.5);g.fill();g.fillStyle="#fff";g.fillText(txt,x,y+fs*.03,tw-fs*.6);g.restore()}
+function vsSlam(g,x,y,txt,fs,t0,t,a){if(t<t0)return;const q=1-Math.pow(1-Math.min(1,(t-t0)/.25),3),sc=2.6-1.6*q;g.save();g.translate(x,y);g.scale(sc,sc);g.globalAlpha=a*Math.min(1,(t-t0)/.12);g.font=`900 ${fs}px 'Dela Gothic One',sans-serif`;g.textAlign="center";g.textBaseline="middle";{const mw=g.measureText(txt).width;if(mw>fs*2.6){const k=fs*2.6/mw;g.scale(k,k)}}g.lineWidth=fs*.12;g.strokeStyle="#2a1600";g.strokeText(txt,0,0);const vg=g.createLinearGradient(0,-fs/2,0,fs/2);vg.addColorStop(0,"#fff6c0");vg.addColorStop(1,"#ffb31f");g.fillStyle=vg;g.fillText(txt,0,0);g.restore()}
+function vsBurst(g,cx,cy,R,k){g.save();g.globalCompositeOperation="lighter";for(let i=0;i<18;i++){const an=i/18*6.283+.3,r1=R*(.1+k),r2=r1*(1.4+(i%3)*.25);g.strokeStyle=`rgba(255,${200+(i%3)*20},120,${Math.max(0,1-k)})`;g.lineWidth=Math.max(2,R*.02*(3-(i%3)));g.beginPath();g.moveTo(cx+Math.cos(an)*r1,cy+Math.sin(an)*r1);g.lineTo(cx+Math.cos(an)*r2,cy+Math.sin(an)*r2);g.stroke()}
+  const rg=g.createRadialGradient(cx,cy,0,cx,cy,R*1.6);rg.addColorStop(0,`rgba(255,250,220,${Math.max(0,.9-k)})`);rg.addColorStop(1,"rgba(255,200,80,0)");g.fillStyle=rg;g.fillRect(cx-R*2,cy-R*2,R*4,R*4);g.restore()}
+// 上下で向かい合う: opponent on top, you at the bottom, troops clash in the middle (works on either side of a TikTok battle)
+function drawVSUD(g,W,H,t){
+  const ease=x=>1-Math.pow(1-Math.max(0,Math.min(1,x)),3),back=x=>{x=Math.max(0,Math.min(1,x));const c=1.7;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+  const me=VSH.team,op=other(me),cm=me==="b"?["#0b2a5e","#1f6fd1","#7cc4ff"]:["#5e0b1a","#d1283f","#ff8a9a"],co=op==="b"?["#0b2a5e","#1f6fd1","#7cc4ff"]:["#5e0b1a","#d1283f","#ff8a9a"];
+  let shake=0;if(t>1.35&&t<1.6)shake=(1.6-t)*40;if(t>2.35&&t<2.8)shake=(2.8-t)*60;g.setTransform(1,0,0,1,(Math.random()-.5)*shake,(Math.random()-.5)*shake);g.clearRect(-50,-50,W+100,H+100);
+  const a=Math.min(1,t/.3)*(t>3.1?Math.max(0,1-(t-3.1)/.5):1);g.globalAlpha=a;
+  const s1=ease(t/.45),tilt=H*.05,mid=H*.5;
+  g.save();g.translate(0,-H*(1-s1)*.6);let gr=g.createLinearGradient(0,0,0,mid);gr.addColorStop(0,co[0]);gr.addColorStop(1,co[1]);g.fillStyle=gr;g.beginPath();g.moveTo(-50,-50);g.lineTo(W+50,-50);g.lineTo(W+50,mid-tilt);g.lineTo(-50,mid+tilt);g.fill();g.restore();
+  g.save();g.translate(0,H*(1-s1)*.6);gr=g.createLinearGradient(0,H,0,mid);gr.addColorStop(0,cm[0]);gr.addColorStop(1,cm[1]);g.fillStyle=gr;g.beginPath();g.moveTo(-50,H+50);g.lineTo(W+50,H+50);g.lineTo(W+50,mid-tilt);g.lineTo(-50,mid+tilt);g.fill();g.restore();
+  g.save();g.globalCompositeOperation="lighter";g.strokeStyle=`rgba(255,240,180,${(.5+.3*Math.sin(t*20))*s1})`;g.lineWidth=5;g.beginPath();g.moveTo(-50,mid+tilt*1.1);g.lineTo(W+50,mid-tilt*1.1);g.stroke();g.restore();
+  g.save();g.globalAlpha=a*.18;g.strokeStyle="#fff";g.lineWidth=3;for(let i=0;i<24;i++){const y=(i*113%H),len=W*(.15+(i%4)*.06),x=((t*1.6+i*.17)%1)*W*1.5-W*.3,d=y<mid?-1:1;g.beginPath();g.moveTo(d>0?x:W-x,y);g.lineTo((d>0?x:W-x)+len*d,y);g.stroke()}g.restore();
+  const ar=Math.min(W*.17,H*.1);
+  {const p=back((t-.15)/.5);vsDisc(g,W*.5,H*.12-H*.3*(1-p),ar,VSH.opp.av,co[2],a);vsTag(g,W*.5,H*.12+ar*1.45-H*.3*(1-p),atn(VSH.opp.name),ar*.3,W*.9,a)}
+  {const p=back((t-.25)/.5);vsDisc(g,W*.5,H*.88+H*.3*(1-p),ar,VSH.own.av,cm[2],a);vsTag(g,W*.5,H*.88-ar*1.45+H*.3*(1-p),atn(VSH.own.name),ar*.3,W*.9,a)}
+  const usz=Math.min(W*.0032,H*.0019);
+  const rowOf=(deck,team,yBase,dirY)=>{const n=Math.min(8,deck.length);deck.slice(0,8).forEach((id,i)=>{const side=i%2?1:-1,slot=Math.floor(i/2),hx=W*.5+side*(W*.1+slot*W*.11);const enter=ease((t-.45-i*.05)/.6);let x=hx+side*W*.8*(1-enter);
+      let y=yBase;const ch=t>1.95?ease((t-1.95)/.4):0;y+=-dirY*H*.07*ch;if(t>2.35)y+=dirY*Math.exp(-(t-2.35)*4)*H*.03*(1-Math.min(1,(t-2.35)*1.2));
+      const mv=enter<1||(t>1.95&&t<2.35),k=t>2.3&&t<2.7?"attack":mv?(Math.floor(t*8+i)%2?"walk1":"walk2"):"idle";
+      g.save();g.translate(x,y);g.scale(usz,usz);if(!drawPoseImg(g,id,k,team,-side,0,0,0,a)){const im=IMG[id+"_"+team];if(ok(im))g.drawImage(im,-30,-60,60,60)}g.restore()})};
+  rowOf(VSH.opp.deck&&VSH.opp.deck.length?VSH.opp.deck:VSH.own.deck,op,H*.36,-1);rowOf(VSH.own.deck,me,H*.72,1);
+  vsSlam(g,W*.5,mid,"VS",Math.min(W*.26,H*.15),1.25,t,a);
+  if(t>2.33)vsBurst(g,W*.5,mid,Math.min(W,H)*.45,(t-2.33)/.6);
+  const fl=t>1.3&&t<1.45?(1.45-t)/.15:t>2.33&&t<2.5?(2.5-t)/.17:0;if(fl>0){g.setTransform(1,0,0,1,0,0);g.fillStyle=`rgba(255,255,255,${fl*.8})`;g.fillRect(0,0,W,H)}
+  g.globalAlpha=1;g.setTransform(1,0,0,1,0,0);return true}
+// 出陣: your army charges toward the viewer (no left/right needed)
+function drawVSCharge(g,W,H,t){
+  const ease=x=>1-Math.pow(1-Math.max(0,Math.min(1,x)),3),back=x=>{x=Math.max(0,Math.min(1,x));const c=1.7;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+  const me=VSH.team,cm=me==="b"?["#0b2a5e","#1f6fd1","#7cc4ff"]:["#5e0b1a","#d1283f","#ff8a9a"];
+  let shake=0;if(t>1.35&&t<1.6)shake=(1.6-t)*40;if(t>2.35&&t<2.9)shake=(2.9-t)*70;g.setTransform(1,0,0,1,(Math.random()-.5)*shake,(Math.random()-.5)*shake);g.clearRect(-50,-50,W+100,H+100);
+  const a=Math.min(1,t/.3)*(t>3.1?Math.max(0,1-(t-3.1)/.5):1);g.globalAlpha=a;
+  const hz=H*.5,rg=g.createRadialGradient(W/2,hz,0,W/2,hz,Math.max(W,H)*.8);rg.addColorStop(0,cm[1]);rg.addColorStop(1,cm[0]);g.fillStyle=rg;g.fillRect(-50,-50,W+100,H+100);
+  g.save();g.globalAlpha=a*.25;g.strokeStyle="#fff";g.lineWidth=3;for(let i=0;i<36;i++){const an=i/36*6.283,ph=((t*1.3+i*.37)%1),r1=Math.max(W,H)*(.05+ph*.7),r2=r1+Math.max(W,H)*(.06+ph*.18);g.beginPath();g.moveTo(W/2+Math.cos(an)*r1,hz+Math.sin(an)*r1);g.lineTo(W/2+Math.cos(an)*r2,hz+Math.sin(an)*r2);g.stroke()}g.restore();
+  // troops: far (small) -> near (big), coming at the viewer
+  const deck=VSH.own.deck.slice(0,8),usz0=Math.min(W*.0045,H*.0026);
+  const order=deck.map((id,i)=>i).sort((x,y)=>x-y);
+  order.forEach(i=>{const id=deck[i],lane=(i%4-1.5)/1.5,wave=Math.floor(i/4);const st=.4+wave*.25+(i%4)*.05,q=Math.max(0,Math.min(1,(t-st)/1.9)),z=q*q;
+    const x=W/2+lane*W*(.08+.42*z),y=hz+H*(.05+.55*z),sc=usz0*(.35+1.4*z);const mv=q<1,k=t>2.3&&t<2.7?"attack":mv?(Math.floor(t*9+i)%2?"walk1":"walk2"):"idle";
+    g.save();g.globalAlpha=a*Math.min(1,q*4);g.translate(x,y);g.scale(sc,sc);if(!drawPoseImg(g,id,k,me,lane<0?1:-1,0,0,0,a*Math.min(1,q*4))){const im=IMG[id+"_"+me];if(ok(im))g.drawImage(im,-30,-60,60,60)}g.restore()});
+  const ar=Math.min(W*.2,H*.12);{const p=back((t-.15)/.5);vsDisc(g,W*.5,H*.2-H*.35*(1-p),ar,VSH.own.av,cm[2],a);vsTag(g,W*.5,H*.2+ar*1.42-H*.35*(1-p),atn(VSH.own.name),ar*.3,W*.9,a)}
+  if(t>.7){const q=ease((t-.7)/.4);g.save();g.globalAlpha=a*q;const fs=Math.min(W*.06,H*.035);g.font=`800 ${fs}px 'M PLUS 1p',sans-serif`;g.textAlign="center";g.textBaseline="middle";g.fillStyle="#fff";g.fillText(`vs ${atn(VSH.opp.name)}`,W/2,H*.2+ar*1.42+fs*1.9,W*.9);g.restore()}
+  vsSlam(g,W*.5,H*.47,"出陣！",Math.min(W*.24,H*.13),1.25,t,a);
+  if(t>2.33)vsBurst(g,W*.5,H*.85,Math.min(W,H)*.55,(t-2.33)/.6);
+  const fl=t>1.3&&t<1.45?(1.45-t)/.15:t>2.33&&t<2.5?(2.5-t)/.17:0;if(fl>0){g.setTransform(1,0,0,1,0,0);g.fillStyle=`rgba(255,255,255,${fl*.8})`;g.fillRect(0,0,W,H)}
+  g.globalAlpha=1;g.setTransform(1,0,0,1,0,0);return true}
 function drawVSHalf(g,W,H){const t=(performance.now()-VSH.t0)/1000;if(t>3.6){VSH=null;return false}
+  if(VS_STYLE==="ud")return drawVSUD(g,W,H,t);if(VS_STYLE==="charge")return drawVSCharge(g,W,H,t);
   const ease=x=>1-Math.pow(1-Math.max(0,Math.min(1,x)),3),back=x=>{x=Math.max(0,Math.min(1,x));const c=1.7;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
   const blue=VSH.team==="b";let shake=0;if(t>1.35&&t<1.6)shake=(1.6-t)*40;if(t>2.35&&t<2.8)shake=(2.8-t)*60;
   g.setTransform(1,0,0,1,(Math.random()-.5)*shake,(Math.random()-.5)*shake);g.clearRect(-50,-50,W+100,H+100);
@@ -1448,7 +1499,7 @@ function startCountdown(){newState();setRoom("b");setPhase("countdown");PLAYERS.
 function vsWait(done){const ov=$("cdOv"),n=$("cdNum");ov.hidden=false;n.textContent="READY";setTimeout(()=>{ov.hidden=true;done()},3600)}
 function runCountdown(){
   const ov=$("cdOv"),n=$("cdNum");ov.hidden=false;let k=3;n.textContent=k;play("beep");const it=setInterval(()=>{k--;if(k>0){n.textContent=k;play("beep")}else if(k===0){n.textContent="START!";play("go")}else{clearInterval(it);ov.hidden=true;setPhase("battle")}},900)}
-function showResult(){const ov=$("resOv"),w=S.over.team;$("rWin").textContent=w==="b"?"青軍の勝利！":"赤軍の勝利！";$("rWin").style.color=w==="b"?COL.b:COL.r;$("rWhy").textContent=S.over.why;
+function showResult(){const ov=$("resOv"),w=S.over.team;$("rWin").textContent=winTxt(w);$("rWin").style.color=w==="b"?COL.b:COL.r;$("rWhy").textContent=S.over.why;
   const g=[];for(const t of ["b","r"])for(const n in S.gf[t])g.push([n,S.gf[t][n],t]);g.sort((a,b)=>b[1]-a[1]);
   $("rGift").innerHTML=g.slice(0,3).map((x,i)=>`<li><span class="rk rk${i+1}">${i+1}</span><span class="rav" style="background:${x[2]==="b"?COL.bd:COL.rd}">${x[0][0].toUpperCase()}</span>${x[0]}<span class="rv">${x[1]}コイン</span></li>`).join("")||"<li>ギフトなし</li>";
   const u=[];for(const t of ["b","r"])for(const id in S.dm[t])u.push([id,S.dm[t][id],t]);u.sort((a,b)=>b[1]-a[1]);
