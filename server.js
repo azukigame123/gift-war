@@ -32,12 +32,12 @@ function checkInv(tok) {
 }
 // invited users are kept on disk (DATA_DIR) so they survive restarts when a persistent disk is mounted
 const pathM = path;
-const DATA_DIR = process.env.DATA_DIR || pathM.join(__dirname, "data");
+const DATA_DIR = process.env.DATA_DIR || (fs.existsSync("/var/data") ? "/var/data" : pathM.join(__dirname, "data"));
 const INV_FILE = pathM.join(DATA_DIR, "invites.json");
 let INVDB = { users: [], revoked: [] };
 try { INVDB = Object.assign(INVDB, JSON.parse(fs.readFileSync(INV_FILE, "utf8"))); } catch (e) {}
 function saveInvDB() { try { fs.mkdirSync(DATA_DIR, { recursive: true }); const tmp = INV_FILE + ".tmp"; fs.writeFileSync(tmp, JSON.stringify(INVDB, null, 1)); fs.renameSync(tmp, INV_FILE); } catch (e) { console.log("[invite] save failed", e.message); } }
-const PERSIST = !!process.env.DATA_DIR;
+const PERSIST = !!process.env.DATA_DIR || DATA_DIR === "/var/data";
 console.log("[invite] storage " + INV_FILE + (PERSIST ? " (persistent disk)" : " (NOT persistent: set DATA_DIR to a Render disk)") + ", users " + INVDB.users.length);
 const cleanTT = n => String(n || "").trim().replace(/^@/, "").toLowerCase().replace(/[^a-z0-9._]/g, "").slice(0, 24);
 const ownerUrl = PUBLIC_URL + "/?inv=" + makeInv("owner");
