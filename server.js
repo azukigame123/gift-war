@@ -257,8 +257,8 @@ wss.on("connection", (ws, req) => {
         if (typeof m.disp === "string") C.disp = m.disp.replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 16);
         if (m.deck) C.deck = cleanDeck(m.deck);
         const P = me();
-        if (P) { const nameChanged = P.name !== C.name; P.name = C.name; P.disp = C.disp || ""; P.icon = C.icon || ""; P.gifts = C.gifts; P.cheer = C.cheer; P.deck = C.deck; if (nameChanged) attachLive(C.room, C.team); lobbyUpdate(C.room); }
-        else soloLive();
+        if (P) { const nameChanged = P.name !== C.name; P.name = C.name; P.disp = C.disp || ""; P.icon = C.icon || ""; P.gifts = C.gifts; P.cheer = C.cheer; P.deck = C.deck; if (nameChanged) { clearTimeout(P.attT); const rm = C.room, tm = C.team; P.attT = setTimeout(() => attachLive(rm, tm), 2500); } lobbyUpdate(C.room); }
+        else { clearTimeout(C.soloT); C.soloT = setTimeout(soloLive, 1500); }
         break;
       }
       case "create": { leave(); const room = { code: newCode(), phase: "lobby", players: { b: null, r: null }, practice: false, offline: !!m.offline, cap: Math.max(10, Math.min(200, +m.cap || 60)) }; ROOMS.set(room.code, room); enter(room, "b"); break; }

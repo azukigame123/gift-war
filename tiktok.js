@@ -32,9 +32,14 @@ class Live extends EventEmitter {
     if (this.conn) { const o = this.conn; this.conn = null; try { o.removeAllListeners(); o.disconnect(); } catch (e) { } }
     const c = new TikTokLiveConnection(this.name, { signApiKey: API_KEY, processInitialData: false, enableExtendedGiftInfo: false });
     this.conn = c;
+    c.on("error", e => dbg(this.name, "conn-error", (e && (e.info || e.message)) || JSON.stringify(e).slice(0, 150)));
+    c.on("websocketConnected", () => dbg(this.name, "ws-connected", ""));
+    c.on("disconnected", e => dbg(this.name, "ws-disconnected", JSON.stringify(e || {}).slice(0, 150)));
+    this.cnt = {}; let lastCnt = Date.now();
+    c.on("decodedData", (type, data) => { this.cnt[type] = (this.cnt[type] || 0) + 1; if (!this.sampled) this.sampled = {}; if (!this.sampled[type] && Object.keys(this.sampled).length < 12) { this.sampled[type] = 1; dbg(this.name, "sample", type + " keys=" + Object.keys(data || {}).slice(0, 14).join(",")); } if (Date.now() - lastCnt > 20000) { lastCnt = Date.now(); dbg(this.name, "counts", JSON.stringify(this.cnt)); } });
     c.on(WebcastEvent.GIFT, d => this.onGift(d));
     c.on(WebcastEvent.LIKE, d => { const n = +d.likeCount || 0; dbg(this.name, "like", n); if (n > 0) this.emit("like", { n, nick: nickOf(d.user) }); });
-    c.on(WebcastEvent.CHAT, d => { dbg(this.name, "chat", d.comment); this.emit("chat", { nick: nickOf(d.user), text: String(d.comment || "") }); });
+    c.on(WebcastEvent.CHAT, d => { dbg(this.name, "chat", (d.comment || "") + " | keys=" + Object.keys(d || {}).slice(0, 10).join(",")); this.emit("chat", { nick: nickOf(d.user), text: String(d.comment || "") }); });
     c.on(WebcastEvent.STREAM_END || "streamEnd", () => { this.set("ng", "配信が終わりました"); this.retry(60); });
     c.on("disconnected", () => { if (!this.closed && this.st === "ok") { this.set("wait", "つなぎ直しています"); this.retry(5); } });
     try {
@@ -132,4 +137,4 @@ async function giftCatalog(name) {
 // warm the gift list at start-up so it is ready before anyone goes live
 setTimeout(() => giftCatalog("").catch(() => { }), 3000);
 setInterval(() => giftCatalog("").catch(() => { }), 6 * 3600 * 1000);
-module.exports = { dbg, debugInfo: () => ({ lives: [...LIVES.values()].map(l => ({ name: l.name, st: l.st, msg: l.msg, refs: l.refs, avatar: !!l.avatar })), events: DBG.slice(-120), key: !!API_KEY }), acquire, release, giftCatalog, clean, MOCK, giftErr: () => GIFT_ERR, version: "gw-5" };
+module.exports = { dbg, debugInfo: () => ({ lives: [...LIVES.values()].map(l => ({ name: l.name, st: l.st, msg: l.msg, refs: l.refs, avatar: !!l.avatar, counts: l.cnt || {} })), events: DBG.slice(-120), key: !!API_KEY }), acquire, release, giftCatalog, clean, MOCK, giftErr: () => GIFT_ERR, version: "gw-5" };
