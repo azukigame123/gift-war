@@ -10,3 +10,9 @@ services:
     envVars:
       - key: EULER_API_KEY
         sync: false
+      - key: DATA_DIR
+        value: /var/data
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1

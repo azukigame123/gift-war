@@ -278,7 +278,8 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
 </header>
 <p class="lead">バトル中、視聴者には2人の映像が左右に並んで見えます。各自のゲーム画面は「自分の陣地の半分」だけを映し、真ん中の川でつながります。兵は川沿いのゲートに入ると、相手の画面のゲートから出てきます。中央の砦は2つの画面にまたがっていて、2人で取り合います。</p>
 
-<div class="stbar" id="stLink"><span class="sti">📺</span><span class="stt">配信に映すURL<small>LIVE Studio の「リンク」に貼ると、バトルでも練習でも自分の画面が映ります</small></span><code id="stUrl">下の「あなた」の欄にユーザー名を入れると出ます</code><button type="button" class="lbtn" id="stCopy" disabled>コピー</button></div>
+<div class="stbar" id="stLink"><span class="sti">📺</span><span class="stt">バトル用URL<small>TikTokバトルで2人の映像を並べるとき。自分の陣地が映ります</small></span><code id="stUrl">下の「あなた」の欄にユーザー名を入れると出ます</code><button type="button" class="lbtn" id="stCopy" disabled>コピー</button></div>
+<div class="stbar" id="stLink2"><span class="sti">🗺️</span><span class="stt">全体表示用URL<small>自分と相手の陣地をつないだ横長の画面。CPU戦や、全体を見せたいときに</small></span><code id="stUrl2">下の「あなた」の欄にユーザー名を入れると出ます</code><button type="button" class="lbtn" id="stCopy2" disabled>コピー</button></div>
 <div class="invcard" id="invCard" hidden><span class="sti">🔑</span><span class="stt">配信者を招待する<small>TikTokのユーザー名を入れると、その人専用の招待URLができます。招待した人は下の一覧に保存されます</small></span>
   <input id="invName" type="text" maxlength="25" style="width:230px" placeholder="TikTokのユーザー名（@なしでOK）"><input id="invMemo" type="text" maxlength="40" placeholder="メモ（任意）"><button type="button" class="lbtn" id="invMake">招待URLを作る</button>
   <p class="invmsg" id="invMsg" hidden></p>
@@ -356,14 +357,17 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
   <div class="stwrap"><canvas id="streamCv" width="720" height="960" aria-label="配信に映す画面のプレビュー"></canvas></div>
   <div class="stside">
     <div class="sthead"><h2>配信画面プレビュー</h2><span class="stst" id="stState">試合が始まると動きます</span></div>
-    <p class="sthint">配信に映る形です。比率を選ぶと、上の「配信に映すURL」にも反映されます。</p>
+    <p class="sthint">配信に映る形です。ここで選んだ映し方は、上の「バトル用URL」「全体表示用URL」に反映されます。</p>
+    <div class="seg" role="group" aria-label="プレビューするURL" id="pvSel"><button data-p="battle" aria-pressed="true">📺 バトル用</button><button data-p="full" aria-pressed="false">🗺️ 全体表示用</button></div>
+    <div id="bvOpt"><div class="seg" role="group" aria-label="バトル用の映し方" id="sview"><button data-v="" aria-pressed="true">キャラ欄つき</button><button data-v="half" aria-pressed="false">フィールドだけ（自陣）</button></div></div>
+    <div id="fvOpt" hidden><div class="seg" role="group" aria-label="全体表示のキャラ欄" id="fcSel"><button data-c="1" aria-pressed="false">キャラ欄あり</button><button data-c="0" aria-pressed="true">キャラ欄なし</button></div></div>
     <div class="seg" role="group" aria-label="配信画面の比率" id="aspect">
     <button data-a="0.5725" aria-pressed="true">TikTokバトル枠</button><button data-a="0.5625" aria-pressed="false">縦長 9:16</button>
     <button data-a="0.75" aria-pressed="false">縦長 3:4</button>
     <button data-a="1" aria-pressed="false">正方形 1:1</button>
     <button data-a="1.7778" aria-pressed="false">横長 16:9</button>
   </div>
-    <p class="note">「TikTokバトル枠」では、上の約半分を透明にして自分のカメラが見えるようにし、下にゲーム（自陣だけ）を出します。配信画面では塔・砦・キャラを1.3倍で描きます。自分の操作画面はフィールド全体のままです。ほかの比率では、この枠の中だけを映します。戦場より横に広い比率なら帯を右に、縦に長い比率なら帯を下に置きます。帯には、キャラと対応するギフト、いいねゲージ、いいねスキルのボタンを出します。</p>
+    <p class="note">「バトル用」と「全体表示用」でURLが分かれています。プレビューは上のボタンで切り替えられます。<b>全体表示用</b>と<b>フィールドだけ（自陣）</b>は、試合が始まるまで透明で、始まると演出と一緒にフィールドが出てきます。下にいいねゲージと2倍タイムのボタンが出ます。<br>「TikTokバトル枠」では、上の約半分を透明にして自分のカメラが見えるようにし、下にゲーム（自陣だけ）を出します。配信画面では塔・砦・キャラを1.3倍で描きます。自分の操作画面はフィールド全体のままです。ほかの比率では、この枠の中だけを映します。戦場より横に広い比率なら帯を右に、縦に長い比率なら帯を下に置きます。帯には、キャラと対応するギフト、いいねゲージ、いいねスキルのボタンを出します。</p>
   </div>
 </section>
 <div class="battle">
@@ -1002,15 +1006,23 @@ function renderCanvas(k){
 }
 
 // ---------- stream preview ----------
-const stCv=document.getElementById("streamCv"),stG=stCv.getContext("2d");let stA=.5725;try{const q=+new URLSearchParams(location.search).get("r");const v=q||+localStorage.getItem("giftwar_ratio");if([.5725,.5625,.75,1,1.7778].includes(v))stA=v}catch(e){}
-document.querySelectorAll("#aspect button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#aspect button").forEach(x=>x.setAttribute("aria-pressed",x===b));stA=+b.dataset.a;sizeStream();try{localStorage.setItem("giftwar_ratio",stA)}catch(e){}typeof updStreamLink==="function"&&updStreamLink()});
+const stCv=document.getElementById("streamCv"),stG=stCv.getContext("2d");let stA=.5725,STV="",BV="",FC=false,PV="battle";try{const q=new URLSearchParams(location.search);if(q.get("stream")){const v=q.get("v");if(v==="full"||v==="half")STV=v;FC=q.get("c")==="1"}else{const v=localStorage.getItem("giftwar_view");if(v==="half")BV=v;FC=localStorage.getItem("giftwar_fc")==="1"}}catch(e){}
+const IS_STREAM=!!new URLSearchParams(location.search).get("stream");function curView(){return IS_STREAM?STV:(PV==="full"?"full":BV)}try{const q=+new URLSearchParams(location.search).get("r");const v=q||+localStorage.getItem("giftwar_ratio");if([.5725,.5625,.75,1,1.7778].includes(v))stA=v}catch(e){}
+function syncView(){const P=(sel,f)=>document.querySelectorAll(sel).forEach(x=>x.setAttribute("aria-pressed",f(x)));P("#pvSel button",x=>x.dataset.p===PV);P("#sview button",x=>x.dataset.v===BV);P("#fcSel button",x=>(x.dataset.c==="1")===FC);
+ const bo=document.getElementById("bvOpt"),fo=document.getElementById("fvOpt"),as=document.getElementById("aspect");if(bo)bo.hidden=PV!=="battle";if(fo)fo.hidden=PV!=="full";if(as){as.style.display=PV!=="battle"?"none":"";as.style.opacity=BV?.4:1;as.style.pointerEvents=BV?"none":""}}
+const viewChanged=()=>{FVT=0;syncView();sizeStream();try{localStorage.setItem("giftwar_view",BV);localStorage.setItem("giftwar_fc",FC?"1":"0")}catch(e){}typeof updStreamLink==="function"&&updStreamLink()};
+document.querySelectorAll("#pvSel button").forEach(b=>b.onclick=()=>{PV=b.dataset.p;viewChanged()});
+document.querySelectorAll("#sview button").forEach(b=>b.onclick=()=>{BV=b.dataset.v;viewChanged()});
+document.querySelectorAll("#fcSel button").forEach(b=>b.onclick=()=>{FC=b.dataset.c==="1";viewChanged()});syncView();
+document.querySelectorAll("#aspect button").forEach(b=>b.onclick=()=>{BV="";syncView();document.querySelectorAll("#aspect button").forEach(x=>x.setAttribute("aria-pressed",x===b));stA=+b.dataset.a;sizeStream();try{localStorage.setItem("giftwar_ratio",stA)}catch(e){}typeof updStreamLink==="function"&&updStreamLink()});
 document.querySelectorAll("#aspect button").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.a===stA));
-function sizeStream(){if(stA>=1){stCv.width=1280;stCv.height=Math.round(1280/stA)}else{stCv.height=1280;stCv.width=Math.round(1280*stA)}if(!document.documentElement.classList.contains("streamonly")){if(stA>=1){stCv.style.width="min(100%,720px)";stCv.style.height="auto"}else{stCv.style.height="64vh";stCv.style.width="auto"}}}
+function sizeStream(){STV=curView();if(STV==="full"){stCv.width=1280;stCv.height=720}else if(STV==="half"){stCv.height=1280;stCv.width=733}else if(stA>=1){stCv.width=1280;stCv.height=Math.round(1280/stA)}else{stCv.height=1280;stCv.width=Math.round(1280*stA)}if(!document.documentElement.classList.contains("streamonly")){if(stCv.width>=stCv.height){stCv.style.width="min(100%,720px)";stCv.style.height="auto"}else{stCv.style.height="64vh";stCv.style.width="auto"}}}
 sizeStream();
 const GIFTLBL={rookie:"♥100",soldier:"1",archer:"5",rider:"5",shield:"10",bomber:"30",mage:"99",golem:"299",dragon:"1000"};
 function coin(g,x,y,r){g.fillStyle="#ffcf3f";g.beginPath();g.arc(x,y,r,0,7);g.fill();g.strokeStyle="#b8860b";g.lineWidth=r*.25;g.stroke();g.fillStyle="#b8860b";g.font=`bold ${r*1.1}px sans-serif`;g.textAlign="center";g.textBaseline="middle";g.fillText("¢",x,y+r*.05)}
 function legendIds(){const a=UNITS.map(u=>u.id).filter(id=>id!=="rookie");a.push("rookie");return a}
 function drawStream(){
+  if(STV){drawFieldView(stG,stCv.width,stCv.height,STV==="full",STV==="full"&&FC);return}
   if(VSH){const W0=stCv.width,H0=stCv.height;if(drawVSHalf(stG,W0,H0))return}
   const g=stG,W=stCv.width,H=stCv.height,team=room,src=CANVAS[0].cv,FA=FW/FH,left=!CANVAS[0].mirror;
   g.setTransform(1,0,0,1,0,0);if(W/H<.62){drawCam(g,W,H,team,src,FA,left);return}
@@ -1049,6 +1061,54 @@ function drawStream(){
 }
 // TikTokバトル枠：上は配信者のカメラ、下の約57%にゲーム
 const CAMR=.57;
+// field-only stream view: transparent until battle, then appears with an effect
+let FVT=0;const STK2={cv:document.createElement("canvas"),field:"r",mirror:true};STK2.cv.width=FW;STK2.cv.height=FH;STK2.c=STK2.cv.getContext("2d");
+function drawFieldView(g,W,H,full,chips){
+  g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,W,H);
+  if(PH!=="battle"||!S){FVT=0;return}
+  const now=performance.now();if(!FVT)FVT=now;const k=(now-FVT)/1000,team=room;
+  const E=x=>1-Math.pow(1-Math.max(0,Math.min(1,x)),3);
+  STK.field=CANVAS[0].field;STK.mirror=CANVAS[0].mirror;OBJS=1.3;renderCanvas(STK);
+  if(full){STK2.field=CANVAS[1].field;STK2.mirror=CANVAS[1].mirror;renderCanvas(STK2)}OBJS=1;
+  const sh0=FH*.92,sy0=FH*.04;
+  let fx,fy,hw,fh,sw;const pad=Math.min(W,H)*.02;
+  let cpw=0;if(full){sw=FW*.97;const FA=sw/sh0;const bh0=H*.14;fh=H-bh0-pad*1.5;cpw=chips?fh*.42:0;hw=fh*FA;if(hw*2+cpw>W-pad*2){hw=(W-pad*2-cpw)/2;fh=hw/FA;cpw=chips?fh*.42:0}fx=(W-hw*2-cpw)/2+cpw;fy=pad*.5}
+  else{sw=FW*.96;const FA=sw/sh0;hw=W;fh=hw/FA;const bh0=W*.15;fx=0;fy=H-bh0-fh}
+  const a=E(k/.7);
+  g.save();g.globalAlpha=Math.min(1,k/.35);
+  if(full){const off=(1-a)*(hw+fx);
+    g.drawImage(STK.cv,FW*.03,sy0,sw,sh0,fx-off,fy,hw,fh);
+    g.drawImage(STK2.cv,0,sy0,sw,sh0,fx+hw+off,fy,hw,fh);
+    g.strokeStyle=tcol(team);g.lineWidth=4;g.strokeRect(fx-off,fy,hw,fh);g.strokeStyle=tcol(other(team));g.strokeRect(fx+hw+off,fy,hw,fh)}
+  else{const off=(1-a)*fh*.6;g.drawImage(STK.cv,FW*.04,sy0,sw,sh0,fx,fy+off,hw,fh);g.fillStyle=tcol(team);g.fillRect(0,fy+off-4,W,4)}
+  g.restore();
+  if(full&&chips){const ca=E((k-.3)/.5);if(ca>0){g.save();g.globalAlpha=ca;const px=fx-cpw-(1-ca)*cpw,ids=legendIds().filter(id=>id!=="rookie"),cp=fh*.012,cw2=(cpw-cp*3)/2,ch2=(fh-cp*2)/4;g.fillStyle="rgba(14,18,30,.88)";g.fillRect(px,fy,cpw,fh);ids.forEach((id,i)=>{const x=px+cp+(i%2)*(cw2+cp),y=fy+cp+Math.floor(i/2)*ch2;g.fillStyle="rgba(255,255,255,.06)";g.fillRect(x,y,cw2,ch2-cp);drawChip(g,id,team,x,y,cw2,ch2-cp)});g.restore()}}
+  // strip (like gauge + double button)
+  const sa=E((k-.5)/.5);if(sa>0){g.save();g.globalAlpha=sa;
+    const sx=full?fx-cpw:0,sw2=full?hw*2+cpw:W,sy=fy+fh+pad*.5,bh=full?H-sy-pad*.5:H-sy;drawFieldStrip(g,team,sx,sy+(1-sa)*20,sw2,bh);g.restore()}
+  // ticker
+  const gt=S.gt&&S.gt[team],tk=gt&&gt.t-S.t<4?gt:null;
+  if(tk&&k>1.6){const t=`${tk.name}さんの${UNITS.find(u=>u.id===tk.id).name} 出撃！`,fs=(full?H:W)*.04,cxm=full?fx+hw/2:W/2;g.font=`800 ${fs}px 'M PLUS 1p',sans-serif`;const tw=Math.min((full?hw:W)-pad*2,g.measureText(t).width+fs);g.fillStyle="rgba(10,14,24,.75)";g.fillRect(cxm-tw/2,fy+pad,tw,fs*1.5);g.fillStyle="#ffcf3f";g.textAlign="center";g.textBaseline="middle";g.fillText(t,cxm,fy+pad+fs*.78,tw-fs*.4)}
+  // flash + START text
+  if(k>.55&&k<1.1){g.save();g.globalCompositeOperation="lighter";g.fillStyle=`rgba(255,250,220,${.55*(1-(k-.55)/.55)})`;g.fillRect(full?fx:0,fy,full?hw*2:W,fh);g.restore()}
+  if(k>.5&&k<2.2){const q=k-.5,sc=q<.25?.5+2*q:1,al=k>1.7?1-(k-1.7)/.5:1,fs=(full?H:W)*.13;g.save();g.globalAlpha=Math.max(0,al);g.translate(full?W/2:W/2,fy+fh*.45);g.scale(sc,sc);g.font=`900 ${fs}px 'Dela Gothic One','M PLUS 1p',sans-serif`;{const mw=g.measureText("BATTLE START!").width,lim=(full?hw*2:W)*.9;if(mw>lim)g.scale(lim/mw,lim/mw)}g.textAlign="center";g.textBaseline="middle";g.lineWidth=fs*.14;g.strokeStyle="#1a1405";g.strokeText("BATTLE START!",0,0);g.fillStyle="#ffcf3f";g.fillText("BATTLE START!",0,0);g.restore()}
+  g.textBaseline="alphabetic";
+}
+function drawFieldStrip(g,team,x,y,w,h){
+  const pad=h*.08;g.fillStyle="rgba(14,18,30,.88)";g.fillRect(x,y,w,h);
+  const rkh=h-pad*2,rkw=rkh*.9;g.fillStyle="rgba(255,255,255,.06)";g.fillRect(x+pad,y+pad,rkw,rkh);drawChip(g,"rookie",team,x+pad,y+pad,rkw,rkh);
+  const btw=Math.min(w*.2,h*2.6),bth=Math.min(h-pad*2,btw*.5);drawBtn(g,team,x+w-pad-btw,y+(h-bth)/2,btw,bth,"wide");
+  const need=SKILLS[0].need,p=Math.min(1,S.charge[team]/need),fullc=p>=1&&S.dblN[team]<SKILLS[0].max;
+  const gx=x+pad*2+rkw,gw=x+w-btw-pad*2-gx,fs=Math.min(h*.24,gw*.08),gyc=y+pad;
+  g.font=`800 ${fs}px 'M PLUS 1p',sans-serif`;g.textAlign="left";g.textBaseline="middle";g.fillStyle="#ff8fb1";g.fillText("♥ いいね",gx,gyc+fs*.6);
+  g.textAlign="right";g.fillStyle="#fff";g.fillText(`${Math.floor(Math.min(S.charge[team],need))}`,gx+gw-fs*2.6,gyc+fs*.6);g.fillStyle="#9aa3bd";g.font=`700 ${fs*.7}px 'M PLUS 1p',sans-serif`;g.fillText(`/${need}`,gx+gw,gyc+fs*.66);
+  const gh=fs*.7,gy=gyc+fs*1.3;g.fillStyle="rgba(255,255,255,.12)";g.fillRect(gx,gy,gw,gh);
+  const gr=g.createLinearGradient(gx,0,gx+gw,0);gr.addColorStop(0,"#ff8fb1");gr.addColorStop(1,"#ffcf3f");g.fillStyle=gr;g.fillRect(gx,gy,gw*p,gh);
+  if(fullc){g.save();g.globalCompositeOperation="lighter";g.fillStyle=`rgba(255,240,170,${.25+.25*Math.sin(tick*.25)})`;g.fillRect(gx,gy,gw,gh);g.restore()}
+  const ty=gy+gh+fs*.55;g.font=`700 ${fs*.7}px 'M PLUS 1p',sans-serif`;
+  if(S.cheer[team]>0){g.textAlign="left";g.fillStyle="#9fe3a8";g.fillText(`「${CFG.cheer}」応援 攻撃+${S.cheer[team]}%`,gx,ty,gw*.6)}
+  if(S.ovf&&S.ovf[team]>=1){g.textAlign="right";g.fillStyle="#ffb35c";g.fillText(`あふれ+${S.ovf[team]|0}%`,gx+gw,ty,gw*.38)}
+}
 function drawCam(g,W,H,team,src0,FA0,left){
   STK.field=CANVAS[0].field;STK.mirror=CANVAS[0].mirror;OBJS=1.3;renderCanvas(STK);OBJS=1;const src=STK.cv;
   g.clearRect(0,0,W,H);
@@ -1373,7 +1433,7 @@ function netConnect(){const u=wsURL();if(!u)return;NETX.url=u;let ws;try{ws=new 
   ws.onopen=()=>{NETX.tries=0};
   ws.onclose=()=>{const was=NETX.ok;NETX.ok=false;NET.on=false;netBadge();if(was&&PH!=="lobby"){log("s","サーバーとの接続が切れました。つなぎ直しています…")}setTimeout(netConnect,Math.min(10000,1000*(++NETX.tries)))}}
 function updStreamLink(){const n=$("ttB").value.trim().replace(/^@/,"");const base=NETX&&NETX.ok?location.origin:"https://gift-war.onrender.com";const c=$("stCopy");
-  if(!n){$("stUrl").textContent="下の「あなた」の欄にユーザー名を入れると出ます";c.disabled=true;return}$("stUrl").textContent=`${base}/?stream=${encodeURIComponent(n)}`+(stA!==.5725?`&r=${stA}`:"")+(INV?`&inv=${encodeURIComponent(INV)}`:"");c.disabled=false}
+  if(!n){$("stUrl").textContent=$("stUrl2").textContent="下の「あなた」の欄にユーザー名を入れると出ます";c.disabled=true;$("stCopy2").disabled=true;return}const iv=INV?`&inv=${encodeURIComponent(INV)}`:"";$("stUrl").textContent=`${base}/?stream=${encodeURIComponent(n)}`+(BV?`&v=${BV}`:stA!==.5725?`&r=${stA}`:"")+iv;c.disabled=false;$("stUrl2").textContent=`${base}/?stream=${encodeURIComponent(n)}&v=full`+(FC?"&c=1":"")+iv;$("stCopy2").disabled=false}
 function netBadge(){const el=$("netSt");if(!el)return;el.className="netst"+(NETX.ok?"":" off");el.innerHTML=NETX.ok?"<b>●</b> サーバー接続中":"<b>●</b> サーバー未接続（見本モード）"}
 function setAv(el,url,name){if(url){el.innerHTML=`<img src="${url}" alt="" referrerpolicy="no-referrer">`;el.classList.add("on","live")}else{el.innerHTML="";el.classList.remove("live");el.style.background="";avatar(el,name)}}
 function ttInfo(slot,info,name){const st=info&&info.st||"";TT[slot]=st;const el=$(slot==="b"?"tsB":"tsR");
@@ -1436,7 +1496,7 @@ let catT=0,catOk=false;async function loadGiftCatalog(){if(!NETX.ok||Date.now()-
    $("pracSt").textContent="";NETX.psrc=src;NET.send(Object.assign({t:"cfg"},cfgMsg()));NET.send({t:"practice",lvl:+$("pLv").value,src,deck:[...DECK.b],cap:CFG.cap})};
  $("doneBtn").onclick=()=>{if(!NETX.ok||!NET.on)return oDone();NET.send({t:"done"});if(!(NETX.room&&NETX.room.practice)){netBackToLobby();if(NETX.room)netLobby(NETX.room,NETX.you)}};}
 $("stUrl").onclick=()=>{if($("stCopy").disabled){const i=$("ttB");i.scrollIntoView({block:"center"});i.focus();i.style.boxShadow="0 0 0 3px #ffcf3f";setTimeout(()=>i.style.boxShadow="",1500)}};
-{const c=$("stCopy");if(c)c.onclick=()=>{const t=$("stUrl").textContent;try{navigator.clipboard.writeText(t);c.textContent="コピーしました";setTimeout(()=>c.textContent="コピー",1500)}catch(e){}}}
+[["stCopy","stUrl"],["stCopy2","stUrl2"]].forEach(([ci,ui])=>{const c=$(ci);if(c)c.onclick=()=>{const t=$(ui).textContent;try{navigator.clipboard.writeText(t);c.textContent="コピーしました";setTimeout(()=>c.textContent="コピー",1500)}catch(e){}}});$("stUrl2").onclick=$("stUrl").onclick;
 // ---------- character gallery: each card runs a tiny real battle (same code as the game) ----------
 const DEX={cards:[],vis:false,last:0};
 const DOFF={cv:document.createElement("canvas"),field:"b",mirror:false};DOFF.cv.width=FW;DOFF.cv.height=FH;DOFF.c=DOFF.cv.getContext("2d");
