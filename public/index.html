@@ -240,7 +240,7 @@ html.streamonly .stbar{display:none!important}
 .gate{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:16px}
 .gbox2{max-width:440px;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px 22px}.gbox2 h2{margin:6px 0 10px;font-family:var(--f-disp)}.gbox2 p{color:var(--muted);line-height:1.7;margin:0}.gi2{font-size:44px}
 .invcard{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px dashed var(--gold);border-radius:10px;padding:10px 12px}
-.invcard[hidden]{display:none}.invmsg{flex-basis:100%;margin:0;font-size:12px;color:var(--gold)}.invtbl{flex-basis:100%;overflow-x:auto;max-height:320px;overflow-y:auto;border:1px solid var(--line);border-radius:8px}.invtbl table{border-collapse:collapse;width:100%;min-width:520px;font-size:13px}.invtbl th,.invtbl td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.invtbl th{font-size:11px;color:var(--muted);background:var(--panel2);position:sticky;top:0}.invtbl a{color:var(--gold);font-weight:700;text-decoration:none}.invtbl a:hover{text-decoration:underline}.invtbl td.op{text-align:right}.invtbl td.op .lbtn{margin-left:6px}.invtbl .lbtn{padding:4px 9px;font-size:12px}.invtbl .del{color:#ffc2ca}.invcard input{font-family:var(--f-body);font-size:13px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:7px 10px;width:160px}
+.stsz{color:var(--gold)!important}.invcard[hidden]{display:none}.invmsg{flex-basis:100%;margin:0;font-size:12px;color:var(--gold)}.invtbl{flex-basis:100%;overflow-x:auto;max-height:320px;overflow-y:auto;border:1px solid var(--line);border-radius:8px}.invtbl table{border-collapse:collapse;width:100%;min-width:520px;font-size:13px}.invtbl th,.invtbl td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.invtbl th{font-size:11px;color:var(--muted);background:var(--panel2);position:sticky;top:0}.invtbl a{color:var(--gold);font-weight:700;text-decoration:none}.invtbl a:hover{text-decoration:underline}.invtbl td.op{text-align:right}.invtbl td.op .lbtn{margin-left:6px}.invtbl .lbtn{padding:4px 9px;font-size:12px}.invtbl .del{color:#ffc2ca}.invcard input{font-family:var(--f-body);font-size:13px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:7px 10px;width:160px}
 .invlist{flex-basis:100%;display:flex;flex-direction:column;gap:6px}.invlist:empty{display:none}.invlist div{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px}.invlist b{min-width:5em}.invlist code{flex:1;min-width:200px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px;word-break:break-all;user-select:all}
 html.streamonly .invcard{display:none!important}
 .vsov{position:fixed;inset:0;z-index:60;background:#05070d}.vsov[hidden]{display:none}.vsov canvas{display:block;width:100%;height:100%}
@@ -278,8 +278,8 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
 </header>
 <p class="lead">バトル中、視聴者には2人の映像が左右に並んで見えます。各自のゲーム画面は「自分の陣地の半分」だけを映し、真ん中の川でつながります。兵は川沿いのゲートに入ると、相手の画面のゲートから出てきます。中央の砦は2つの画面にまたがっていて、2人で取り合います。</p>
 
-<div class="stbar" id="stLink"><span class="sti">📺</span><span class="stt">バトル用URL<small>TikTokバトルで2人の映像を並べるとき。自分の陣地が映ります</small></span><code id="stUrl">下の「あなた」の欄にユーザー名を入れると出ます</code><button type="button" class="lbtn" id="stCopy" disabled>コピー</button></div>
-<div class="stbar" id="stLink2"><span class="sti">🗺️</span><span class="stt">全体表示用URL<small>自分と相手の陣地をつないだ横長の画面。CPU戦や、全体を見せたいときに</small></span><code id="stUrl2">下の「あなた」の欄にユーザー名を入れると出ます</code><button type="button" class="lbtn" id="stCopy2" disabled>コピー</button></div>
+<div class="stbar" id="stLink"><span class="sti">📺</span><span class="stt">バトル用URL<small>TikTokバトルで2人の映像を並べるとき。自分の陣地が映ります</small><small class="stsz" id="stSz1"></small></span><code id="stUrl">下の「あなた」の欄にユーザー名を入れると出ます</code><button type="button" class="lbtn" id="stCopy" disabled>コピー</button></div>
+<div class="stbar" id="stLink2"><span class="sti">🗺️</span><span class="stt">全体表示用URL<small>自分と相手の陣地をつないだ横長の画面。CPU戦や、全体を見せたいときに</small><small class="stsz" id="stSz2"></small></span><code id="stUrl2">下の「あなた」の欄にユーザー名を入れると出ます</code><button type="button" class="lbtn" id="stCopy2" disabled>コピー</button></div>
 <div class="invcard" id="invCard" hidden><span class="sti">🔑</span><span class="stt">配信者を招待する<small>TikTokのユーザー名を入れると、その人専用の招待URLができます。招待した人は下の一覧に保存されます</small></span>
   <input id="invName" type="text" maxlength="25" style="width:230px" placeholder="TikTokのユーザー名（@なしでOK）"><input id="invMemo" type="text" maxlength="40" placeholder="メモ（任意）"><button type="button" class="lbtn" id="invMake">招待URLを作る</button>
   <p class="invmsg" id="invMsg" hidden></p>
@@ -1016,7 +1016,9 @@ document.querySelectorAll("#sview button").forEach(b=>b.onclick=()=>{BV=b.datase
 document.querySelectorAll("#fcSel button").forEach(b=>b.onclick=()=>{FC=b.dataset.c==="1";viewChanged()});syncView();
 document.querySelectorAll("#aspect button").forEach(b=>b.onclick=()=>{BV="";syncView();document.querySelectorAll("#aspect button").forEach(x=>x.setAttribute("aria-pressed",x===b));stA=+b.dataset.a;sizeStream();try{localStorage.setItem("giftwar_ratio",stA)}catch(e){}typeof updStreamLink==="function"&&updStreamLink()});
 document.querySelectorAll("#aspect button").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.a===stA));
-function sizeStream(){STV=curView();if(STV==="full"){stCv.width=1280;stCv.height=720}else if(STV==="half"){stCv.height=1280;stCv.width=733}else if(stA>=1){stCv.width=1280;stCv.height=Math.round(1280/stA)}else{stCv.height=1280;stCv.width=Math.round(1280*stA)}if(!document.documentElement.classList.contains("streamonly")){if(stCv.width>=stCv.height){stCv.style.width="min(100%,720px)";stCv.style.height="auto"}else{stCv.style.height="64vh";stCv.style.width="auto"}}}
+const FVA_F=(FW*.97)/(FH*.92),FVA_H=(FW*.96)/(FH*.92),FV_STRIP=.15,FV_CH=.42;
+function viewSize(v,fc){if(v==="full"){const fh=1280/(2*FVA_F+(fc?FV_CH:0));return[1280,Math.round(fh*(1+FV_STRIP))]}if(v==="half"){const fh=720/FVA_H;return[720,Math.round(fh+720*FV_STRIP)]}return stA>=1?[1280,Math.round(1280/stA)]:[Math.round(1280*stA),1280]}
+function sizeStream(){STV=curView();if(STV==="full"){const fh=1280/(2*FVA_F+(FC?FV_CH:0));stCv.width=1280;stCv.height=Math.round(fh*(1+FV_STRIP))}else if(STV==="half"){const fh=720/FVA_H;stCv.width=720;stCv.height=Math.round(fh+720*FV_STRIP)}else if(stA>=1){stCv.width=1280;stCv.height=Math.round(1280/stA)}else{stCv.height=1280;stCv.width=Math.round(1280*stA)}if(!document.documentElement.classList.contains("streamonly")){if(stCv.width>=stCv.height){stCv.style.width="min(100%,720px)";stCv.style.height="auto"}else{stCv.style.height="64vh";stCv.style.width="auto"}}}
 sizeStream();
 const GIFTLBL={rookie:"♥100",soldier:"1",archer:"5",rider:"5",shield:"10",bomber:"30",mage:"99",golem:"299",dragon:"1000"};
 function coin(g,x,y,r){g.fillStyle="#ffcf3f";g.beginPath();g.arc(x,y,r,0,7);g.fill();g.strokeStyle="#b8860b";g.lineWidth=r*.25;g.stroke();g.fillStyle="#b8860b";g.font=`bold ${r*1.1}px sans-serif`;g.textAlign="center";g.textBaseline="middle";g.fillText("¢",x,y+r*.05)}
@@ -1072,20 +1074,20 @@ function drawFieldView(g,W,H,full,chips){
   if(full){STK2.field=CANVAS[1].field;STK2.mirror=CANVAS[1].mirror;renderCanvas(STK2)}OBJS=1;
   const sh0=FH*.92,sy0=FH*.04;
   let fx,fy,hw,fh,sw;const pad=Math.min(W,H)*.02;
-  let cpw=0;if(full){sw=FW*.97;const FA=sw/sh0;const bh0=H*.14;fh=H-bh0-pad*1.5;cpw=chips?fh*.42:0;hw=fh*FA;if(hw*2+cpw>W-pad*2){hw=(W-pad*2-cpw)/2;fh=hw/FA;cpw=chips?fh*.42:0}fx=(W-hw*2-cpw)/2+cpw;fy=pad*.5}
-  else{sw=FW*.96;const FA=sw/sh0;hw=W;fh=hw/FA;const bh0=W*.15;fx=0;fy=H-bh0-fh}
+  let cpw=0;if(full){sw=FW*.97;fh=W/(2*FVA_F+(chips?FV_CH:0));if(fh*(1+FV_STRIP)>H)fh=H/(1+FV_STRIP);cpw=chips?fh*FV_CH:0;hw=fh*FVA_F;fx=cpw;fy=0}
+  else{sw=FW*.96;hw=W;fh=W/FVA_H;fx=0;fy=0}
   const a=E(k/.7);
   g.save();g.globalAlpha=Math.min(1,k/.35);
   if(full){const off=(1-a)*(hw+fx);
     g.drawImage(STK.cv,FW*.03,sy0,sw,sh0,fx-off,fy,hw,fh);
     g.drawImage(STK2.cv,0,sy0,sw,sh0,fx+hw+off,fy,hw,fh);
-    g.strokeStyle=tcol(team);g.lineWidth=4;g.strokeRect(fx-off,fy,hw,fh);g.strokeStyle=tcol(other(team));g.strokeRect(fx+hw+off,fy,hw,fh)}
-  else{const off=(1-a)*fh*.6;g.drawImage(STK.cv,FW*.04,sy0,sw,sh0,fx,fy+off,hw,fh);g.fillStyle=tcol(team);g.fillRect(0,fy+off-4,W,4)}
+    g.strokeStyle=tcol(team);g.lineWidth=4;g.strokeRect(fx-off+2,fy+2,hw-4,fh-4);g.strokeStyle=tcol(other(team));g.strokeRect(fx+hw+off+2,fy+2,hw-4,fh-4)}
+  else{const off=(1-a)*fh*.6;g.drawImage(STK.cv,FW*.04,sy0,sw,sh0,fx,fy+off,hw,fh);g.strokeStyle=tcol(team);g.lineWidth=4;g.strokeRect(fx+2,fy+off+2,hw-4,fh-4)}
   g.restore();
   if(full&&chips){const ca=E((k-.3)/.5);if(ca>0){g.save();g.globalAlpha=ca;const px=fx-cpw-(1-ca)*cpw,ids=legendIds().filter(id=>id!=="rookie"),cp=fh*.012,cw2=(cpw-cp*3)/2,ch2=(fh-cp*2)/4;g.fillStyle="rgba(14,18,30,.88)";g.fillRect(px,fy,cpw,fh);ids.forEach((id,i)=>{const x=px+cp+(i%2)*(cw2+cp),y=fy+cp+Math.floor(i/2)*ch2;g.fillStyle="rgba(255,255,255,.06)";g.fillRect(x,y,cw2,ch2-cp);drawChip(g,id,team,x,y,cw2,ch2-cp)});g.restore()}}
   // strip (like gauge + double button)
   const sa=E((k-.5)/.5);if(sa>0){g.save();g.globalAlpha=sa;
-    const sx=full?fx-cpw:0,sw2=full?hw*2+cpw:W,sy=fy+fh+pad*.5,bh=full?H-sy-pad*.5:H-sy;drawFieldStrip(g,team,sx,sy+(1-sa)*20,sw2,bh);g.restore()}
+    const sx=0,sw2=W,sy=fy+fh,bh=H-sy;drawFieldStrip(g,team,sx,sy+(1-sa)*20,sw2,bh);g.restore()}
   // ticker
   const gt=S.gt&&S.gt[team],tk=gt&&gt.t-S.t<4?gt:null;
   if(tk&&k>1.6){const t=`${tk.name}さんの${UNITS.find(u=>u.id===tk.id).name} 出撃！`,fs=(full?H:W)*.04,cxm=full?fx+hw/2:W/2;g.font=`800 ${fs}px 'M PLUS 1p',sans-serif`;const tw=Math.min((full?hw:W)-pad*2,g.measureText(t).width+fs);g.fillStyle="rgba(10,14,24,.75)";g.fillRect(cxm-tw/2,fy+pad,tw,fs*1.5);g.fillStyle="#ffcf3f";g.textAlign="center";g.textBaseline="middle";g.fillText(t,cxm,fy+pad+fs*.78,tw-fs*.4)}
@@ -1433,7 +1435,7 @@ function netConnect(){const u=wsURL();if(!u)return;NETX.url=u;let ws;try{ws=new 
   ws.onopen=()=>{NETX.tries=0};
   ws.onclose=()=>{const was=NETX.ok;NETX.ok=false;NET.on=false;netBadge();if(was&&PH!=="lobby"){log("s","サーバーとの接続が切れました。つなぎ直しています…")}setTimeout(netConnect,Math.min(10000,1000*(++NETX.tries)))}}
 function updStreamLink(){const n=$("ttB").value.trim().replace(/^@/,"");const base=NETX&&NETX.ok?location.origin:"https://gift-war.onrender.com";const c=$("stCopy");
-  if(!n){$("stUrl").textContent=$("stUrl2").textContent="下の「あなた」の欄にユーザー名を入れると出ます";c.disabled=true;$("stCopy2").disabled=true;return}const iv=INV?`&inv=${encodeURIComponent(INV)}`:"";$("stUrl").textContent=`${base}/?stream=${encodeURIComponent(n)}`+(BV?`&v=${BV}`:stA!==.5725?`&r=${stA}`:"")+iv;c.disabled=false;$("stUrl2").textContent=`${base}/?stream=${encodeURIComponent(n)}&v=full`+(FC?"&c=1":"")+iv;$("stCopy2").disabled=false}
+  if(!n){$("stUrl").textContent=$("stUrl2").textContent="下の「あなた」の欄にユーザー名を入れると出ます";c.disabled=true;$("stCopy2").disabled=true;return}const iv=INV?`&inv=${encodeURIComponent(INV)}`:"";$("stUrl").textContent=`${base}/?stream=${encodeURIComponent(n)}`+(BV?`&v=${BV}`:stA!==.5725?`&r=${stA}`:"")+iv;c.disabled=false;$("stUrl2").textContent=`${base}/?stream=${encodeURIComponent(n)}&v=full`+(FC?"&c=1":"")+iv;$("stCopy2").disabled=false;const z1=viewSize(BV,false),z2=viewSize("full",FC);$("stSz1").textContent=`余白なしにするには、LIVE Studioの「リンク」の大きさを 幅${z1[0]}×高さ${z1[1]} に`;$("stSz2").textContent=`余白なしにするには、LIVE Studioの「リンク」の大きさを 幅${z2[0]}×高さ${z2[1]} に`}
 function netBadge(){const el=$("netSt");if(!el)return;el.className="netst"+(NETX.ok?"":" off");el.innerHTML=NETX.ok?"<b>●</b> サーバー接続中":"<b>●</b> サーバー未接続（見本モード）"}
 function setAv(el,url,name){if(url){el.innerHTML=`<img src="${url}" alt="" referrerpolicy="no-referrer">`;el.classList.add("on","live")}else{el.innerHTML="";el.classList.remove("live");el.style.background="";avatar(el,name)}}
 function ttInfo(slot,info,name){const st=info&&info.st||"";TT[slot]=st;const el=$(slot==="b"?"tsB":"tsR");
