@@ -269,6 +269,7 @@ table{border-collapse:collapse;width:100%;font-size:13px;min-width:520px}
 th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
 th{color:var(--muted);font-size:12px}
 td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+.ceBox{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:44px;border:1px dashed #6a7aa0;border-radius:8px;padding:0 6px;font-size:12px}.ceBox img{width:40px;height:40px;object-fit:contain}.ceWait{color:#ffcf3f}
 </style>
 
 <div class="wrap" id="wrap" data-phase="lobby">
@@ -408,6 +409,7 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
     <tbody id="giftRows"></tbody>
   </table></div>
   <div class="setrow"><label for="cheerWord">応援コメント</label><input id="cheerWord" type="text" maxlength="12"><span>このコメントが届くと、その側のキャラ全員の攻撃が少し上がる（1回+1%、最大+20%、少しずつ戻る）</span></div>
+  <div class="setrow"><label>応援スタンプ</label><span id="ceBox" class="ceBox">なし</span><button type="button" id="ceLearn">スタンプを登録</button><button type="button" id="ceClr" hidden>消す</button><span id="ceMsg">TikTokで作ったスタンプ・ステッカーを1種類、応援コメントの代わりにできる。押してから自分の配信でそのスタンプを1回送る</span></div>
   <div class="setrow"><label for="capN">1陣地に出せる数</label><input id="capN" type="number" min="10" max="200" step="10"><span>超えた分は待ち列に入り、空いたら出撃する</span></div>
   <div class="setrow"><label>テスト用</label><button type="button" id="glvB">青にグローブを送る</button><button type="button" id="glvR">赤にグローブを送る</button><button type="button" id="cheerB">青に応援コメント</button><button type="button" id="cheerR">赤に応援コメント</button></div>
 </section>
@@ -608,7 +610,11 @@ const DECK={b:new Set(["rookie","soldier","archer","rider","shield","bomber","ma
 const DECK_CAP=30,DECK_MIN=6;
 function deckMap(team,id){if(DECK[team].has(id))return id;const order=["rookie","soldier","archer","rider","shield","bomber","mage","golem","dragon"];let i=order.indexOf(id);while(i>0){i--;if(DECK[team].has(order[i]))return order[i]}return "rookie"}
 const CFG={gifts:{soldier:"バラ",archer:"",rider:"",shield:"",bomber:"",mage:"",golem:"",dragon:"",glove:"グローブ"},cheer:"がんばれ",cap:60};
-CFG.gid={};try{const sv=JSON.parse(localStorage.getItem("giftwar_cfg")||"null");if(sv){if(sv.gid)Object.assign(CFG.gid,sv.gid);Object.assign(CFG.gifts,sv.gifts||{});if(sv.cheer)CFG.cheer=sv.cheer;if(sv.disp)CFG.disp=sv.disp;if(sv.icon)CFG.icon=sv.icon;if(sv.cap)CFG.cap=sv.cap}}catch(e){}
+CFG.gid={};try{const sv=JSON.parse(localStorage.getItem("giftwar_cfg")||"null");if(sv){if(sv.gid)Object.assign(CFG.gid,sv.gid);Object.assign(CFG.gifts,sv.gifts||{});if(sv.cheer)CFG.cheer=sv.cheer;if(sv.cheerEmote)CFG.cheerEmote=sv.cheerEmote;if(sv.disp)CFG.disp=sv.disp;if(sv.icon)CFG.icon=sv.icon;if(sv.cap)CFG.cap=sv.cap}}catch(e){}
+let CE_WAIT=false;
+function ceUI(){const b=document.getElementById("ceBox");if(!b)return;const e=CFG.cheerEmote;b.innerHTML="";if(e){if(e.img){const im=new Image();im.src=e.img;im.alt="応援スタンプ";im.referrerPolicy="no-referrer";b.appendChild(im)}else b.textContent="登録ずみ"}else b.textContent="なし";
+ const L=document.getElementById("ceLearn");L.textContent=CE_WAIT?"やめる":e?"登録しなおす":"スタンプを登録";document.getElementById("ceClr").hidden=!e||CE_WAIT;
+ const M=document.getElementById("ceMsg");if(CE_WAIT){M.textContent="待っています…自分の配信のコメント欄から、そのスタンプを1回送ってください（2分まで）";M.className="ceWait"}else{M.className="";if(e)M.textContent="このスタンプが届くと応援コメントと同じく攻撃アップ"}}
 function saveCfg(){try{localStorage.setItem("giftwar_cfg",JSON.stringify(CFG))}catch(e){}}
 const mult=team=>1+(S.dbl[team]>0?1:0)+(S.glv[team]>0?1:0);
 const tscore=team=>S.towers.filter(t=>t.team===team).reduce((a,t)=>a+Math.max(0,t.hp)/t.max*(t.king?2:1),0);
@@ -1270,6 +1276,7 @@ for(const k in DEFG)if(!CFG.gifts[k]||!gInfo(CFG.gifts[k])){const want=k==="glov
   tb.querySelectorAll(".gpick[data-id=glove]").forEach(b=>{b.disabled=true;b.style.cursor="default";const sm=b.querySelector("small");if(sm)sm.textContent="固定"});tb.querySelectorAll(".gpick:not([data-id=glove])").forEach(b=>b.onclick=()=>openPicker(b.dataset.id,nm=>{CFG.gifts[b.dataset.id]=nm;const gg=gInfo(nm);CFG.gid[b.dataset.id]=gg&&gg[3]||"";saveCfg();paint();drawDeck();sendCfg();buildDex()}))};
  paint();
  const cw=document.getElementById("cheerWord");cw.value=CFG.cheer;cw.oninput=()=>{CFG.cheer=cw.value.trim()||"がんばれ";saveCfg();sendCfg()};
+ ceUI();document.getElementById("ceLearn").onclick=()=>{if(CE_WAIT){NET.send({t:"learnEmote",stop:1});CE_WAIT=false;ceUI();return}if(!NETX.ok){document.getElementById("ceMsg").textContent="サーバーにつながっていないため登録できません";return}NET.send(Object.assign({t:"cfg"},cfgMsg()));NET.send({t:"learnEmote"});CE_WAIT=true;ceUI()};document.getElementById("ceClr").onclick=()=>{CFG.cheerEmote=null;saveCfg();sendCfg();ceUI()};
  const cn=document.getElementById("capN");cn.value=CFG.cap;cn.onchange=()=>{CFG.cap=Math.max(10,Math.min(200,+cn.value||60));cn.value=CFG.cap;saveCfg()};
  document.getElementById("glvB").onclick=()=>sendGlove("b");document.getElementById("glvR").onclick=()=>sendGlove("r");
  document.getElementById("cheerB").onclick=()=>cheer("b");document.getElementById("cheerR").onclick=()=>cheer("r");}
@@ -1514,7 +1521,7 @@ if(STREAM_NAME){document.documentElement.classList.add("streamonly");stCv.style.
 var NETX={ok:false,url:null,tries:0,dt:66,lastSnap:0,you:"b",room:null,rival:"",avatars:{}};
 function wsURL(){const q=new URLSearchParams(location.search).get("server");if(q)return q.replace(/^http/,"ws").replace(/\/$/,"")+"/ws";if(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent|anthropic/.test(location.hostname))return null;return (location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws?inv="+encodeURIComponent(INV)}
 function gfor(id){const n=CFG.gifts[id];const g=gInfo(n);return {id:(CFG.gid&&CFG.gid[id])||(g&&g[3])||"",name:n||"",alt:(g&&g[4])||""}}
-function cfgMsg(){const gifts={};for(const k of ["soldier","archer","rider","shield","bomber","mage","golem","dragon","glove"])gifts[k]=gfor(k);return {name:$("ttB").value.trim().replace(/^@/,""),disp:CFG.disp||"",icon:CFG.icon||"",gifts,cheer:CFG.cheer,deck:[...DECK.b],cap:CFG.cap}}
+function cfgMsg(){const gifts={};for(const k of ["soldier","archer","rider","shield","bomber","mage","golem","dragon","glove"])gifts[k]=gfor(k);return {name:$("ttB").value.trim().replace(/^@/,""),disp:CFG.disp||"",icon:CFG.icon||"",gifts,cheer:CFG.cheer,cheerEmote:CFG.cheerEmote||null,deck:[...DECK.b],cap:CFG.cap}}
 let cfgT=null;function sendCfg(){if(!NETX.ok)return;clearTimeout(cfgT);cfgT=setTimeout(()=>NET.send(Object.assign({t:"cfg"},cfgMsg())),500)}
 async function netGate(){const u=wsURL();if(!u)return;try{const r=await fetch("/api/whoami?inv="+encodeURIComponent(INV),{cache:"no-store"});const j=await r.json();if(j.gate&&!j.ok){showGate();return}}catch(e){}netConnect()}
 function showGate(){const d=document.createElement("div");d.className="gate";d.innerHTML=`<div class="gbox2"><div class="gi2">🔒</div><h2>このゲームは招待制です</h2><p>招待してくれた人から届いたURLを開いてください。<br>一度開けば、このブラウザでは次から普通に開けます。</p></div>`;document.body.appendChild(d)}
@@ -1560,6 +1567,7 @@ function netBackToLobby(){NET.on=false;PRAC.on=false;wrapEl.classList.remove("ne
 function netMsg(m){
   if(m.t==="rdone"){NETX.rdone=true;return}
   if(m.t==="hi"){NETX.ok=true;netBadge();NETX.owner=!!m.owner;$("invCard").hidden=!m.owner||!!STREAM_NAME;if(m.owner&&!STREAM_NAME)invLoad();if(STREAM_NAME){NET.send({t:"watch",name:STREAM_NAME});return}NET.send(Object.assign({t:"hello"},cfgMsg()));loadGiftCatalog();updStreamLink();return}
+  if(m.t==="emote"){CE_WAIT=false;if(m.e){CFG.cheerEmote=m.e;saveCfg();sendCfg();ceUI();$("ceMsg").textContent="登録しました。このスタンプが届くと攻撃アップ"}else{ceUI();$("ceMsg").textContent=m.err||"登録できませんでした"}return}
   if(m.t==="tt"){if(!NETX.room||NETX.room.practice)ttInfo("b",m.info,$("ttB").value.trim());lobbyUI();if(m.info&&m.info.st==="ok")loadGiftCatalog();return}
   if(m.t==="joined"||m.t==="lobby"){if(m.room.practice){NETX.room=m.room;return}if(PH!=="lobby"&&(m.room.phase!=="lobby"||!$("resOv").hidden||(S&&S.over))){NETX.room=m.room;NETX.you=m.you;return}netLobby(m.room,m.you);if(PH!=="lobby")netBackToLobby();return}
   if(m.t==="start"){NETX.room=m.room;netStart(m);return}

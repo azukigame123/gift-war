@@ -161,8 +161,8 @@ function onLike(room, team, l) {
 }
 function onChat(room, team, c) {
   if (!battling(room)) return; if (room.practice && team === "b" && room.src !== "live") return;
-  const P = room.players[team]; const w = (P.cheer || "").trim();
-  if (w && c.text.includes(w)) room.sim.cheer(team);
+  const P = room.players[team]; const w = (P.cheer || "").trim(), ce = P.cheerEmote && P.cheerEmote.id;
+  if ((w && c.text.includes(w)) || (ce && (c.emotes || []).some(e => e.id === ce))) room.sim.cheer(team);
 }
 
 function startMatch(room) {
@@ -236,7 +236,7 @@ wss.on("connection", (ws, req) => {
     dropSolo();
     let P = room.players[team];
     if (!P) P = room.players[team] = { name: "", gifts: {}, cheer: "", deck: [], ready: false };
-    P.ws = ws; P.name = C.name; P.disp = C.disp || ""; P.icon = C.icon || ""; P.gifts = C.gifts; P.cheer = C.cheer; P.deck = C.deck; P.ready = false;
+    P.ws = ws; P.name = C.name; P.disp = C.disp || ""; P.icon = C.icon || ""; P.gifts = C.gifts; P.cheer = C.cheer; P.cheerEmote = C.cheerEmote || null; P.deck = C.deck; P.ready = false;
     C.room = room; C.team = team; clearTimeout(room.dieT);
     attachLive(room, team);
     send(ws, { t: "joined", you: team, room: roomView(room) });
@@ -253,11 +253,12 @@ wss.on("connection", (ws, req) => {
         if (typeof m.name === "string") C.name = TT.clean(m.name);
         if (m.gifts) C.gifts = cleanGifts(m.gifts);
         if (typeof m.cheer === "string") C.cheer = m.cheer.slice(0, 12);
+        if ("cheerEmote" in m) { const e = m.cheerEmote; C.cheerEmote = e && typeof e.id === "string" && e.id ? { id: e.id.slice(0, 40), img: typeof e.img === "string" && /^https:\/\//.test(e.img) ? e.img.slice(0, 600) : "" } : null; }
         if (typeof m.icon === "string") C.icon = (m.icon.length <= 40000 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(m.icon)) ? m.icon : "";
         if (typeof m.disp === "string") C.disp = m.disp.replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 16);
         if (m.deck) C.deck = cleanDeck(m.deck);
         const P = me();
-        if (P) { const nameChanged = P.name !== C.name; P.name = C.name; P.disp = C.disp || ""; P.icon = C.icon || ""; P.gifts = C.gifts; P.cheer = C.cheer; P.deck = C.deck; if (nameChanged) { clearTimeout(P.attT); const rm = C.room, tm = C.team; P.attT = setTimeout(() => attachLive(rm, tm), 2500); } lobbyUpdate(C.room); }
+        if (P) { const nameChanged = P.name !== C.name; P.name = C.name; P.disp = C.disp || ""; P.icon = C.icon || ""; P.gifts = C.gifts; P.cheer = C.cheer; P.cheerEmote = C.cheerEmote || null; P.deck = C.deck; if (nameChanged) { clearTimeout(P.attT); const rm = C.room, tm = C.team; P.attT = setTimeout(() => attachLive(rm, tm), 2500); } lobbyUpdate(C.room); }
         else { clearTimeout(C.soloT); C.soloT = setTimeout(soloLive, 1500); }
         break;
       }
@@ -270,6 +271,16 @@ wss.on("connection", (ws, req) => {
         const team = back || (!room.players.r ? "r" : !room.players.b ? "b" : null);
         if (!team) return send(ws, { t: "err", msg: "この部屋はもう2人そろっています" });
         leave(); enter(room, team); break;
+      }
+      case "learnEmote": { // wait for the next stamp sent on this streamer's LIVE and report it back
+        if (C.learn) { C.learn.stop(); C.learn = null; }
+        if (m.stop) break;
+        if (!C.name) return send(ws, { t: "emote", err: "先に「あなた」の欄にTikTokのユーザー名を入れてください" });
+        const L = TT.acquire(C.name); if (!L) return send(ws, { t: "emote", err: "TikTokにつながりません" });
+        const f = c => { const e = (c.emotes || [])[0]; if (e) { send(ws, { t: "emote", e }); stop(); } };
+        const stop = () => { clearTimeout(tm); L.off("chat", f); TT.release(L); if (C.learn && C.learn.stop === stop) C.learn = null; };
+        const tm = setTimeout(() => { send(ws, { t: "emote", err: "2分以内にスタンプが届きませんでした" }); stop(); }, 120000);
+        L.on("chat", f); C.learn = { stop }; break;
       }
       case "leave": leave(); soloLive(); break;
       case "ready": {
@@ -308,7 +319,7 @@ wss.on("connection", (ws, req) => {
     }
   });
   const rt = setInterval(() => { C.rate = 0; }, 1000);
-  ws.on("close", () => { clearInterval(rt); if (C.watch) { const W = WATCH.get(C.watch); if (W) { W.delete(ws); if (!W.size) WATCH.delete(C.watch); } } leave(); dropSolo(); });
+  ws.on("close", () => { clearInterval(rt); if (C.watch) { const W = WATCH.get(C.watch); if (W) { W.delete(ws); if (!W.size) WATCH.delete(C.watch); } } leave(); dropSolo(); if (C.learn) C.learn.stop(); });
   send(ws, { t: "hi", mock: TT.MOCK, version: 1, who: WHO.name, owner: !!WHO.owner });
 });
 

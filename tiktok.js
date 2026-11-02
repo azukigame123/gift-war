@@ -39,7 +39,14 @@ class Live extends EventEmitter {
     c.on("decodedData", (type, data) => { this.cnt[type] = (this.cnt[type] || 0) + 1; if (!this.sampled) this.sampled = {}; if (!this.sampled[type] && Object.keys(this.sampled).length < 12) { this.sampled[type] = 1; dbg(this.name, "sample", type + " keys=" + Object.keys(data || {}).slice(0, 14).join(",")); } if (Date.now() - lastCnt > 20000) { lastCnt = Date.now(); dbg(this.name, "counts", JSON.stringify(this.cnt)); } });
     c.on(WebcastEvent.GIFT, d => this.onGift(d));
     c.on(WebcastEvent.LIKE, d => { const n = +pick(d.likeCount, d.count, d.like_count, 0) || 0; dbg(this.name, "like", n); if (n > 0) this.emit("like", { n, nick: nickOf(d.user) }); });
-    c.on(WebcastEvent.CHAT, d => { dbg(this.name, "chat", (d.content || d.comment || "") + " | keys=" + Object.keys(d || {}).slice(0, 10).join(",")); this.emit("chat", { nick: nickOf(d.user), text: String(d.content || d.comment || "") }); });
+    const onChatMsg = d => {
+      const mid = d && d.common && d.common.msgId; if (mid) { if (SEEN.has(mid)) return; SEEN.add(mid); if (SEEN.size > 3000) SEEN.delete(SEEN.values().next().value); }
+      const text = String(d.content || d.comment || ""), emotes = emotesOf(d);
+      dbg(this.name, "chat", text + (emotes.length ? " | emotes=" + emotes.map(e => e.id).join(",") : ""));
+      this.emit("chat", { nick: nickOf(d.user), text, emotes });
+    };
+    c.on(WebcastEvent.CHAT, onChatMsg);
+    if (WebcastEvent.EMOTE) c.on(WebcastEvent.EMOTE, onChatMsg);
     c.on(WebcastEvent.STREAM_END || "streamEnd", () => { this.set("ng", "配信が終わりました"); this.retry(60); });
     c.on("disconnected", () => { if (!this.closed && this.st === "ok") { this.set("wait", "つなぎ直しています"); this.retry(5); } });
     try {
@@ -102,10 +109,16 @@ class Live extends EventEmitter {
       const r = Math.random();
       if (r < .35) { const g = fake[Math.random() < .8 ? (Math.random() * 3 | 0) : (Math.random() * fake.length | 0)]; this.emit("gift", { giftId: g[0], giftName: g[1], coins: g[2], count: 1, nick: nicks[Math.random() * nicks.length | 0] }); }
       else if (r < .75) this.emit("like", { n: 5 + (Math.random() * 30 | 0) });
-      else if (r < .8) this.emit("chat", { nick: "mochi", text: "がんばれ！" });
+      else if (r < .8) this.emit("chat", { nick: "mochi", text: "がんばれ！", emotes: [] });
+      else if (r < .83) this.emit("chat", { nick: "rio", text: " ", emotes: [{ id: "mock-emote-1", img: "" }] });
     }, 700);
   }
   stop() { this.closed = true; clearTimeout(this.timer); clearInterval(this.mockT); try { this.conn && this.conn.disconnect(); } catch (e) { } this.removeAllListeners(); }
+}
+const SEEN = new Set(); // msgIds already handled (TikTok resends recent chat on reconnect)
+function emotesOf(d) {
+  const raw = [].concat((d && d.emotes) || [], (d && d.emoteList) || []);
+  return raw.map(e => e && (e.emote || e)).filter(e => e && e.emoteId).map(e => { const im = e.image || {}; const img = (im.urlList && im.urlList[0]) || im.imageUrl || urlOf(im) || ""; return { id: String(e.emoteId).slice(0, 40), img: /^https:\/\//.test(img) ? String(img).slice(0, 600) : "" }; });
 }
 function nickOf(u) { u = u || {}; return String(pick(u.nickname, u.uniqueId, "だれか")).slice(0, 24); }
 
