@@ -1017,7 +1017,7 @@ document.querySelectorAll("#fcSel button").forEach(b=>b.onclick=()=>{FC=b.datase
 document.querySelectorAll("#aspect button").forEach(b=>b.onclick=()=>{BV="";syncView();document.querySelectorAll("#aspect button").forEach(x=>x.setAttribute("aria-pressed",x===b));stA=+b.dataset.a;sizeStream();try{localStorage.setItem("giftwar_ratio",stA)}catch(e){}typeof updStreamLink==="function"&&updStreamLink()});
 document.querySelectorAll("#aspect button").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.a===stA));
 const FVA_F=(FW*.97)/(FH*.92),FVA_H=(FW*.96)/(FH*.92),FV_STRIP=.15,FV_CH=.42;
-function viewSize(v,fc){if(v==="full"){const fh=1280/(2*FVA_F+(fc?FV_CH:0));return[1280,Math.round(fh*(1+FV_STRIP))]}if(v==="half"){const fh=720/FVA_H;return[720,Math.round(fh+720*FV_STRIP)]}return stA>=1?[1280,Math.round(1280/stA)]:[Math.round(1280*stA),1280]}
+function viewSize(v,fc){if(v==="full"){const fh=1280/(2*FVA_F+(fc?FV_CH:0));return[1280,Math.round(fh*(1+FV_STRIP))]}if(v==="half"){const fh=720/FVA_H;return[720,Math.round(fh+720*FV_STRIP)]}if(stA===.5725&&typeof camBlockRatio==="function")return[720,Math.round(720*camBlockRatio())];return stA>=1?[1280,Math.round(1280/stA)]:[Math.round(1280*stA),1280]}
 function sizeStream(){STV=curView();if(IS_STREAM){const r=Math.min(2,window.devicePixelRatio||1);let w=innerWidth*r,h=innerHeight*r;const m=1920/Math.max(w,h,1);if(m<1){w*=m;h*=m}stCv.width=Math.max(2,Math.round(w));stCv.height=Math.max(2,Math.round(h));return}if(STV==="full"){const fh=1280/(2*FVA_F+(FC?FV_CH:0));stCv.width=1280;stCv.height=Math.round(fh*(1+FV_STRIP))}else if(STV==="half"){const fh=720/FVA_H;stCv.width=720;stCv.height=Math.round(fh+720*FV_STRIP)}else if(stA>=1){stCv.width=1280;stCv.height=Math.round(1280/stA)}else{stCv.height=1280;stCv.width=Math.round(1280*stA)}if(!document.documentElement.classList.contains("streamonly")){if(stCv.width>=stCv.height){stCv.style.width="min(100%,720px)";stCv.style.height="auto"}else{stCv.style.height="64vh";stCv.style.width="auto"}}}
 sizeStream();if(IS_STREAM)addEventListener("resize",()=>{sizeStream();FVT=FVT&&performance.now()-2000});
 const GIFTLBL={rookie:"♥100",soldier:"1",archer:"5",rider:"5",shield:"10",bomber:"30",mage:"99",golem:"299",dragon:"1000"};
@@ -1027,7 +1027,7 @@ function drawStream(){
   if(STV){drawFieldView(stG,stCv.width,stCv.height,STV==="full",STV==="full"&&FC);return}
   if(VSH){const W0=stCv.width,H0=stCv.height;if(drawVSHalf(stG,W0,H0))return}
   const g=stG,W=stCv.width,H=stCv.height,team=room,src=CANVAS[0].cv,FA=FW/FH,left=!CANVAS[0].mirror;
-  g.setTransform(1,0,0,1,0,0);if(W/H<.62){drawCam(g,W,H,team,src,FA,left);return}
+  g.setTransform(1,0,0,1,0,0);if(IS_STREAM&&CAMFIT){g.clearRect(0,0,W,H);const r=camBlockRatio(),wb=Math.min(W,H/r);g.save();g.translate((W-wb)/2,0);drawCam(g,wb,H,team,src,FA,left,true);g.restore();return}if(W/H<.62){drawCam(g,W,H,team,src,FA,left);return}
   g.fillStyle="#0c111c";g.fillRect(0,0,W,H);
   const side=W/H>FA*1.12;let fx,fy,fw,fh,bx,by,bw,bh;
   if(side){bw=Math.round(W*Math.min(.3,Math.max(.2,1-FA*H/W)));fw=Math.min(W-bw,H*FA);fh=fw/FA;bx=left?0:W-bw;by=0;bh=H;fx=left?bw+(W-bw-fw)/2:(W-bw-fw)/2;fy=(H-fh)/2}
@@ -1111,9 +1111,12 @@ function drawFieldStrip(g,team,x,y,w,h){
   if(S.cheer[team]>0){g.textAlign="left";g.fillStyle="#9fe3a8";g.fillText(`「${CFG.cheer}」応援 攻撃+${S.cheer[team]}%`,gx,ty,gw*.6)}
   if(S.ovf&&S.ovf[team]>=1){g.textAlign="right";g.fillStyle="#ffb35c";g.fillText(`あふれ+${S.ovf[team]|0}%`,gx+gw,ty,gw*.38)}
 }
-function drawCam(g,W,H,team,src0,FA0,left){
+// TikTok battle-frame block (chips + field + like strip): its height per unit width, from drawCam's own layout
+function camBlockRatio(){const W=1000,FA=(FW*.96)/(FH*.9),pad=W*.016,cw=W*.28,fw=W-cw,fh=fw/FA,crh0=(fh-pad*2)/4,ccw0=(cw-pad*3)/2,rkh=Math.min(crh0-pad*.6,ccw0*1.02),bh=Math.max(W*.12,rkh+pad*1.2);return (fh+bh)/W}
+const CAMFIT=IS_STREAM&&!STV&&(()=>{const r=+new URLSearchParams(location.search).get("r");return !r||r===.5725})();
+function drawCam(g,W,H,team,src0,FA0,left,noClear){
   STK.field=CANVAS[0].field;STK.mirror=CANVAS[0].mirror;OBJS=1.3;renderCanvas(STK);OBJS=1;const src=STK.cv;
-  g.clearRect(0,0,W,H);
+  if(!noClear)g.clearRect(0,0,W,H);
   const sw=FW*.96,sh0=FH*.9,sx0=left?FW*.04:0,sy0=FH*.05,FA=sw/sh0;
   const pad=W*.016,cw=W*.28,fw=W-cw,fh=fw/FA,crh0=(fh-pad*2)/4,ccw0=(cw-pad*3)/2,rkh=Math.min(crh0-pad*.6,ccw0*1.02),bh=Math.max(W*.12,rkh+pad*1.2),Hb=fh+bh,top=H-Hb,cx=left?0:fw,fx=left?cw:0;
   g.fillStyle="rgba(14,18,30,.88)";g.fillRect(cx,top,cw,fh);g.fillRect(0,top+fh,W,bh);
