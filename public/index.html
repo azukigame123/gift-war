@@ -1025,9 +1025,10 @@ function coin(g,x,y,r){g.fillStyle="#ffcf3f";g.beginPath();g.arc(x,y,r,0,7);g.fi
 function legendIds(){const a=UNITS.map(u=>u.id).filter(id=>id!=="rookie");a.push("rookie");return a}
 function drawStream(){
   if(STV){drawFieldView(stG,stCv.width,stCv.height,STV==="full",STV==="full"&&FC);return}
+  if(VSF&&IS_STREAM&&stCv.width/stCv.height>1.05){const t=(performance.now()-VSF.t0)/1000;if(t<3.6&&PH!=="battle"){const g0=stG;g0.setTransform(1,0,0,1,0,0);g0.clearRect(0,0,stCv.width,stCv.height);vsFrame(g0,stCv.width,stCv.height,t,Math.max(1,stCv.width/1280),VSF,false);return}}
   if(VSH){const W0=stCv.width,H0=stCv.height;if(drawVSHalf(stG,W0,H0))return}
   const g=stG,W=stCv.width,H=stCv.height,team=room,src=CANVAS[0].cv,FA=FW/FH,left=!CANVAS[0].mirror;
-  g.setTransform(1,0,0,1,0,0);if(IS_STREAM&&CAMFIT){g.clearRect(0,0,W,H);const r=camBlockRatio(),wb=Math.min(W,H/r);g.save();g.translate((W-wb)/2,0);drawCam(g,wb,H,team,src,FA,left,true);g.restore();return}if(W/H<.62){drawCam(g,W,H,team,src,FA,left);return}
+  g.setTransform(1,0,0,1,0,0);if(IS_STREAM&&CAMFIT){g.clearRect(0,0,W,H);const r=camBlockRatio();if(W/H>1/r*1.08){drawBattleWide(g,W,H,team);return}const wb=Math.min(W,H/r);g.save();g.translate((W-wb)/2,0);drawCam(g,wb,H,team,src,FA,left,true);g.restore();return}if(W/H<.62){drawCam(g,W,H,team,src,FA,left);return}
   g.fillStyle="#0c111c";g.fillRect(0,0,W,H);
   const side=W/H>FA*1.12;let fx,fy,fw,fh,bx,by,bw,bh;
   if(side){bw=Math.round(W*Math.min(.3,Math.max(.2,1-FA*H/W)));fw=Math.min(W-bw,H*FA);fh=fw/FA;bx=left?0:W-bw;by=0;bh=H;fx=left?bw+(W-bw-fw)/2:(W-bw-fw)/2;fy=(H-fh)/2}
@@ -1118,6 +1119,28 @@ function drawFieldStrip(g,team,x,y,w,h){
 // TikTok battle-frame block (chips + field + like strip): its height per unit width, from drawCam's own layout
 function camBlockRatio(){const W=1000,FA=(FW*.96)/(FH*.9),pad=W*.016,cw=W*.28,fw=W-cw,fh=fw/FA,crh0=(fh-pad*2)/4,ccw0=(cw-pad*3)/2,rkh=Math.min(crh0-pad*.6,ccw0*1.02),bh=Math.max(W*.12,rkh+pad*1.2);return (fh+bh)/W}
 const CAMFIT=IS_STREAM&&!STV&&(()=>{const r=+new URLSearchParams(location.search).get("r");return !r||r===.5725})();
+// battle URL in a landscape box: chips on the left, field in the middle, likes + button on the right
+function drawBattleWide(g,W,H,team){
+  STK.field=CANVAS[0].field;STK.mirror=CANVAS[0].mirror;OBJS=1.3;renderCanvas(STK);OBJS=1;
+  const sw=FW*.96,sh0=FH*.9,sx0=FW*.04,sy0=FH*.05,FA=sw/sh0;let fh=H,fw=fh*FA;const pad=H*.02;
+  let rem=W-fw;if(rem<H*.6){fw=W-H*.6;fh=fw/FA;rem=H*.6}const lw=Math.max(rem*.55,H*.32),rw=rem-lw,fx=lw,fy=(H-fh)/2;
+  g.fillStyle="rgba(14,18,30,.92)";g.fillRect(0,0,lw,H);g.fillRect(fx+fw,0,rw,H);
+  g.drawImage(STK.cv,sx0,sy0,sw,sh0,fx,fy,fw,fh);g.fillStyle=tcol(team);g.fillRect(fx-3,0,3,H);
+  const ids=legendIds().filter(id=>id!=="rookie"),cw2=(lw-pad*3)/2,ch2=(H-pad*2)/4;
+  ids.forEach((id,i)=>{const x=pad+(i%2)*(cw2+pad),y=pad+Math.floor(i/2)*ch2;g.fillStyle="rgba(255,255,255,.06)";g.fillRect(x,y,cw2,ch2-pad);drawChip(g,id,team,x,y,cw2,ch2-pad)});
+  const rx=fx+fw+pad,rw2=rw-pad*2;let y=pad;
+  const rk=Math.min(rw2,H*.32);g.fillStyle="rgba(255,255,255,.06)";g.fillRect(rx+(rw2-rk)/2,y,rk,rk);drawChip(g,"rookie",team,rx+(rw2-rk)/2,y,rk,rk);y+=rk+pad;
+  const need=SKILLS[0].need,p=Math.min(1,S.charge[team]/need),full=p>=1&&S.dblN[team]<SKILLS[0].max,fs=Math.min(rw2*.17,H*.06);
+  g.font=`800 ${fs}px 'M PLUS 1p',sans-serif`;g.textAlign="left";g.textBaseline="middle";g.fillStyle="#ff8fb1";g.fillText("♥ いいね",rx,y+fs*.6,rw2);y+=fs*1.3;
+  g.textAlign="right";g.fillStyle="#fff";g.font=`800 ${fs*1.1}px 'M PLUS 1p',sans-serif`;g.fillText(`${Math.floor(Math.min(S.charge[team],need))}`,rx+rw2-fs*2.4,y+fs*.6);g.fillStyle="#9aa3bd";g.font=`700 ${fs*.7}px 'M PLUS 1p',sans-serif`;g.fillText(`/${need}`,rx+rw2,y+fs*.66);y+=fs*1.4;
+  const gh=fs*.7;g.fillStyle="rgba(255,255,255,.12)";g.fillRect(rx,y,rw2,gh);const gr=g.createLinearGradient(rx,0,rx+rw2,0);gr.addColorStop(0,"#ff8fb1");gr.addColorStop(1,"#ffcf3f");g.fillStyle=gr;g.fillRect(rx,y,rw2*p,gh);
+  if(full){g.save();g.globalCompositeOperation="lighter";g.fillStyle=`rgba(255,240,170,${.25+.25*Math.sin(tick*.25)})`;g.fillRect(rx,y,rw2,gh);g.restore()}y+=gh+fs*.8;
+  g.font=`700 ${fs*.68}px 'M PLUS 1p',sans-serif`;g.textAlign="left";if(S.cheer[team]>0){g.fillStyle="#9fe3a8";g.fillText(`「${CFG.cheer}」+${S.cheer[team]}%`,rx,y,rw2);y+=fs*.9}if(S.ovf&&S.ovf[team]>=1){g.fillStyle="#ffb35c";g.fillText(`あふれ+${S.ovf[team]|0}%`,rx,y,rw2)}
+  const bth=Math.min(H*.17,rw2*.55);drawBtn(g,team,rx,H-pad-bth,rw2,bth,"wide");
+  const gt=S.gt&&S.gt[team],tk=gt&&gt.t-S.t<4?gt:null;
+  if(tk){const t=`${tk.name}さんの${UNITS.find(u=>u.id===tk.id).name} 出撃！`,tf=fh*.05;g.font=`800 ${tf}px 'M PLUS 1p',sans-serif`;const tw=Math.min(fw-pad*2,g.measureText(t).width+tf);g.fillStyle="rgba(10,14,24,.75)";g.fillRect(fx+(fw-tw)/2,fy+pad,tw,tf*1.5);g.fillStyle="#ffcf3f";g.textAlign="center";g.textBaseline="middle";g.fillText(t,fx+fw/2,fy+pad+tf*.78,tw-tf*.4)}
+  g.textBaseline="alphabetic";
+}
 function drawCam(g,W,H,team,src0,FA0,left,noClear){
   STK.field=CANVAS[0].field;STK.mirror=CANVAS[0].mirror;OBJS=1.3;renderCanvas(STK);OBJS=1;const src=STK.cv;
   if(!noClear)g.clearRect(0,0,W,H);
