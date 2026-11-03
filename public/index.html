@@ -279,12 +279,13 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
 .ppane>*:first-child{margin-top:0}.ppane section.spec,.ppane section.streamsec{margin:0}
 .ppane .stbar,.ppane .invcard{margin:0 0 12px}
 .histpane h2{margin:0 0 6px;font-size:18px}.histpane p{margin:0 0 10px}.hbtns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}.hbtns a{text-decoration:none;display:inline-flex}
+.whob{font-size:12px;font-weight:800;border-radius:999px;padding:4px 12px;border:1px solid var(--line);background:var(--panel)}.whob.own{color:#1a1033;background:var(--gold);border-color:var(--gold)}.whob.inv{color:var(--fg)}
 </style>
 
 <div class="wrap" id="wrap" data-phase="lobby">
 <header>
   <h1>ギフト攻城戦</h1>
-  <div class="snd"><button type="button" id="sndBtn" aria-pressed="true">効果音 ON</button><label for="vol">音量</label><input id="vol" type="range" min="0" max="1" step="0.05" value="0.5"><span class="tag">見本 v40・コイン見本表</span></div>
+  <div class="snd"><button type="button" id="sndBtn" aria-pressed="true">効果音 ON</button><label for="vol">音量</label><input id="vol" type="range" min="0" max="1" step="0.05" value="0.5"><span class="tag">見本 v40・コイン見本表</span><span class="whob" id="whoB" hidden></span></div>
 </header>
 <p class="lead">バトル中、視聴者には2人の映像が左右に並んで見えます。各自のゲーム画面は「自分の陣地の半分」だけを映し、真ん中の川でつながります。兵は川沿いのゲートに入ると、相手の画面のゲートから出てきます。中央の砦は2つの画面にまたがっていて、2人で取り合います。</p>
 
@@ -1582,7 +1583,7 @@ function netStart(m){NETX.rdone=false;const you=m.you;NET.team=you;NET.on=true;s
 function netBackToLobby(){NET.on=false;PRAC.on=false;wrapEl.classList.remove("net-b","net-r","prac","practest","offl");$("resOv").hidden=true;resTimer=null;setRoom("b");setPhase("lobby");newState();refreshUI();lobbyUI()}
 function netMsg(m){
   if(m.t==="rdone"){NETX.rdone=true;return}
-  if(m.t==="hi"){NETX.ok=true;netBadge();NETX.owner=!!m.owner;$("invCard").hidden=!m.owner||!!STREAM_NAME;if(m.owner&&!STREAM_NAME)invLoad();if(STREAM_NAME){NET.send({t:"watch",name:STREAM_NAME});return}NET.send(Object.assign({t:"hello"},cfgMsg()));loadGiftCatalog();updStreamLink();return}
+  if(m.t==="hi"){NETX.ok=true;netBadge();NETX.owner=!!m.owner;{const w=$("whoB");if(w&&!STREAM_NAME){w.hidden=false;w.className="whob "+(m.owner?"own":"inv");w.textContent=m.owner?"👑 オーナーとして入っています":`🎟️ 招待：@${m.who||"?"}`;w.title=m.owner?"全員の戦歴と招待の画面が使えます":"自分の戦歴だけ見られます"}}$("invCard").hidden=!m.owner||!!STREAM_NAME;if(m.owner&&!STREAM_NAME)invLoad();if(STREAM_NAME){NET.send({t:"watch",name:STREAM_NAME});return}NET.send(Object.assign({t:"hello"},cfgMsg()));loadGiftCatalog();updStreamLink();return}
   if(m.t==="emote"){CE_WAIT=false;if(m.e){CFG.cheerEmote=m.e;saveCfg();sendCfg();ceUI();$("ceMsg").textContent="登録しました。このスタンプが届くと攻撃アップ"}else{ceUI();$("ceMsg").textContent=m.err||"登録できませんでした"}return}
   if(m.t==="tt"){if(!NETX.room||NETX.room.practice)ttInfo("b",m.info,$("ttB").value.trim());lobbyUI();if(m.info&&m.info.st==="ok")loadGiftCatalog();return}
   if(m.t==="joined"||m.t==="lobby"){if(m.room.practice){NETX.room=m.room;return}if(PH!=="lobby"&&(m.room.phase!=="lobby"||!$("resOv").hidden||(S&&S.over))){NETX.room=m.room;NETX.you=m.you;return}netLobby(m.room,m.you);if(PH!=="lobby")netBackToLobby();return}
