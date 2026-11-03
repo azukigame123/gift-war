@@ -38,6 +38,13 @@ let INVDB = { users: [], revoked: [] };
 try { INVDB = Object.assign(INVDB, JSON.parse(fs.readFileSync(INV_FILE, "utf8"))); } catch (e) {}
 function saveInvDB() { try { fs.mkdirSync(DATA_DIR, { recursive: true }); const tmp = INV_FILE + ".tmp"; fs.writeFileSync(tmp, JSON.stringify(INVDB, null, 1)); fs.renameSync(tmp, INV_FILE); } catch (e) { console.log("[invite] save failed", e.message); } }
 const PERSIST = !!process.env.DATA_DIR || DATA_DIR === "/var/data";
+// ---------- who is connected right now (owner can see it in the invite list) ----------
+const CONNS = new Map(); // invite name -> Set of connection states
+function presence(name) {
+  const S = CONNS.get(name); let st = "";
+  if (S) for (const C of S) { const r = C.room; const v = r ? (r.phase === "battle" || r.phase === "countdown" ? (r.practice ? "練習中" : "対戦中") : r.practice ? "練習中" : "部屋で準備中") : "ゲーム画面"; if (!st || v.endsWith("中") && !st.endsWith("戦中")) st = v; }
+  return { online: !!(S && S.size), doing: st };
+}
 // ---------- match history (per streamer, newest first, max 200) ----------
 const HIST_FILE = pathM.join(DATA_DIR, "history.json");
 let HIST = {}; try { HIST = JSON.parse(fs.readFileSync(HIST_FILE, "utf8")) || {}; } catch (e) {}
@@ -96,7 +103,7 @@ const server = http.createServer(async (req, res) => {
     const who = checkInv(u.searchParams.get("inv"));
     res.writeHead(who && who.owner ? 200 : 403, { "content-type": "application/json", "cache-control": "no-store" });
     if (!who || !who.owner) return res.end(JSON.stringify({ ok: false }));
-    const list = () => INVDB.users.map(x => Object.assign({}, x, { url: PUBLIC_URL + "/?inv=" + makeInv(x.name), tiktok: "https://www.tiktok.com/@" + encodeURIComponent(x.name) }));
+    const list = () => INVDB.users.map(x => Object.assign({}, x, presence(x.name), { url: PUBLIC_URL + "/?inv=" + makeInv(x.name), tiktok: "https://www.tiktok.com/@" + encodeURIComponent(x.name) }));
     if (u.pathname === "/api/invites") return res.end(JSON.stringify({ ok: true, persist: PERSIST, users: list() }));
     const name = cleanTT(u.searchParams.get("name"));
     if (!name || name === "owner") return res.end(JSON.stringify({ ok: false, msg: "TikTokのユーザー名を入れてください" }));
@@ -246,6 +253,7 @@ function maybeClose(room) {
 const wss = new WebSocketServer({ server, path: "/ws", verifyClient: (info, cb) => { const q = new URL(info.req.url, "http://x").searchParams; const who = checkInv(q.get("inv")); if (!who) return cb(false, 401, "invite required"); info.req.who = who; cb(true); }, perMessageDeflate: { threshold: 512 } , maxPayload: 64 * 1024 });
 wss.on("connection", (ws, req) => {
   const WHO = req.who || { name: "guest", owner: false };
+  const PK = WHO.owner ? "" : WHO.name; let pc = null;
   const C = { ws, name: "", gifts: {}, cheer: "がんばれ", deck: UNIT_IDS.slice(), room: null, team: null, live: null, on: null, rate: 0 };
   let solo = null; // TikTok status while not in a room
   const soloLive = () => {
@@ -354,7 +362,8 @@ wss.on("connection", (ws, req) => {
     }
   });
   const rt = setInterval(() => { C.rate = 0; }, 1000);
-  ws.on("close", () => { clearInterval(rt); if (C.watch) { const W = WATCH.get(C.watch); if (W) { W.delete(ws); if (!W.size) WATCH.delete(C.watch); } } leave(); dropSolo(); if (C.learn) C.learn.stop(); });
+  ws.on("close", () => { clearInterval(rt); if (C.watch) { const W = WATCH.get(C.watch); if (W) { W.delete(ws); if (!W.size) WATCH.delete(C.watch); } } leave(); dropSolo(); if (C.learn) C.learn.stop(); if (pc) { const S = CONNS.get(PK); if (S) { S.delete(pc); if (!S.size) CONNS.delete(PK); } const ux = INVDB.users.find(x => x.name === PK); if (ux) { ux.seen = new Date().toISOString(); saveInvDB(); } } });
+  if (PK) { pc = C; let S = CONNS.get(PK); if (!S) CONNS.set(PK, S = new Set()); S.add(C); const ux = INVDB.users.find(x => x.name === PK); if (ux) { ux.seen = new Date().toISOString(); saveInvDB(); } }
   send(ws, { t: "hi", mock: TT.MOCK, version: 1, who: WHO.name, owner: !!WHO.owner });
 });
 

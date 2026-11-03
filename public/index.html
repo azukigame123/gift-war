@@ -280,6 +280,7 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
 .ppane .stbar,.ppane .invcard{margin:0 0 12px}
 .histpane h2{margin:0 0 6px;font-size:18px}.histpane p{margin:0 0 10px}.hbtns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}.hbtns a{text-decoration:none;display:inline-flex}
 .whob{font-size:12px;font-weight:800;border-radius:999px;padding:4px 12px;border:1px solid var(--line);background:var(--panel)}.whob.own{color:#1a1033;background:var(--gold);border-color:var(--gold)}.whob.inv{color:var(--fg)}
+.pres span{display:block;font-weight:800;font-size:12px}.pres .on{color:var(--green)}.pres .off{color:var(--muted)}.pres small{font-size:11px;color:var(--muted)}
 </style>
 
 <div class="wrap" id="wrap" data-phase="lobby">
@@ -294,7 +295,7 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
 <div class="invcard" id="invCard" hidden><span class="sti">🔑</span><span class="stt">配信者を招待する<small>TikTokのユーザー名を入れると、その人専用の招待URLができます。招待した人は下の一覧に保存されます</small></span>
   <input id="invName" type="text" maxlength="25" style="width:230px" placeholder="TikTokのユーザー名（@なしでOK）"><input id="invMemo" type="text" maxlength="40" placeholder="メモ（任意）"><button type="button" class="lbtn" id="invMake">招待URLを作る</button>
   <p class="invmsg" id="invMsg" hidden></p>
-  <div class="invtbl" id="invWrap" hidden><table><thead><tr><th>TikTok</th><th>招待した日</th><th>メモ</th><th></th></tr></thead><tbody id="invList"></tbody></table></div></div>
+  <div class="invtbl" id="invWrap" hidden><table><thead><tr><th>TikTok</th><th>いまの状態</th><th>招待した日</th><th>メモ</th><th></th></tr></thead><tbody id="invList"></tbody></table></div></div>
 <section class="lobby" id="lobby" data-mode="battle">
   <h2 class="lh">対戦の準備 <span class="netst off" id="netSt"><b>●</b> サーバー未接続（見本モード）</span></h2>
   <div class="modetabs" role="tablist" aria-label="遊び方"><button type="button" role="tab" data-mode="battle" aria-selected="true">⚔ バトル<small>友達と対戦</small></button><button type="button" role="tab" data-mode="prac" aria-selected="false">🎯 練習<small>ひとりでCPUと</small></button></div>
@@ -1695,13 +1696,14 @@ $("pracStop").onclick=()=>{if(NETX.ok&&NET.on){NET.send({t:"done"});return}
 const invApi=(p,q)=>fetch(`/api/${p}?inv=${encodeURIComponent(INV)}`+(q||""),{cache:"no-store"}).then(r=>r.json());
 function invMsg(t){const m=$("invMsg");m.textContent=t||"";m.hidden=!t}
 function invRender(users,persist){const tb=$("invList");$("invWrap").hidden=!users.length;tb.innerHTML="";
-  users.forEach(u=>{const tr=document.createElement("tr");const d=new Date(u.at);tr.innerHTML=`<td><a target="_blank" rel="noopener"></a></td><td>${isNaN(d)?"—":`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`}</td><td class="mm"></td><td class="op"><button type="button" class="lbtn cp">URLをコピー</button><button type="button" class="lbtn del">消す</button></td>`;
+  users.forEach(u=>{const tr=document.createElement("tr");const d=new Date(u.at);const sn=u.seen?new Date(u.seen):null,ago=sn?Math.round((Date.now()-sn)/60000):null,agoT=ago==null?"まだ入っていない":ago<60?`${ago}分前`:ago<1440?`${Math.round(ago/60)}時間前`:`${sn.getMonth()+1}/${sn.getDate()}`;tr.innerHTML=`<td><a target="_blank" rel="noopener"></a></td><td class="pres">${u.online?`<span class="on">● 入っている</span><small>${u.doing||""}</small>`:`<span class="off">○ 入っていない</span><small>最後：${agoT}</small>`}</td><td>${isNaN(d)?"—":`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`}</td><td class="mm"></td><td class="op"><button type="button" class="lbtn cp">URLをコピー</button><button type="button" class="lbtn del">消す</button></td>`;
    const a=tr.querySelector("a");a.href=u.tiktok;a.textContent="@"+u.name;tr.querySelector(".mm").textContent=u.memo||"";
    tr.querySelector(".cp").onclick=e=>{try{navigator.clipboard.writeText(u.url).then(()=>{e.target.textContent="コピーしました";setTimeout(()=>e.target.textContent="URLをコピー",1500)})}catch(x){}};
    const del=tr.querySelector(".del");del.onclick=async()=>{if(del.dataset.k!=="1"){del.dataset.k="1";del.textContent="本当に消す";setTimeout(()=>{del.dataset.k="";del.textContent="消す"},3000);return}
      const j=await invApi("invite/del",`&name=${encodeURIComponent(u.name)}`);if(j.ok){invRender(j.users,persist);invMsg(`@${u.name} を消しました。この人の招待URLはもう使えません`)}};
    tb.appendChild(tr)});
   if(persist===false)invMsg("※いまは保存用ディスクが付いていないので、サーバーを更新すると一覧が消えます")}
+setInterval(()=>{if(NETX.owner&&!document.hidden)invLoad()},20000);
 async function invLoad(){try{const j=await invApi("invites");if(j.ok){invLoad.persist=j.persist;invRender(j.users,j.persist)}}catch(e){}}
 $("invMake").onclick=async()=>{const n=$("invName").value.trim();if(!n)return;try{const j=await invApi("invite",`&name=${encodeURIComponent(n)}&memo=${encodeURIComponent($("invMemo").value.trim())}`);if(!j.ok){invMsg(j.msg||"作れませんでした");return}
   invRender(j.users,invLoad.persist);try{await navigator.clipboard.writeText(j.url);invMsg(`@${j.name} の招待URLを作って、コピーしました`)}catch(x){invMsg(`@${j.name} の招待URLを作りました（一覧の「URLをコピー」でコピーできます）`)}$("invName").value="";$("invMemo").value=""}catch(e){}};
