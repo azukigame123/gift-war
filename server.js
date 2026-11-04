@@ -159,10 +159,12 @@ function broadcast(room, o) {
   for (const t of ["b", "r"]) {
     const P = room.players[t]; if (!P) continue;
     if (P.ws) send(P.ws, Object.assign({ you: t }, o));
-    if ((o.t === "start" || o.t === "snap") && P.name && !P.cpu) { const W = WATCH.get(wkey(P.name)); if (W) { const msg = JSON.stringify(Object.assign({ you: t }, o)); for (const w of W) if (w.readyState === 1) w.send(msg); } }
+    if ((o.t === "start" || o.t === "snap") && !P.cpu) { const ws2 = new Set(); for (const k of pkeys(P)) { const W = WATCH.get(k); if (W) for (const w of W) ws2.add(w); } if (ws2.size) { const msg = JSON.stringify(Object.assign({ you: t }, o)); for (const w of ws2) if (w.readyState === 1) w.send(msg); } }
   }
 }
-function roomOf(name) { const k = wkey(name); for (const room of ROOMS.values()) for (const t of ["b", "r"]) { const P = room.players[t]; if (P && !P.cpu && P.name && wkey(P.name) === k) return { room, team: t }; } return null; }
+// a stream page can follow a player by TikTok name or by invite name (so the URL works before a TikTok ID is entered)
+function pkeys(P) { return [...new Set([P && P.name && wkey(P.name), P && P.who && P.who.name && wkey(P.who.name)].filter(Boolean))]; }
+function roomOf(name) { const k = wkey(name); for (const room of ROOMS.values()) for (const t of ["b", "r"]) { const P = room.players[t]; if (P && !P.cpu && pkeys(P).includes(k)) return { room, team: t }; } return null; }
 function lobbyUpdate(room) { broadcast(room, { t: "lobby", room: roomView(room) }); }
 
 function attachLive(room, team) {
@@ -346,7 +348,7 @@ wss.on("connection", (ws, req) => {
       case "act": { const room = C.room; if (!room || room.phase !== "battle" || !room.sim) return; if (m.a && m.a.a === "like") { const n = Date.now(); if (n - (C.likeT || 0) < 80) return; C.likeT = n; } try { room.sim.doAct(C.team, m.a); } catch (e) { } break; }
       case "done": {
         const room = C.room; if (!room) return;
-        if (C.name) { const W = WATCH.get(wkey(C.name)); if (W) for (const w of W) if (w.readyState === 1) w.send(JSON.stringify({ t: "rdone" })); }
+        for (const k of new Set([C.name && wkey(C.name), wkey(WHO.name)].filter(Boolean))) { const W = WATCH.get(k); if (W) for (const w of W) if (w.readyState === 1) w.send(JSON.stringify({ t: "rdone" })); }
         if (room.practice) { leave(); soloLive(); send(ws, { t: "left" }); return; }
         if (room.phase === "result") { room.phase = "lobby"; for (const t of ["b", "r"]) if (room.players[t]) room.players[t].ready = false; }
         lobbyUpdate(room); break;
