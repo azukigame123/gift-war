@@ -22,6 +22,7 @@ const GATE = process.env.INVITE_OFF !== "1";
 const PUBLIC_URL = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || "http://localhost:" + PORT).replace(/\/$/, "");
 const sig = name => crypto.createHmac("sha256", INV_SECRET).update(name).digest("base64url").slice(0, 16);
 const makeInv = name => encodeURIComponent(name) + "." + sig(name);
+const pboostKey = name => sig("pboost:" + name); // key for the 2倍タイム URL that ChainRoulette calls
 function checkInv(tok) {
   if (!GATE) return { name: "guest", owner: true };
   tok = String(tok || ""); const i = tok.lastIndexOf("."); if (i <= 0) return null;
@@ -84,6 +85,14 @@ const server = http.createServer(async (req, res) => {
     const who = checkInv(u.searchParams.get("inv"));
     res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
     return res.end(JSON.stringify(who ? { ok: true, name: who.name, owner: !!who.owner, gate: GATE } : { ok: false, gate: GATE }));
+  }
+  if (u.pathname === "/api/pboost") { // 押し合いの2倍タイム: /api/pboost?k=KEY&x=2&sec=30&side=all|h|x
+    const k = String(u.searchParams.get("k") || ""); let G = null;
+    for (const g of PUSHG.values()) { const a = Buffer.from(k), b = Buffer.from(pboostKey(g.who)); if (a.length === b.length && crypto.timingSafeEqual(a, b)) G = g; }
+    res.writeHead(G ? 200 : 404, { "content-type": "application/json", "cache-control": "no-store" });
+    if (!G) return res.end(JSON.stringify({ ok: false, msg: "押し合いが動いていないか、キーが違います" }));
+    const r = G.game.boost(u.searchParams.get("x"), u.searchParams.get("sec"), u.searchParams.get("side"));
+    TT.dbg(G.who, "push-boost", JSON.stringify(r)); return res.end(JSON.stringify(Object.assign({ ok: true }, r)));
   }
   if (u.pathname === "/api/history") {
     const who = checkInv(u.searchParams.get("inv"));
@@ -271,7 +280,11 @@ function pushLive(G, name) {
   for (const k in G.on) L.on(k, G.on[k]);
   G.on.state();
 }
-function pushStop(G) { clearInterval(G.loop); clearTimeout(G.dieT); if (G.live) { for (const k in G.on) G.live.off(k, G.on[k]); TT.release(G.live); G.live = null; } pushSend(G, { t: "pend" }); PUSHG.delete(G.who); }
+// before a push game starts (and after it stops) the stream pages show a still field and "0 / goal", using the last settings
+const PUSHLAST = new Map(); // watch key -> { cfg, gifts }
+function idleSnap(k) { const L = PUSHLAST.get(k) || {}, g = createPush(); g.start(L.cfg || {}, L.gifts || null); const s = g.snapshot(); s.idle = 1; s.g = 0; return s; }
+function pushIdle(G) { for (const k of pushKeys(G)) { const W = WATCH.get(k), msg = JSON.stringify({ t: "psnap", s: idleSnap(k) }); if (W) for (const w of W) if (w.readyState === 1) w.send(msg); } }
+function pushStop(G) { clearInterval(G.loop); clearTimeout(G.dieT); if (G.live) { for (const k in G.on) G.live.off(k, G.on[k]); TT.release(G.live); G.live = null; } pushSend(G, { t: "pend" }); PUSHG.delete(G.who); pushIdle(G); }
 function pushRun(G) {
   clearInterval(G.loop); let n = 0;
   G.loop = setInterval(() => { for (let q = 0; q < SPEED; q++) G.game.tick(1 / 30); if (++n % 2 === 0) pushSend(G, { t: "psnap", s: G.game.snapshot() }); }, 1000 / 30);
@@ -385,23 +398,25 @@ wss.on("connection", (ws, req) => {
         if (C.watch) { const W = WATCH.get(C.watch); if (W) W.delete(ws); }
         C.watch = k; if (!WATCH.has(k)) WATCH.set(k, new Set()); WATCH.get(k).add(ws);
         const f = roomOf(k); if (f && f.room.sim && f.room.phase !== "lobby") send(ws, { t: "start", you: f.team, room: roomView(f.room), s: snapshot(f.room.sim.S), resume: true });
-        const pg = pushOf(k); if (pg) send(ws, { t: "psnap", s: pg.game.snapshot() });
+        const pg = pushOf(k); send(ws, { t: "psnap", s: pg ? pg.game.snapshot() : idleSnap(k) });
         break;
       }
-      case "pstart": case "pslots": case "pskill": case "ptest": case "pstop": case "pjoin": {
+      case "pstart": case "pslots": case "pskill": case "ptest": case "pstop": case "pjoin": case "pboost": {
         if (!WHO.owner) return send(ws, { t: "err", msg: "押し合いモードは今はオーナーだけが使えます" });
         let G = PUSHG.get(WHO.name);
+        if (m.t === "pjoin" || m.t === "pstart") send(ws, { t: "pkey", k: pboostKey(WHO.name) });
         if (m.t === "pjoin") { if (G) { G.ops.add(ws); C.push = G; clearTimeout(G.dieT); send(ws, { t: "psnap", s: G.game.snapshot() }); if (G.live) send(ws, { t: "ptt", info: G.live.info() }); } break; }
         if (m.t === "pstart") {
           if (!G) { G = { game: createPush(), ops: new Set(), who: WHO.name, name: "", live: null, on: null }; PUSHG.set(WHO.name, G); }
           G.ops.add(ws); C.push = G; clearTimeout(G.dieT);
-          G.game.start(m.cfg || {}, m.gifts); pushLive(G, C.name); pushRun(G); pushSend(G, { t: "psnap", s: G.game.snapshot() }); break;
+          G.game.start(m.cfg || {}, m.gifts); pushLive(G, C.name); for (const k of pushKeys(G)) PUSHLAST.set(k, { cfg: m.cfg || {}, gifts: m.gifts || null }); pushRun(G); pushSend(G, { t: "psnap", s: G.game.snapshot() }); break;
         }
         if (!G) return;
-        if (m.t === "pslots") G.game.setSlots(m.gifts);
+        if (m.t === "pslots") { G.game.setSlots(m.gifts); for (const k of pushKeys(G)) { const L = PUSHLAST.get(k); if (L) L.gifts = m.gifts; } }
         else if (m.t === "pskill") G.game.skill(m.k === 2 ? 2 : 1);
         else if (m.t === "ptest") G.game.test(m.side === "x" ? "x" : "h", Math.max(0, Math.min(5, m.i | 0)), "テスト");
         else if (m.t === "pstop") pushStop(G);
+        else if (m.t === "pboost") G.game.boost(2, 30, "all");
         break;
       }
       case "ping": send(ws, { t: "pong", at: m.at }); break;

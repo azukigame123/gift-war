@@ -26,31 +26,41 @@ const L = 3000, GMAX = 10, AREA = 5, GSEC = 2;
 const TUNE = { hk: 2, hx: 3.5, wall: 1, ha: 1, hw: 16, r1: 200, r2: 300, ab: 1 };
 const VIEW = 570 * 0.4; // camera: hero sits 40% from the left of a 570px wide course
 
+// gift price → strength, same as the main game: m = coins / base (0.5–2), hp and attack × m^SME; a 2-coin soldier gift gives 2 soldiers
+const COINV = { soldier: 1, archer: 5, rider: 5, shield: 10, bomber: 30, mage: 99, golem: 299, dragon: 500 };
+const SME = { archer: { up: .8 }, bomber: { up: .6, dn: .6 }, shield: { dn: .8 }, dragon: { up: 1.1 }, golem: { up: 1.3, dn: 1.7 } }; // golem tuned for push mode (splits into two)
+function smOf(id, coins) { const b = COINV[id]; if (!b || !coins) return 1; return Math.max(.5, Math.min(2, coins / b)); }
+function powOf(id, coins) { if (id === "soldier") return 1; const m = smOf(id, coins), e = SME[id] || {}; return Math.pow(m, m >= 1 ? (e.up || 1) : (e.dn || 1)); }
+function countOf(id, coins) { return id === "soldier" && coins >= 2 ? 2 : 1; }
 function cleanSlots(g) {
   const out = { h: [], x: [] };
   for (const side of ["h", "x"]) {
     const src = g && Array.isArray(g[side]) ? g[side] : [];
     for (let i = 0; i < DEF[side].length; i++) {
       const d = DEF[side][i], v = src[i] && typeof src[i] === "object" ? src[i] : {};
-      out[side].push({ unit: d[0], label: d[4], id: String(v.id || d[1]).slice(0, 32), name: String(v.name || d[2]).slice(0, 40), coins: Math.max(0, Math.min(1e6, +v.coins || d[3])), img: typeof v.img === "string" && /^https:\/\//.test(v.img) ? v.img.slice(0, 600) : "" });
+      const coins = Math.max(0, Math.min(1e6, +v.coins || d[3]));
+      out[side].push({ unit: d[0], label: d[4], pw: powOf(d[0], coins), n: countOf(d[0], coins), id: String(v.id || d[1]).slice(0, 32), name: String(v.name || d[2]).slice(0, 40), coins, img: typeof v.img === "string" && /^https:\/\//.test(v.img) ? v.img.slice(0, 600) : "" });
     }
   }
   return out;
 }
 
 function createPush() {
-  let S = null, COUNT = 0, CFG = { goal: 5, fort: 3000, castle: 5000 }, interT = 0, uid = 1;
+  let S = null, COUNT = 0, CFG = { goal: 5, fort: 3000, castle: 5000 }, interT = 0, uid = 1, clock = 0;
+  const BOOST = { h: { x: 1, until: 0 }, x: { x: 1, until: 0 } }; // 2倍タイム (from ChainRoulette etc.): gifts spawn x times the units
+  const boostOf = side => BOOST[side].until > clock ? BOOST[side].x : 1;
   let slots = cleanSlots(null);
   const camS = () => Math.max(VIEW, Math.min(L - 570 * 0.6, S.hero.s));
   function newLap() { const fin = COUNT >= CFG.goal - 1, fr = fin ? CFG.fort * 2 : CFG.fort; S = { t: 0, gauge: 0, hero: { s: 150, cd: 0, atk: 40 * TUNE.ha, kb: 0, act: null }, units: [], fx: [], help: [], harm: [], fortB: CFG.castle, maxB: CFG.castle, fortR: fr, maxR: fr, final: fin, over: null, clear: false, feed: [], cut: null, mvp: {}, vfx: [], pops: [], shots: [], zones: [], shake: 0, flash: 0, push: .5 }; }
   function recent(a) { while (a.length && S.t - a[0].t > 20) a.shift(); return a.reduce((p, q) => p + q.c, 0); }
-  function add(side, id, label, coins, who, n) {
+  function add(side, id, label, coins, who, n, pw) {
     if (!S || S.over || !U[id]) return; const u = U[id], h = side === "h", c = camS();
-    for (let k = 0; k < (n || 1); k++) {
+    const reps = Math.round((n || 1) * (coins ? boostOf(side) : 1));
+    for (let k = 0; k < reps; k++) {
       const s = h ? Math.max(30, c - VIEW + Math.random() * 30) : Math.min(L - 30, c + 570 * .6 - Math.random() * 30);
       const hm = h ? 1 : 1 + (TUNE.hx - 1) * TUNE.hk / (TUNE.hk + recent(S.harm) / Math.min(20, Math.max(5, S.t)));
-      const hp = Math.round(u.hp * hm);
-      S.units.push({ i: uid++, side, id, s, y: (Math.random() - .5) * 80, hp, max: hp, cd: Math.random(), bob: Math.random() * 6, m: hm, g: Math.random() * .3, run: 0 });
+      const hp = Math.round(u.hp * hm * (pw || 1));
+      S.units.push({ i: uid++, side, id, s, y: (Math.random() - .5) * 80, hp, max: hp, cd: Math.random(), bob: Math.random() * 6, m: hm * (pw || 1), g: Math.random() * .3, run: 0 });
     }
     if (coins) { (h ? S.help : S.harm).push({ t: S.t, c: coins }); if (h) S.mvp[who] = (S.mvp[who] || 0) + coins; }
     if (coins >= 99 && !(S.cut && S.cut.id === "hero")) S.cut = { side, txt: `${who} の ${label}！`, t: 2.2, d: 2.2, id }; // the hero's big attack is never covered
@@ -171,11 +181,11 @@ function createPush() {
     if (S.fortR <= 0) { S.fortR = 0; end("h"); } else if (S.fortB <= 0) { S.fortB = 0; end("x"); }
   }
   // one server tick: the charge pose slows time like the preview
-  function tick(dt) { if (!S) return; if (!S.over) heroAct(dt); const slow = S.hero.act && S.hero.act.k === "charge" ? .22 : 1; step(dt * slow); }
+  function tick(dt) { if (!S) return; clock += dt; if (!S.over) heroAct(dt); const slow = S.hero.act && S.hero.act.k === "charge" ? .22 : 1; step(dt * slow); }
   function gift(g) { // g: {giftId, giftName, count, nick}
     if (!S || S.over) return null; const gn = String(g.giftName || "").toLowerCase();
     for (const side of ["h", "x"]) for (const sl of slots[side]) if ((sl.id && sl.id === String(g.giftId)) || (sl.name && sl.name.toLowerCase() === gn)) {
-      for (let i = 0; i < Math.min(200, g.count || 1); i++) add(side, sl.unit, `${sl.name}→${sl.label}`, sl.coins, String(g.nick || "だれか").slice(0, 24), 1);
+      for (let i = 0; i < Math.min(200, g.count || 1); i++) add(side, sl.unit, `${sl.name}→${sl.label}`, sl.coins, String(g.nick || "だれか").slice(0, 24), sl.n, sl.pw);
       return side;
     }
     return null;
@@ -190,20 +200,28 @@ function createPush() {
       u: S.units.map(u => [u.i, u.side, u.id, r1(u.s), r1(u.y), Math.round(u.hp / u.max * 100), u.atkT > 0 ? 1 : 0, u.mv > 0 ? 1 : 0, u.hitT > 0 ? 1 : 0, r1(u.bob), (u.stun > 0 ? 1 : 0) | (u.guardT > 0 ? 2 : 0) | (u.mini ? 4 : 0) | (u.aura > 0 ? 8 : 0) | (u.dash > 0 ? 16 : 0) | (u.tauntT > 0 ? 32 : 0)]),
       fx: S.fx.map(f => [r1(f.s), r1(f.y || 0), r1(f.t), f.c]), vfx: S.vfx.map(f => [f.k, r1(f.s), r1(f.t), f.d, r1(f.y || 0), f.side || ""]), pops: S.pops.map(p => [r1(p.s), r1(p.y), p.txt, r1(p.t), p.c, p.big ? 1 : p.sk ? 2 : 0]), shots: S.shots.map(q => [q.k, r1(q.a), r1(q.b), r1(q.c), r1(q.e), r1(q.t), q.d]), zones: S.zones.map(z => [r1(z.s), r1(z.y), z.r, r1(z.t), z.side]), hst: S.hero.stun > 0 ? 1 : 0,
       feed: S.feed.filter(f => S.t - f.t < 4).map(f => [f.side, f.txt, r1(S.t - f.t)]), cut: S.cut, sh: r1(S.shake), fl: r1(S.flash),
+      bst: { h: BOOST.h.until > clock ? [BOOST.h.x, Math.ceil(BOOST.h.until - clock)] : null, x: BOOST.x.until > clock ? [BOOST.x.x, Math.ceil(BOOST.x.until - clock)] : null },
       mvp: Object.entries(S.mvp).sort((a, b) => b[1] - a[1]).slice(0, 3),
-      slots: { h: slots.h.map(s => [s.unit, s.id, s.img, s.label]), x: slots.x.map(s => [s.unit, s.id, s.img, s.label]) },
+      slots: { h: slots.h.map(s => [s.unit, s.id, s.img, s.label, Math.round(s.pw * 10) / 10, s.n]), x: slots.x.map(s => [s.unit, s.id, s.img, s.label, Math.round(s.pw * 10) / 10, s.n]) },
     };
   }
   return {
     start(cfg, g) { CFG = { goal: [3, 5, 7, 10].includes(+cfg.goal) ? +cfg.goal : 5, fort: [1500, 3000, 5000].includes(+cfg.fort) ? +cfg.fort : 3000, castle: [3000, 5000, 8000].includes(+cfg.castle) ? +cfg.castle : 5000 }; if (g) slots = cleanSlots(g); COUNT = 0; interT = 0; newLap(); },
     setSlots(g) { slots = cleanSlots(g); },
+    boost(x, sec, side) { // calling again while it runs adds the time
+      x = Math.max(2, Math.min(5, Math.round(+x || 2))); sec = Math.max(5, Math.min(600, Math.round(+sec || 30)));
+      const sides = side === "h" || side === "x" ? [side] : ["h", "x"]; let until = 0;
+      for (const sd of sides) { const b = BOOST[sd]; b.until = (b.until > clock && b.x === x ? b.until : clock) + sec; b.x = x; until = Math.max(until, b.until - clock); }
+      if (S && !S.over) S.cut = { side: sides.length === 1 ? sides[0] : "h", txt: `${sides.length === 2 ? "" : sides[0] === "h" ? "救済 " : "妨害 "}${x}倍タイム！（${sec}秒）`, t: 2.2, d: 2.2, id: "boost" };
+      return { x, side: sides.length === 2 ? "all" : sides[0], left: Math.ceil(until) };
+    },
     get slots() { return slots; },
     get running() { return !!S; }, get S() { return S; }, TUNE, heroAct,
     tick, skill, gift, snapshot,
-    test(side, i, who) { const sl = slots[side] && slots[side][i]; if (sl) add(side, sl.unit, `${sl.name}→${sl.label}`, sl.coins, who || "テスト", 1); },
+    test(side, i, who) { const sl = slots[side] && slots[side][i]; if (sl) add(side, sl.unit, `${sl.name}→${sl.label}`, sl.coins, who || "テスト", sl.n, sl.pw); },
   };
 }
 
-const API = { createPush, DEF, cleanSlots, UNIT_IDS, U };
+const API = { createPush, DEF, cleanSlots, UNIT_IDS, U, COINV, smOf, powOf, countOf };
 if (typeof module !== "undefined" && module.exports) module.exports = API; else window.PushGame = API;
 })();

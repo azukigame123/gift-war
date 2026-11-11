@@ -319,13 +319,13 @@ html.mpush #wrap>*:not(header):not(#pushSec){display:none!important}
   <div class="snd"><button type="button" id="sndBtn" aria-pressed="true">効果音 ON</button><label for="vol">音量</label><input id="vol" type="range" min="0" max="1" step="0.05" value="0.5"><span class="tag">見本 v40・コイン見本表</span><span class="whob" id="whoB" hidden></span></div>
 </header>
 <section id="modeSel" aria-label="モードを選ぶ"><p class="note" style="color:var(--muted);margin:0">遊ぶモードを選んでください。あとから「モードを変える」でいつでも戻れます。</p>
-<div class="modes"><button type="button" class="mode b" data-mode="bat"><span class="ic">⚔️</span><h2>バトクラ</h2><p>TikTokバトルで相手の配信者と対戦。今までどおりの画面です。</p><span class="tg">2人で対戦</span></button>
-<button type="button" class="mode" data-mode="push"><span class="ic">🏰</span><h2>押し合い</h2><p>リスナーが救済と妨害に分かれて押し合い。勇者で砦を落としていく。</p><span class="tg" id="pRunTag">ひとりで配信</span></button></div></section>
-<div class="mbar" id="batBar"><span class="t">⚔️ バトクラ</span><button type="button" data-mode="sel">モードを変える</button></div>
+<div class="modes"><button type="button" class="mode b" data-gmode="bat"><span class="ic">⚔️</span><h2>バトクラ</h2><p>TikTokバトルで相手の配信者と対戦。今までどおりの画面です。</p><span class="tg">2人で対戦</span></button>
+<button type="button" class="mode" data-gmode="push"><span class="ic">🏰</span><h2>押し合い</h2><p>リスナーが救済と妨害に分かれて押し合い。勇者で砦を落としていく。</p><span class="tg" id="pRunTag">ひとりで配信</span></button></div></section>
+<div class="mbar" id="batBar"><span class="t">⚔️ バトクラ</span><button type="button" data-gmode="sel">モードを変える</button></div>
 <section id="pushSec" aria-label="押し合いモード">
-<div class="mbar"><span class="t">🏰 押し合い</span><span class="ptt" id="pTT"></span><button type="button" data-mode="sel">モードを変える</button></div>
+<div class="mbar"><span class="t">🏰 押し合い</span><span class="ptt" id="pTT"></span><button type="button" data-gmode="sel">モードを変える</button></div>
 <div class="pgrid">
- <div class="pcard"><h3>画面（配信に映るもの）</h3><div class="pv"><iframe id="pFrame" title="押し合いの画面" hidden></iframe><div class="wait" id="pWait">「押し合いを始める」を押すと、ここに画面が出ます</div></div>
+ <div class="pcard"><h3>画面（配信に映るもの）</h3><div class="pv"><iframe id="pFrame" title="押し合いの画面" hidden></iframe><div class="wait" id="pWait">サーバーにつながると、ここに画面が出ます</div></div>
   <div class="gauge"><i id="pGauge"></i></div><p class="note" id="pGaugeT">勇者ゲージ 0/10（2秒で1たまる）</p>
   <div class="sk"><button type="button" id="pSk1" disabled>⚔️ 単体攻撃（1）</button><button type="button" id="pSk2" disabled>🌀 範囲攻撃（5）</button></div>
   <p class="note">勇者の攻撃はこのボタンで出します。自動では出ません。</p></div>
@@ -336,13 +336,19 @@ html.mpush #wrap>*:not(header):not(#pushSec){display:none!important}
    <label for="pCastle">自分の城の耐久</label><select id="pCastle"><option>3000</option><option selected>5000</option><option>8000</option></select></div>
    <button type="button" class="go" id="pStart">押し合いを始める</button><button type="button" class="stop" id="pStop" hidden>押し合いをやめる</button>
    <p class="note">TikTokのユーザー名は、バトクラの「あなた」の欄と同じものを使います。魔王城（最後の1つ）は砦の耐久の2倍。</p></div>
-  <div class="pcard"><h3>ギフト</h3><div class="gsl" id="pGifts"></div><p class="note" id="pGMsg">緑が救済、赤が妨害。同じ値段のギフトから選べます。「テスト」でそのキャラを1体出せます（試合中だけ）。</p></div>
+  <div class="pcard"><h3>ギフト</h3><div class="gsl" id="pGifts"></div><p class="note" id="pGMsg">緑が救済、赤が妨害。基準の0.5〜2倍の値段のギフトから選べて、値段に合わせて強さが変わります（兵士は2コインで2体）。「テスト」でそのキャラを1体出せます（試合中だけ）。</p></div>
  </div>
 </div>
 <div class="pcard"><h3>配信用URL（押し合い）</h3>
  <div class="st"><span class="i">🏰</span><span><b>押し合い用URL</b><small>コースと勇者・ギフト欄が映る画面</small></span><span class="sz">640×600</span><code id="pUrl1">サーバーにつながると出ます</code><button type="button" id="pCopy1">コピー</button></div>
  <div class="st"><span class="i">🔢</span><span><b>カウント用URL</b><small>落とした砦の数。背景は透明で、好きな場所に重ねる</small></span><span class="sz">440×220</span><code id="pUrl2">サーバーにつながると出ます</code><button type="button" id="pCopy2">コピー</button></div>
+ <div class="st"><span class="i">🎮</span><span><b>押し合い用（攻撃ボタンつき）</b><small>押し合い用の画面の下（敵の欄の下）に、単体攻撃・範囲攻撃のボタンがつく。画面を触って攻撃できる（ボタンも配信に映ります）</small></span><span class="sz">640×672</span><code id="pUrl4">サーバーにつながると出ます</code><button type="button" id="pCopy4">コピー</button></div>
  <p class="note">バトクラ用のURL（バトル用・全体表示用）とは別です。OBSにそれぞれブラウザソースとして足します。このURLには入場用の鍵が入っているので、ほかの人に見せないでください。</p></div>
+<div class="pcard"><h3>ChainRouletteと連動（2倍タイム）</h3>
+ <p class="note">このURLを呼ぶと、押し合いのギフトで出るキャラが一定時間2倍になります。ChainRouletteのアクションで「URLを呼ぶ」に貼ってください。</p>
+ <div class="st"><span class="i">⚡</span><span><b>2倍タイムのURL</b><small>x＝倍率（2〜5）　sec＝秒数　side＝all（両方）／h（救済だけ）／x（妨害だけ）</small></span><span class="sz">押し合い中だけ効く</span><code id="pUrl3">サーバーにつながると出ます</code><button type="button" id="pCopy3">コピー</button></div>
+ <button type="button" id="pBoost">2倍タイムを試す（両方・30秒）</button>
+ <p class="note">2倍タイム中にもう一度呼ぶと、時間がのびます。このURLにも鍵が入っているので、ほかの人に見せないでください。</p></div>
 </section>
 <p class="lead">バトル中、視聴者には2人の映像が左右に並んで見えます。各自のゲーム画面は「自分の陣地の半分」だけを映し、真ん中の川でつながります。兵は川沿いのゲートに入ると、相手の画面のゲートから出てきます。中央の砦は2つの画面にまたがっていて、2人で取り合います。</p>
 
@@ -1639,7 +1645,7 @@ function netStart(m){NETX.rdone=false;const you=m.you;NET.team=you;NET.on=true;s
   const it=setInterval(()=>{k--;if(k>0){n.textContent=k;play("beep")}else if(k===0){n.textContent="START!";play("go")}else{clearInterval(it);ov.hidden=true;setPhase("battle")}},900)})}
 function netBackToLobby(){NET.on=false;PRAC.on=false;wrapEl.classList.remove("net-b","net-r","prac","practest","offl");$("resOv").hidden=true;resTimer=null;setRoom("b");setPhase("lobby");newState();refreshUI();lobbyUI()}
 function netMsg(m){
-  if(m.t==="psnap"||m.t==="ptt"||m.t==="pend"){if(window.PUSHUI)PUSHUI.msg(m);return}
+  if(m.t==="psnap"||m.t==="ptt"||m.t==="pend"||m.t==="pkey"){if(window.PUSHUI)PUSHUI.msg(m);return}
   if(m.t==="hi")setTimeout(()=>{if(window.PUSHUI)PUSHUI.hi(m)});
   if(m.t==="rdone"){NETX.rdone=true;return}
   if(m.t==="hi"){NETX.ok=true;netBadge();NETX.owner=!!m.owner;NETX.who=m.who||"";{const w=$("whoB");if(w&&!STREAM_NAME){w.hidden=false;w.className="whob "+(m.owner?"own":"inv");w.textContent=m.owner?"👑 オーナーとして入っています":`🎟️ 招待：@${m.who||"?"}`;w.title=m.owner?"全員の戦歴と招待の画面が使えます":"自分の戦歴だけ見られます"}}$("invCard").hidden=!m.owner||!!STREAM_NAME;if(m.owner&&!STREAM_NAME)invLoad();if(STREAM_NAME){NET.send({t:"watch",name:STREAM_NAME});return}NET.send(Object.assign({t:"hello"},cfgMsg()));loadGiftCatalog();updStreamLink();return}
@@ -1811,20 +1817,23 @@ refreshUI();netGate();frame();
              x:[["soldier","5269","TikTok",1,"子分"],["rider","13538","おまもり",5,"狼騎兵"],["shield","51281","DJレコード",10,"盾ゴブリン"],["mage","8343","ハンドハート",100,"黒魔導士"],["golem","6267","コーギー",299,"岩の巨人"],["dragon","11583","DJメガネ",500,"魔竜"]]};
   let PC={goal:5,fort:3000,castle:5000,gifts:null};try{Object.assign(PC,JSON.parse(localStorage.getItem("giftwar_push")||"{}"))}catch(e){}
   const save=()=>{try{localStorage.setItem("giftwar_push",JSON.stringify(PC))}catch(e){}};
+  const PCV={soldier:1,rider:5,shield:10,mage:99,golem:299,dragon:500},PSME={shield:{dn:.8},dragon:{up:1.1},golem:{up:1.3,dn:1.7}};
+  const ppow=(id,c)=>{if(id==="soldier")return 1;const m=Math.max(.5,Math.min(2,c/PCV[id])),e=PSME[id]||{};return Math.pow(m,m>=1?(e.up||1):(e.dn||1))};
+  const ptag=(id,c)=>{if(id==="soldier")return c>=2?"　2体":"";const p=ppow(id,c);return Math.abs(p-1)<.05?"":`　強さ×${p.toFixed(1)}`};
   const slots=()=>{const o={};for(const sd of ["h","x"])o[sd]=DEF[sd].map((d,i)=>{const v=PC.gifts&&PC.gifts[sd]&&PC.gifts[sd][i];return v&&v.id?v:{id:d[1],name:d[2],coins:d[3],img:""}});return o};
   let CAT=[],RUN=false,OWNER=false,LAST=null;
-  const setMode=k=>{H.classList.remove("msel","mpush","mbat");if(!OWNER)return;H.classList.add(k==="push"?"mpush":k==="bat"?"mbat":"msel");if(k==="push")urls();window.dispatchEvent(new Event("resize"))};
-  document.addEventListener("click",e=>{const b=e.target.closest("[data-mode]");if(b){setMode(b.dataset.mode);if(b.dataset.mode!=="sel")window.scrollTo(0,0)}});
+  const setMode=k=>{H.classList.remove("msel","mpush","mbat");if(!OWNER)return;H.classList.add(k==="push"?"mpush":k==="bat"?"mbat":"msel");if(k==="push"){urls();frame()}window.dispatchEvent(new Event("resize"))};
+  document.addEventListener("click",e=>{const b=e.target.closest("[data-gmode]");if(b){setMode(b.dataset.gmode);if(b.dataset.gmode!=="sel")window.scrollTo(0,0)}});
   const key=()=>{const t=$("ttB");return (t&&t.value.trim().replace(/^@/,""))||(window.GW&&GW.NETX.who)||""};
-  const urls=()=>{const n=key();if(!n||!window.GW||!GW.NETX.ok){$("pUrl1").textContent=$("pUrl2").textContent="サーバーにつながると出ます";return}
-    const iv=window.GW&&GW.INV?`&inv=${encodeURIComponent(GW.INV)}`:"";$("pUrl1").textContent=`${location.origin}/?stream=${encodeURIComponent(n)}&v=push${iv}`;$("pUrl2").textContent=`${location.origin}/?stream=${encodeURIComponent(n)}&v=count${iv}`};
-  for(const [b,c] of [["pCopy1","pUrl1"],["pCopy2","pUrl2"]])$(b).onclick=async()=>{const t=$(c).textContent;if(!/^https?:/.test(t))return;try{await navigator.clipboard.writeText(t);$(b).textContent="コピーしました";setTimeout(()=>$(b).textContent="コピー",1500)}catch(e){const r=document.createRange();r.selectNodeContents($(c));const se=getSelection();se.removeAllRanges();se.addRange(r)}};
+  const urls=()=>{const n=key();if(!n||!window.GW||!GW.NETX.ok){$("pUrl1").textContent=$("pUrl2").textContent=$("pUrl4").textContent="サーバーにつながると出ます";return}
+    const iv=window.GW&&GW.INV?`&inv=${encodeURIComponent(GW.INV)}`:"";$("pUrl1").textContent=`${location.origin}/?stream=${encodeURIComponent(n)}&v=push${iv}`;$("pUrl2").textContent=`${location.origin}/?stream=${encodeURIComponent(n)}&v=count${iv}`;$("pUrl4").textContent=`${location.origin}/?stream=${encodeURIComponent(n)}&v=push&btn=1${iv}`};
+  for(const [b,c] of [["pCopy1","pUrl1"],["pCopy2","pUrl2"],["pCopy3","pUrl3"],["pCopy4","pUrl4"]])$(b).onclick=async()=>{const t=$(c).textContent;if(!/^https?:/.test(t))return;try{await navigator.clipboard.writeText(t);$(b).textContent="コピーしました";setTimeout(()=>$(b).textContent="コピー",1500)}catch(e){const r=document.createRange();r.selectNodeContents($(c));const se=getSelection();se.removeAllRanges();se.addRange(r)}};
   // gift pickers: same price as the slot
   function gifts(){const box=$("pGifts");box.innerHTML="";const cur=slots();
     for(const sd of ["h","x"])DEF[sd].forEach((d,i)=>{const lab=document.createElement("label");lab.className=sd;lab.textContent=`${sd==="h"?"🟢":"🔴"} ${d[4]}`;lab.htmlFor=`pg-${sd}-${i}`;
       const sel=document.createElement("select");sel.id=`pg-${sd}-${i}`;const c=cur[sd][i];
-      const opts=CAT.filter(g=>g.coins===d[3]);if(!opts.some(g=>g.id===c.id))opts.unshift({id:c.id,name:c.name,coins:c.coins,img:c.img});
-      for(const g of opts){const o=document.createElement("option");o.value=g.id;o.textContent=`${g.name}（${g.coins}）`;sel.appendChild(o)}sel.value=c.id;
+      const base=PCV[d[0]],opts=CAT.filter(g=>g.coins>=base*.5&&g.coins<=base*2).sort((a,b)=>a.coins-b.coins||a.name.localeCompare(b.name,"ja"));if(!opts.some(g=>g.id===c.id))opts.unshift({id:c.id,name:c.name,coins:c.coins,img:c.img});
+      for(const g of opts){const o=document.createElement("option");o.value=g.id;o.textContent=`${g.name}（${g.coins}コイン）${ptag(d[0],g.coins)}`;sel.appendChild(o)}sel.value=c.id;
       sel.onchange=()=>{const all=slots();const used=["h","x"].some(s2=>all[s2].some((q,j)=>!(s2===sd&&j===i)&&q.id===sel.value));if(used){sel.value=c.id;$("pGMsg").textContent="そのギフトはほかのキャラで使っています。同じギフトは1つのキャラにしか割り当てられません";return}
         const g=opts.find(x=>x.id===sel.value);all[sd][i]={id:g.id,name:g.name,coins:g.coins,img:g.img||""};PC.gifts=all;save();$("pGMsg").textContent="変えました。試合中でもすぐ反映されます。";if(RUN)NET.send({t:"pslots",gifts:all});gifts()};
       const tb=document.createElement("button");tb.type="button";tb.textContent="テスト";tb.onclick=()=>NET.send({t:"ptest",side:sd,i});
@@ -1836,13 +1845,15 @@ refreshUI();netGate();frame();
   $("pStart").onclick=()=>{if(RUN&&!confirmRestart())return;PC.gifts=slots();save();if(window.GW)NET.send(Object.assign({t:"cfg"},GW.cfgMsg()));NET.send({t:"pstart",cfg:{goal:PC.goal,fort:PC.fort,castle:PC.castle},gifts:PC.gifts});frame()};
   let armed=0;const confirmRestart=()=>{if(Date.now()-armed<4000)return true;armed=Date.now();$("pStart").textContent="もう一度押すと最初からやり直します";setTimeout(()=>{$("pStart").textContent=RUN?"設定を変えて最初から":"押し合いを始める"},4000);return false};
   $("pStop").onclick=()=>{if(Date.now()-(armed||0)<4000&&$("pStop").dataset.a){NET.send({t:"pstop"});return}armed=Date.now();$("pStop").dataset.a=1;$("pStop").textContent="もう一度押すとやめます";setTimeout(()=>{$("pStop").textContent="押し合いをやめる";delete $("pStop").dataset.a},4000)};
+  $("pBoost").onclick=()=>NET.send({t:"pboost"});
   $("pSk1").onclick=()=>NET.send({t:"pskill",k:1});$("pSk2").onclick=()=>NET.send({t:"pskill",k:2});
   const runUI=()=>{$("pStop").hidden=!RUN;$("pStart").textContent=RUN?"設定を変えて最初から":"押し合いを始める";$("pRunTag").textContent=RUN?"▶ 進行中":"ひとりで配信";if(!RUN){$("pSk1").disabled=$("pSk2").disabled=true;$("pGauge").style.width="0";$("pGaugeT").textContent="勇者ゲージ 0/10（2秒で1たまる）"}};
   window.PUSHUI={
     hi(m){OWNER=!!m.owner;if(!OWNER){setMode(null);return}NET.send({t:"pjoin"});if(!H.classList.contains("mpush")&&!H.classList.contains("mbat"))setMode("sel");urls()},
-    msg(m){if(m.t==="pend"){RUN=false;LAST=null;$("pFrame").hidden=true;$("pWait").hidden=false;$("pTT").textContent="";runUI();return}
+    msg(m){if(m.t==="pend"){RUN=false;LAST=null;$("pTT").textContent="";runUI();return}
+      if(m.t==="pkey"){$("pUrl3").textContent=`${location.origin}/api/pboost?k=${encodeURIComponent(m.k)}&x=2&sec=30&side=all`;return}
       if(m.t==="ptt"){const i=m.info||{};$("pTT").textContent=i.st==="ok"?"● TikTok 配信中":i.st==="wait"?"TikTok 接続中…":i.st?(i.msg||"TikTokにつながっていません"):"";return}
-      if(m.t==="psnap"&&m.s){const was=RUN;RUN=true;LAST=m.s;if(!was){runUI();frame()}const gv=m.s.g;$("pGauge").style.width=gv*10+"%";$("pGaugeT").textContent=`勇者ゲージ ${Math.floor(gv)}/10（2秒で1たまる）`+(m.s.over?"　—　周の合間":"");
+      if(m.t==="psnap"&&m.s){if(m.s.idle)return;const was=RUN;RUN=true;LAST=m.s;if(!was){runUI();frame()}const gv=m.s.g;$("pGauge").style.width=gv*10+"%";$("pGaugeT").textContent=`勇者ゲージ ${Math.floor(gv)}/10（2秒で1たまる）`+(m.s.over?"　—　周の合間":"");
         const busy=!!m.s.over||!!(m.s.hero&&m.s.hero.act);$("pSk1").disabled=busy||gv<1;$("pSk2").disabled=busy||gv<5}}
   };
   const t=$("ttB");if(t)t.addEventListener("input",urls);
