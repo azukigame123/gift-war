@@ -61,7 +61,7 @@ const GIMG={},GURL={};fetch("gift-catalog.json").then(r=>r.json()).then(j=>{for(
 const gimg=(id,url)=>{const u=url||GURL[id];if(!u)return null;if(!GIMG[u]){const i=new Image();i.referrerPolicy="no-referrer";i.src=u;GIMG[u]=i}return GIMG[u]};
 // ---------- layout ----------
 const SH=96,GX=0,GW=64,TOP=SH+4,BOT=H-SH-4,CX=GW+6,CW=W-CX,LANE=BOT-95;
-const L=3000,PX=1,GMAX=10,AREA=5,R1=200,R2=300,WF=3;
+const L=3000,PX=1,GMAX=10,AREA=5,R1=200,R2=300,WF=3,UWF=3;
 // ---------- state from server snapshots (interpolated) ----------
 let SN=null,PREV=null,tSn=0,iv=66,S=null;
 // cut-ins run on this page's own clock: a new one starts when the server shows a different text, then plays once to the end
@@ -107,7 +107,7 @@ function draw(){const hero=S.hero;g.clearRect(0,0,W,H);g.fillStyle="#0b0f1d";g.f
   if(fly){g.fillStyle="rgba(0,0,0,.25)";g.beginPath();g.ellipse(x,y-2,26*sc,7*sc,0,0,7);g.fill();y-=22+Math.sin(S.t*3+u.bob)*4}
   if(u.aura){g.fillStyle=u.side==="h"?"rgba(255,215,90,.35)":"rgba(255,90,140,.35)";g.beginPath();g.ellipse(x,y-2,30*sc,9*sc,0,0,7);g.fill()}
   if(u.dash){g.strokeStyle="rgba(255,255,255,.7)";g.lineWidth=2;for(let k=0;k<4;k++){const ly=y-12-k*9,d=u.side==="h"?-1:1;g.beginPath();g.moveTo(x+d*20,ly);g.lineTo(x+d*(44+k*6),ly);g.stroke()}}
-  const k=u.hit?"hurt":u.atk?"attack":u.mv?(Math.floor(S.t*6+u.bob)%2?"walk1":"walk2"):"idle";
+  const k=u.hit?"hurt":u.atk?"attack":u.mv?(Math.floor(S.t*UWF+u.bob)%2?"walk1":"walk2"):"idle";
   if(u.side==="x"){espr(EMAP[u.id],k==="hurt"?"hit":k,x,y,EH[EMAP[u.id]]*sc)||spr(u.id+"_r",x,y,(SZ[u.id]||40)*1.35*sc,true)}
   else{pspr(u.id,k,x,y,hh(u.id)*sc)||spr(u.id+"_b",x,y,(SZ[u.id]||40)*1.35*sc,false)}
   const top=y-(u.side==="x"?EH[EMAP[u.id]]||60:hh(u.id))*sc;
