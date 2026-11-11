@@ -85,8 +85,8 @@ function rr(x,y,w,h,r,f){g.beginPath();g.roundRect(x,y,w,h,r);g.fillStyle=f;g.fi
 function arrow(x1,x2,y,col){g.strokeStyle=col;g.lineWidth=4;g.beginPath();g.moveTo(x1,y);g.lineTo(x2,y);g.stroke();const d=Math.sign(x2-x1);g.fillStyle=col;g.beginPath();g.moveTo(x2+d*10,y);g.lineTo(x2-d*4,y-8);g.lineTo(x2-d*4,y+8);g.fill()}
 function strip(Lst,y,side){const h=side==="h",x0=CX+6,x1=W-8,n=Lst.length,cw=(x1-x0)/n;
  rr(CX,y,W-CX-4,SH,12,h?"rgba(14,52,30,.94)":"rgba(64,14,26,.94)");
- Lst.forEach(([id,gid,url],i)=>{const k=h?i:n-1-i,x=x0+k*cw;rr(x+2,y+4,cw-4,SH-16,9,"rgba(255,255,255,.08)");
-  const gi=gimg(gid,url);if(gi&&gi.complete&&gi.naturalWidth)g.drawImage(gi,x+5,y+8,32,32);
+ Lst.forEach(([id,gid,url,lb,pw,cnt],i)=>{const k=h?i:n-1-i,x=x0+k*cw;rr(x+2,y+4,cw-4,SH-16,9,"rgba(255,255,255,.08)");
+  const gi=gimg(gid,url);if(gi&&gi.complete&&gi.naturalWidth)g.drawImage(gi,x+5,y+8,32,32);const tg=cnt>1?`×${cnt}体`:pw&&Math.abs(pw-1)>=.05?`×${pw}`:"";if(tg)txt(tg,x+21,y+54,13,pw>1||cnt>1?"#ffe27a":"#cbd3ea","center",4);
   ((!h&&espr(EMAP[id],"idle",x+cw/2+6,y+SH-13,id==="dragon"||id==="golem"?70:62))||spr(id+(h?"_b":"_r"),x+cw/2+8,y+SH-13,id==="dragon"||id==="golem"?80:72,!h))});
  arrow(h?x0:x1-10,h?x1-10:x0,y+SH-5,h?"#3fd47a":"#ff4d6a")}
 function draw(){const hero=S.hero;g.clearRect(0,0,W,H);g.fillStyle="#0b0f1d";g.fillRect(0,0,W,H);
