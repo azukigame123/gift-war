@@ -75,7 +75,7 @@ function hydrate(now){if(!SN)return null;const a=Math.min(1.5,(now-tSn)/iv),pm={
   shots:(SN.shots||[]).map(q=>({k:q[0],a:q[1],b:q[2],c:q[3],e:q[4],t:q[5]-el,d:q[6]})).filter(q=>q.t>0),zones:(SN.zones||[]).map(z=>({s:z[0],y:z[1],r:z[2],t:z[3]-el,side:z[4]})).filter(z=>z.t>0),hst:SN.hst,
   fx:SN.fx.map(f=>({s:f[0],y:f[1],t:f[2]-el,c:f[3]})).filter(f=>f.t>0),vfx:SN.vfx.map(f=>({k:f[0],s:f[1],t:f[2]-el,d:f[3],y:f[4]||0,side:f[5]})).filter(f=>f.t>0),
   pops:SN.pops.map(p=>({s:p[0],y:p[1],txt:p[2],t:p[3]-el,c:p[4],big:p[5]})).filter(p=>p.t>0),feed:SN.feed.map(f=>({side:f[0],txt:f[1],age:f[2]+el})),
-  cut:cutNow(now),shake:Math.max(0,SN.sh-el*40),flash:Math.max(0,SN.fl-el),mvp:SN.mvp,slots:SN.slots}}
+  cut:cutNow(now),bst:SN.bst||{},shake:Math.max(0,SN.sh-el*40),flash:Math.max(0,SN.fl-el),mvp:SN.mvp,slots:SN.slots}}
 // ---------- drawing (same as the approved preview) ----------
 const camS=()=>Math.max((CW*.4)/PX,Math.min(L-(CW*.6)/PX,S.hero.s));
 const X=s=>CX+CW*.4+(s-camS())*PX;
@@ -136,14 +136,16 @@ function draw(){const hero=S.hero;g.clearRect(0,0,W,H);g.fillStyle="#0b0f1d";g.f
  g.fillStyle="rgba(10,14,28,.78)";g.fillRect(CX,TOP+2,CW,30);
  const bx=CX+80,bw=CW-160,p=hero.s/L;rr(bx,TOP+10,bw,14,7,"#ff4d6a");rr(bx,TOP+10,Math.max(14,bw*p),14,7,"#3fd47a");g.fillStyle="#fff";g.beginPath();g.arc(bx+bw*p,TOP+17,9,0,7);g.fill();
  g.font='800 11px "M PLUS 1p"';g.fillStyle="#bff5d2";g.textAlign="right";g.fillText("自分の城",bx-6,TOP+22);g.fillStyle=S.final?"#ffcf3f":"#ffd0d8";g.textAlign="left";g.fillText(S.final?"魔王城":"敵の砦",bx+bw+6,TOP+22);
- S.feed.forEach((f,i)=>{if(f.age>4)return;g.globalAlpha=Math.min(1,4-f.age);txt(f.txt,CX+CW/2,TOP+56+i*20,14,f.side==="h"?"#7dffae":"#ff8da0","center",4);g.globalAlpha=1});
+ {const b=S.bst||{},parts=[];if(b.h&&b.x&&b.h[1]===b.x[1]&&b.h[0]===b.x[0])parts.push([`⚡ ${b.h[0]}倍タイム　残り${b.h[1]}秒`,"#ffcf3f"]);else{if(b.h)parts.push([`⚡ 救済${b.h[0]}倍　残り${b.h[1]}秒`,"#7dffae"]);if(b.x)parts.push([`⚡ 妨害${b.x[0]}倍　残り${b.x[1]}秒`,"#ff8da0"])}
+  parts.forEach(([t,c],i)=>{const y=TOP+38+i*30,w=Math.min(CW-40,260);g.save();g.globalAlpha=.88;rr(CX+CW/2-w/2,y,w,26,13,"rgba(10,14,28,.85)");g.strokeStyle=c;g.lineWidth=2;g.beginPath();g.roundRect(CX+CW/2-w/2,y,w,26,13);g.stroke();g.restore();txt(t,CX+CW/2,y+20,16,c,"center",4)})}
+ S.feed.forEach((f,i)=>{if(f.age>4)return;g.globalAlpha=Math.min(1,4-f.age);txt(f.txt,CX+CW/2,TOP+56+(S.bst&&(S.bst.h||S.bst.x)?(S.bst.h&&S.bst.x&&S.bst.h[1]!==S.bst.x[1]?60:30):0)+i*20,14,f.side==="h"?"#7dffae":"#ff8da0","center",4);g.globalAlpha=1});
  if(S.cut){const c=S.cut,e=c.d-c.t,h=c.side==="h",dir=h?1:-1,T=.28,eo=v=>1-Math.pow(1-Math.min(1,Math.max(0,v)),3);
   let ox=0;if(e<T)ox=-dir*(1-eo(e/T))*(CW+80);else if(c.t<T)ox=dir*eo((T-c.t)/T)*(CW+80);
   const y=TOP+150,bh=96;g.save();g.translate(ox,0);
   g.fillStyle=h?"rgba(16,96,52,.95)":"rgba(120,18,40,.95)";g.beginPath();g.moveTo(CX-20,y-bh/2);g.lineTo(W+20,y-bh/2-14);g.lineTo(W+20,y+bh/2-14);g.lineTo(CX-20,y+bh/2);g.closePath();g.fill();
   g.strokeStyle=h?"#7dffae":"#ff8da0";g.lineWidth=4;g.stroke();
   g.strokeStyle="rgba(255,255,255,.35)";g.lineWidth=2;for(let i=0;i<6;i++){const ly=y-bh/2+14+i*13,lx=CX+((i*97+S.t*900*dir)%CW+CW)%CW;g.beginPath();g.moveTo(lx,ly);g.lineTo(lx+70*dir,ly);g.stroke()}
-  const sx=h?CX+70:W-70;if(c.id==="hero")hspr("charge",sx,y+bh/2+8,.5);else if(!h&&EMAP[c.id])espr(EMAP[c.id],"attack",sx,y+bh/2+6,104);else spr(c.id+(h?"_b":"_r"),sx,y+bh/2+6,118,!h);
+  const sx=h?CX+70:W-70;if(c.id==="boost")txt("⚡",sx,y+24,56,"#ffcf3f","center",6);else if(c.id==="hero")hspr("charge",sx,y+bh/2+8,.5);else if(!h&&EMAP[c.id])espr(EMAP[c.id],"attack",sx,y+bh/2+6,104);else spr(c.id+(h?"_b":"_r"),sx,y+bh/2+6,118,!h);
   txt(c.txt,h?CX+CW/2+50:CX+CW/2-50,y+10,24,"#fff","center",6,CW-170);g.restore()}
  if(S.over){g.fillStyle="rgba(4,6,14,.82)";g.fillRect(CX,TOP,CW,BOT-TOP);const win=S.over==="h",mx=CX+CW/2,goal=S.cfg.goal;
   txt(S.clear?"目標達成！":win?"勇者の勝ち！":"妨害の勝ち！",mx,TOP+70,40,S.clear?"#ffcf3f":win?"#7dffae":"#ff8da0",null,8);txt(S.clear?`魔王城を落とした！（${S.n}/${goal}）`:win?`敵の砦を落とした ＋1（${S.n}/${goal}）`:`自分の城が落とされた −1（${S.n}/${goal}）`,mx,TOP+104,17,"#fff");

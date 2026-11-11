@@ -22,6 +22,7 @@ const GATE = process.env.INVITE_OFF !== "1";
 const PUBLIC_URL = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || "http://localhost:" + PORT).replace(/\/$/, "");
 const sig = name => crypto.createHmac("sha256", INV_SECRET).update(name).digest("base64url").slice(0, 16);
 const makeInv = name => encodeURIComponent(name) + "." + sig(name);
+const pboostKey = name => sig("pboost:" + name); // key for the 2倍タイム URL that ChainRoulette calls
 function checkInv(tok) {
   if (!GATE) return { name: "guest", owner: true };
   tok = String(tok || ""); const i = tok.lastIndexOf("."); if (i <= 0) return null;
@@ -84,6 +85,14 @@ const server = http.createServer(async (req, res) => {
     const who = checkInv(u.searchParams.get("inv"));
     res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
     return res.end(JSON.stringify(who ? { ok: true, name: who.name, owner: !!who.owner, gate: GATE } : { ok: false, gate: GATE }));
+  }
+  if (u.pathname === "/api/pboost") { // 押し合いの2倍タイム: /api/pboost?k=KEY&x=2&sec=30&side=all|h|x
+    const k = String(u.searchParams.get("k") || ""); let G = null;
+    for (const g of PUSHG.values()) { const a = Buffer.from(k), b = Buffer.from(pboostKey(g.who)); if (a.length === b.length && crypto.timingSafeEqual(a, b)) G = g; }
+    res.writeHead(G ? 200 : 404, { "content-type": "application/json", "cache-control": "no-store" });
+    if (!G) return res.end(JSON.stringify({ ok: false, msg: "押し合いが動いていないか、キーが違います" }));
+    const r = G.game.boost(u.searchParams.get("x"), u.searchParams.get("sec"), u.searchParams.get("side"));
+    TT.dbg(G.who, "push-boost", JSON.stringify(r)); return res.end(JSON.stringify(Object.assign({ ok: true }, r)));
   }
   if (u.pathname === "/api/history") {
     const who = checkInv(u.searchParams.get("inv"));
@@ -388,9 +397,10 @@ wss.on("connection", (ws, req) => {
         const pg = pushOf(k); if (pg) send(ws, { t: "psnap", s: pg.game.snapshot() });
         break;
       }
-      case "pstart": case "pslots": case "pskill": case "ptest": case "pstop": case "pjoin": {
+      case "pstart": case "pslots": case "pskill": case "ptest": case "pstop": case "pjoin": case "pboost": {
         if (!WHO.owner) return send(ws, { t: "err", msg: "押し合いモードは今はオーナーだけが使えます" });
         let G = PUSHG.get(WHO.name);
+        if (m.t === "pjoin" || m.t === "pstart") send(ws, { t: "pkey", k: pboostKey(WHO.name) });
         if (m.t === "pjoin") { if (G) { G.ops.add(ws); C.push = G; clearTimeout(G.dieT); send(ws, { t: "psnap", s: G.game.snapshot() }); if (G.live) send(ws, { t: "ptt", info: G.live.info() }); } break; }
         if (m.t === "pstart") {
           if (!G) { G = { game: createPush(), ops: new Set(), who: WHO.name, name: "", live: null, on: null }; PUSHG.set(WHO.name, G); }
@@ -402,6 +412,7 @@ wss.on("connection", (ws, req) => {
         else if (m.t === "pskill") G.game.skill(m.k === 2 ? 2 : 1);
         else if (m.t === "ptest") G.game.test(m.side === "x" ? "x" : "h", Math.max(0, Math.min(5, m.i | 0)), "テスト");
         else if (m.t === "pstop") pushStop(G);
+        else if (m.t === "pboost") G.game.boost(2, 30, "all");
         break;
       }
       case "ping": send(ws, { t: "pong", at: m.at }); break;

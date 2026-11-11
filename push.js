@@ -46,14 +46,17 @@ function cleanSlots(g) {
 }
 
 function createPush() {
-  let S = null, COUNT = 0, CFG = { goal: 5, fort: 3000, castle: 5000 }, interT = 0, uid = 1;
+  let S = null, COUNT = 0, CFG = { goal: 5, fort: 3000, castle: 5000 }, interT = 0, uid = 1, clock = 0;
+  const BOOST = { h: { x: 1, until: 0 }, x: { x: 1, until: 0 } }; // 2倍タイム (from ChainRoulette etc.): gifts spawn x times the units
+  const boostOf = side => BOOST[side].until > clock ? BOOST[side].x : 1;
   let slots = cleanSlots(null);
   const camS = () => Math.max(VIEW, Math.min(L - 570 * 0.6, S.hero.s));
   function newLap() { const fin = COUNT >= CFG.goal - 1, fr = fin ? CFG.fort * 2 : CFG.fort; S = { t: 0, gauge: 0, hero: { s: 150, cd: 0, atk: 40 * TUNE.ha, kb: 0, act: null }, units: [], fx: [], help: [], harm: [], fortB: CFG.castle, maxB: CFG.castle, fortR: fr, maxR: fr, final: fin, over: null, clear: false, feed: [], cut: null, mvp: {}, vfx: [], pops: [], shots: [], zones: [], shake: 0, flash: 0, push: .5 }; }
   function recent(a) { while (a.length && S.t - a[0].t > 20) a.shift(); return a.reduce((p, q) => p + q.c, 0); }
   function add(side, id, label, coins, who, n, pw) {
     if (!S || S.over || !U[id]) return; const u = U[id], h = side === "h", c = camS();
-    for (let k = 0; k < (n || 1); k++) {
+    const reps = Math.round((n || 1) * (coins ? boostOf(side) : 1));
+    for (let k = 0; k < reps; k++) {
       const s = h ? Math.max(30, c - VIEW + Math.random() * 30) : Math.min(L - 30, c + 570 * .6 - Math.random() * 30);
       const hm = h ? 1 : 1 + (TUNE.hx - 1) * TUNE.hk / (TUNE.hk + recent(S.harm) / Math.min(20, Math.max(5, S.t)));
       const hp = Math.round(u.hp * hm * (pw || 1));
@@ -178,7 +181,7 @@ function createPush() {
     if (S.fortR <= 0) { S.fortR = 0; end("h"); } else if (S.fortB <= 0) { S.fortB = 0; end("x"); }
   }
   // one server tick: the charge pose slows time like the preview
-  function tick(dt) { if (!S) return; if (!S.over) heroAct(dt); const slow = S.hero.act && S.hero.act.k === "charge" ? .22 : 1; step(dt * slow); }
+  function tick(dt) { if (!S) return; clock += dt; if (!S.over) heroAct(dt); const slow = S.hero.act && S.hero.act.k === "charge" ? .22 : 1; step(dt * slow); }
   function gift(g) { // g: {giftId, giftName, count, nick}
     if (!S || S.over) return null; const gn = String(g.giftName || "").toLowerCase();
     for (const side of ["h", "x"]) for (const sl of slots[side]) if ((sl.id && sl.id === String(g.giftId)) || (sl.name && sl.name.toLowerCase() === gn)) {
@@ -197,6 +200,7 @@ function createPush() {
       u: S.units.map(u => [u.i, u.side, u.id, r1(u.s), r1(u.y), Math.round(u.hp / u.max * 100), u.atkT > 0 ? 1 : 0, u.mv > 0 ? 1 : 0, u.hitT > 0 ? 1 : 0, r1(u.bob), (u.stun > 0 ? 1 : 0) | (u.guardT > 0 ? 2 : 0) | (u.mini ? 4 : 0) | (u.aura > 0 ? 8 : 0) | (u.dash > 0 ? 16 : 0) | (u.tauntT > 0 ? 32 : 0)]),
       fx: S.fx.map(f => [r1(f.s), r1(f.y || 0), r1(f.t), f.c]), vfx: S.vfx.map(f => [f.k, r1(f.s), r1(f.t), f.d, r1(f.y || 0), f.side || ""]), pops: S.pops.map(p => [r1(p.s), r1(p.y), p.txt, r1(p.t), p.c, p.big ? 1 : p.sk ? 2 : 0]), shots: S.shots.map(q => [q.k, r1(q.a), r1(q.b), r1(q.c), r1(q.e), r1(q.t), q.d]), zones: S.zones.map(z => [r1(z.s), r1(z.y), z.r, r1(z.t), z.side]), hst: S.hero.stun > 0 ? 1 : 0,
       feed: S.feed.filter(f => S.t - f.t < 4).map(f => [f.side, f.txt, r1(S.t - f.t)]), cut: S.cut, sh: r1(S.shake), fl: r1(S.flash),
+      bst: { h: BOOST.h.until > clock ? [BOOST.h.x, Math.ceil(BOOST.h.until - clock)] : null, x: BOOST.x.until > clock ? [BOOST.x.x, Math.ceil(BOOST.x.until - clock)] : null },
       mvp: Object.entries(S.mvp).sort((a, b) => b[1] - a[1]).slice(0, 3),
       slots: { h: slots.h.map(s => [s.unit, s.id, s.img, s.label, Math.round(s.pw * 10) / 10, s.n]), x: slots.x.map(s => [s.unit, s.id, s.img, s.label, Math.round(s.pw * 10) / 10, s.n]) },
     };
@@ -204,6 +208,13 @@ function createPush() {
   return {
     start(cfg, g) { CFG = { goal: [3, 5, 7, 10].includes(+cfg.goal) ? +cfg.goal : 5, fort: [1500, 3000, 5000].includes(+cfg.fort) ? +cfg.fort : 3000, castle: [3000, 5000, 8000].includes(+cfg.castle) ? +cfg.castle : 5000 }; if (g) slots = cleanSlots(g); COUNT = 0; interT = 0; newLap(); },
     setSlots(g) { slots = cleanSlots(g); },
+    boost(x, sec, side) { // calling again while it runs adds the time
+      x = Math.max(2, Math.min(5, Math.round(+x || 2))); sec = Math.max(5, Math.min(600, Math.round(+sec || 30)));
+      const sides = side === "h" || side === "x" ? [side] : ["h", "x"]; let until = 0;
+      for (const sd of sides) { const b = BOOST[sd]; b.until = (b.until > clock && b.x === x ? b.until : clock) + sec; b.x = x; until = Math.max(until, b.until - clock); }
+      if (S && !S.over) S.cut = { side: sides.length === 1 ? sides[0] : "h", txt: `${sides.length === 2 ? "" : sides[0] === "h" ? "救済 " : "妨害 "}${x}倍タイム！（${sec}秒）`, t: 2.2, d: 2.2, id: "boost" };
+      return { x, side: sides.length === 2 ? "all" : sides[0], left: Math.ceil(until) };
+    },
     get slots() { return slots; },
     get running() { return !!S; }, get S() { return S; }, TUNE, heroAct,
     tick, skill, gift, snapshot,
