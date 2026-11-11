@@ -1,3 +1,4 @@
+<script>(function(){var q=new URLSearchParams(location.search),v=q.get("v");if(q.get("stream")&&(v==="push"||v==="count"))location.replace("push.html"+location.search)})()</script>
 <title>ギフト攻城戦 見本</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -281,6 +282,35 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
 .histpane h2{margin:0 0 6px;font-size:18px}.histpane p{margin:0 0 10px}.hbtns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}.hbtns a{text-decoration:none;display:inline-flex}
 .whob{font-size:12px;font-weight:800;border-radius:999px;padding:4px 12px;border:1px solid var(--line);background:var(--panel)}.whob.own{color:#1a1033;background:var(--gold);border-color:var(--gold)}.whob.inv{color:var(--fg)}
 .pres span{display:block;font-weight:800;font-size:12px}.pres .on{color:var(--green)}.pres .off{color:var(--muted)}.pres small{font-size:11px;color:var(--muted)}
+/* mode select (owner) + 押し合い panel */
+html.msel #wrap>*:not(header):not(#modeSel){display:none!important}
+html.mpush #wrap>*:not(header):not(#pushSec){display:none!important}
+#modeSel,#pushSec,#batBar{display:none}html.msel #modeSel,html.mpush #pushSec{display:grid}html.mbat #batBar{display:flex}
+#modeSel{gap:10px;margin-top:14px}.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
+.mode{all:unset;box-sizing:border-box;cursor:pointer;background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:18px;display:grid;gap:8px;transition:.15s}
+.mode:hover,.mode:focus-visible{border-color:var(--gold);transform:translateY(-2px)}
+.mode .ic{font-size:42px;line-height:1}.mode h2{font:400 24px "Dela Gothic One",sans-serif;margin:0}.mode p{margin:0;color:var(--muted)}
+.mode .tg{justify-self:start;font-size:11.5px;font-weight:800;border-radius:6px;padding:2px 8px;background:#3a2f12;color:var(--gold)}.mode.b .tg{background:#173052;color:#9fd0ff}
+.mbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel);border-radius:12px;padding:8px 12px;margin-top:12px}
+.mbar .t{font:400 18px "Dela Gothic One",sans-serif}.mbar button,#pushSec button{font:inherit;font-weight:800;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);padding:8px 14px;cursor:pointer}
+#pushSec{gap:12px}#pushSec .pgrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:12px;align-items:start}
+@media (max-width:820px){#pushSec .pgrid{grid-template-columns:minmax(0,1fr)}}
+#pushSec .pcard{background:var(--panel);border-radius:12px;padding:12px;display:grid;gap:8px;min-width:0;align-content:start}
+#pushSec h3{margin:0;font-size:15px}#pushSec .note{color:var(--muted);font-size:12.5px;margin:0}
+#pushSec .pcfg{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;font-weight:800;font-size:13px}
+#pushSec select{font:inherit;font-weight:800;font-size:13px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px;min-width:0;max-width:100%}
+#pushSec .go{background:var(--green);color:#06210f;border-color:transparent;font-size:16px}#pushSec .stop{background:transparent;color:var(--muted)}
+#pushSec .sk{display:flex;gap:8px}#pushSec .sk button{flex:1;font-size:15px;padding:12px}#pushSec .sk button:disabled{opacity:.4;cursor:default}
+#pushSec .gauge{height:12px;border-radius:6px;background:#0e1424;overflow:hidden}#pushSec .gauge i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--gold));transition:width .2s}
+#pushSec .pv{position:relative;width:100%;aspect-ratio:640/600;max-width:100%;border-radius:10px;overflow:hidden;background:#0b0f1d}
+#pushSec .pv iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+#pushSec [hidden]{display:none!important}#pushSec .pv .wait{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-weight:800;text-align:center;padding:12px}
+#pushSec .gsl{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 8px;align-items:center;font-size:13px;font-weight:800}
+#pushSec .gsl .h{color:var(--green)}#pushSec .gsl .x{color:var(--red)}#pushSec .gsl button{padding:4px 8px;font-size:12px}
+#pushSec .st{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 10px;align-items:center;background:var(--panel2);border-radius:10px;padding:10px}
+#pushSec .st .i{font-size:22px}#pushSec .st small{display:block;color:var(--muted);font-weight:500;font-size:12px}
+#pushSec .st code{grid-column:1/-1;background:#0e1424;border-radius:6px;padding:6px 8px;font-size:12px;overflow-x:auto;white-space:nowrap}
+#pushSec .sz{font-size:11.5px;font-weight:800;color:var(--gold);white-space:nowrap}#pushSec .ptt{font-size:12.5px;font-weight:800;color:var(--muted)}
 </style>
 
 <div class="wrap" id="wrap" data-phase="lobby">
@@ -288,6 +318,32 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
   <h1>ギフト攻城戦</h1>
   <div class="snd"><button type="button" id="sndBtn" aria-pressed="true">効果音 ON</button><label for="vol">音量</label><input id="vol" type="range" min="0" max="1" step="0.05" value="0.5"><span class="tag">見本 v40・コイン見本表</span><span class="whob" id="whoB" hidden></span></div>
 </header>
+<section id="modeSel" aria-label="モードを選ぶ"><p class="note" style="color:var(--muted);margin:0">遊ぶモードを選んでください。あとから「モードを変える」でいつでも戻れます。</p>
+<div class="modes"><button type="button" class="mode b" data-mode="bat"><span class="ic">⚔️</span><h2>バトクラ</h2><p>TikTokバトルで相手の配信者と対戦。今までどおりの画面です。</p><span class="tg">2人で対戦</span></button>
+<button type="button" class="mode" data-mode="push"><span class="ic">🏰</span><h2>押し合い</h2><p>リスナーが救済と妨害に分かれて押し合い。勇者で砦を落としていく。</p><span class="tg" id="pRunTag">ひとりで配信</span></button></div></section>
+<div class="mbar" id="batBar"><span class="t">⚔️ バトクラ</span><button type="button" data-mode="sel">モードを変える</button></div>
+<section id="pushSec" aria-label="押し合いモード">
+<div class="mbar"><span class="t">🏰 押し合い</span><span class="ptt" id="pTT"></span><button type="button" data-mode="sel">モードを変える</button></div>
+<div class="pgrid">
+ <div class="pcard"><h3>画面（配信に映るもの）</h3><div class="pv"><iframe id="pFrame" title="押し合いの画面" hidden></iframe><div class="wait" id="pWait">「押し合いを始める」を押すと、ここに画面が出ます</div></div>
+  <div class="gauge"><i id="pGauge"></i></div><p class="note" id="pGaugeT">勇者ゲージ 0/10（2秒で1たまる）</p>
+  <div class="sk"><button type="button" id="pSk1" disabled>⚔️ 単体攻撃（1）</button><button type="button" id="pSk2" disabled>🌀 範囲攻撃（5）</button></div>
+  <p class="note">勇者の攻撃はこのボタンで出します。自動では出ません。</p></div>
+ <div style="display:grid;gap:12px;min-width:0">
+  <div class="pcard"><h3>始める前の設定</h3>
+   <div class="pcfg"><label for="pGoal">目標（落とす砦の数）</label><select id="pGoal"><option>3</option><option selected>5</option><option>7</option><option>10</option></select>
+   <label for="pFort">敵の砦の耐久</label><select id="pFort"><option>1500</option><option selected>3000</option><option>5000</option></select>
+   <label for="pCastle">自分の城の耐久</label><select id="pCastle"><option>3000</option><option selected>5000</option><option>8000</option></select></div>
+   <button type="button" class="go" id="pStart">押し合いを始める</button><button type="button" class="stop" id="pStop" hidden>押し合いをやめる</button>
+   <p class="note">TikTokのユーザー名は、バトクラの「あなた」の欄と同じものを使います。魔王城（最後の1つ）は砦の耐久の2倍。</p></div>
+  <div class="pcard"><h3>ギフト</h3><div class="gsl" id="pGifts"></div><p class="note" id="pGMsg">緑が救済、赤が妨害。同じ値段のギフトから選べます。「テスト」でそのキャラを1体出せます（試合中だけ）。</p></div>
+ </div>
+</div>
+<div class="pcard"><h3>配信用URL（押し合い）</h3>
+ <div class="st"><span class="i">🏰</span><span><b>押し合い用URL</b><small>コースと勇者・ギフト欄が映る画面</small></span><span class="sz">640×600</span><code id="pUrl1">サーバーにつながると出ます</code><button type="button" id="pCopy1">コピー</button></div>
+ <div class="st"><span class="i">🔢</span><span><b>カウント用URL</b><small>落とした砦の数。背景は透明で、好きな場所に重ねる</small></span><span class="sz">440×220</span><code id="pUrl2">サーバーにつながると出ます</code><button type="button" id="pCopy2">コピー</button></div>
+ <p class="note">バトクラ用のURL（バトル用・全体表示用）とは別です。OBSにそれぞれブラウザソースとして足します。このURLには入場用の鍵が入っているので、ほかの人に見せないでください。</p></div>
+</section>
 <p class="lead">バトル中、視聴者には2人の映像が左右に並んで見えます。各自のゲーム画面は「自分の陣地の半分」だけを映し、真ん中の川でつながります。兵は川沿いのゲートに入ると、相手の画面のゲートから出てきます。中央の砦は2つの画面にまたがっていて、2人で取り合います。</p>
 
 <div class="stbar" id="stLink"><span class="sti">📺</span><span class="stt">バトル用URL<small>TikTokバトルで2人の映像を並べるとき。自分の陣地が映ります</small><small class="stsz" id="stSz1"></small></span><code id="stUrl">下の「あなた」の欄にユーザー名を入れると出ます</code><button type="button" class="lbtn" id="stCopy" disabled>コピー</button></div>
@@ -1583,6 +1639,8 @@ function netStart(m){NETX.rdone=false;const you=m.you;NET.team=you;NET.on=true;s
   const it=setInterval(()=>{k--;if(k>0){n.textContent=k;play("beep")}else if(k===0){n.textContent="START!";play("go")}else{clearInterval(it);ov.hidden=true;setPhase("battle")}},900)})}
 function netBackToLobby(){NET.on=false;PRAC.on=false;wrapEl.classList.remove("net-b","net-r","prac","practest","offl");$("resOv").hidden=true;resTimer=null;setRoom("b");setPhase("lobby");newState();refreshUI();lobbyUI()}
 function netMsg(m){
+  if(m.t==="psnap"||m.t==="ptt"||m.t==="pend"){if(window.PUSHUI)PUSHUI.msg(m);return}
+  if(m.t==="hi")setTimeout(()=>{if(window.PUSHUI)PUSHUI.hi(m)});
   if(m.t==="rdone"){NETX.rdone=true;return}
   if(m.t==="hi"){NETX.ok=true;netBadge();NETX.owner=!!m.owner;NETX.who=m.who||"";{const w=$("whoB");if(w&&!STREAM_NAME){w.hidden=false;w.className="whob "+(m.owner?"own":"inv");w.textContent=m.owner?"👑 オーナーとして入っています":`🎟️ 招待：@${m.who||"?"}`;w.title=m.owner?"全員の戦歴と招待の画面が使えます":"自分の戦歴だけ見られます"}}$("invCard").hidden=!m.owner||!!STREAM_NAME;if(m.owner&&!STREAM_NAME)invLoad();if(STREAM_NAME){NET.send({t:"watch",name:STREAM_NAME});return}NET.send(Object.assign({t:"hello"},cfgMsg()));loadGiftCatalog();updStreamLink();return}
   if(m.t==="emote"){CE_WAIT=false;if(m.e){CFG.cheerEmote=m.e;saveCfg();sendCfg();ceUI();$("ceMsg").textContent="登録しました。このスタンプが届くと攻撃アップ"}else{ceUI();$("ceMsg").textContent=m.err||"登録できませんでした"}return}
@@ -1712,6 +1770,7 @@ function frame(){const now=performance.now();fpsAcc+=now-lastT;lastT=now;fpsN++;
  const f=$("icFile"),clr=$("icClr"),paint=()=>{clr.hidden=!CFG.icon;avatar($("avB"),$("ttB").value,"b")};paint();
  $("icPick").onclick=()=>f.click();clr.onclick=()=>{CFG.icon="";saveCfg();sendCfg();clr.hidden=true;setAv($("avB"),TT.b==="ok"&&LASTAV,$("ttB").value)};
  f.onchange=()=>{const file=f.files&&f.files[0];if(!file)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement("canvas");c.width=c.height=160;const s=Math.min(im.width,im.height);c.getContext("2d").drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,160,160);CFG.icon=c.toDataURL("image/jpeg",.85);saveCfg();sendCfg();paint();f.value=""};im.src=rd.result};rd.readAsDataURL(file)}}
+window.GW={NET,get NETX(){return NETX},get INV(){return INV},cfgMsg};
 refreshUI();netGate();frame();
 })();
 
@@ -1742,5 +1801,51 @@ refreshUI();netGate();frame();
   const syncInv=()=>{const own=inv&&!inv.hidden;panes.inv.b.hidden=!own;const go=document.getElementById("histGo");go.textContent=own?"📜 配信者の戦歴を見る（オーナー）":"📜 自分の戦歴を開く";if(!own&&cur==="inv")sel("url")};
   if(inv){new MutationObserver(syncInv).observe(inv,{attributes:true,attributeFilter:["hidden"]})}
   syncInv();sel(cur);
+})();
+
+// ---------- mode select (owner) + 押し合いモード ----------
+(function(){
+  if(document.documentElement.classList.contains("streamonly"))return;
+  const $=id=>document.getElementById(id),H=document.documentElement,NET={send:o=>window.GW&&GW.NET.send(o)};
+  const DEF={h:[["soldier","5655","バラ",1,"兵士"],["rider","5487","フィンガーハート",5,"騎兵"],["shield","8913","ローザ",10,"盾兵"],["mage","5660","ハートポーズ",100,"魔法使い"],["golem","15194","つながる心",299,"ゴーレム"],["dragon","7168","マネーガン",500,"ドラゴン"]],
+             x:[["soldier","5269","TikTok",1,"子分"],["rider","13538","おまもり",5,"狼騎兵"],["shield","51281","DJレコード",10,"盾ゴブリン"],["mage","8343","ハンドハート",100,"黒魔導士"],["golem","6267","コーギー",299,"岩の巨人"],["dragon","11583","DJメガネ",500,"魔竜"]]};
+  let PC={goal:5,fort:3000,castle:5000,gifts:null};try{Object.assign(PC,JSON.parse(localStorage.getItem("giftwar_push")||"{}"))}catch(e){}
+  const save=()=>{try{localStorage.setItem("giftwar_push",JSON.stringify(PC))}catch(e){}};
+  const slots=()=>{const o={};for(const sd of ["h","x"])o[sd]=DEF[sd].map((d,i)=>{const v=PC.gifts&&PC.gifts[sd]&&PC.gifts[sd][i];return v&&v.id?v:{id:d[1],name:d[2],coins:d[3],img:""}});return o};
+  let CAT=[],RUN=false,OWNER=false,LAST=null;
+  const setMode=k=>{H.classList.remove("msel","mpush","mbat");if(!OWNER)return;H.classList.add(k==="push"?"mpush":k==="bat"?"mbat":"msel");if(k==="push")urls();window.dispatchEvent(new Event("resize"))};
+  document.addEventListener("click",e=>{const b=e.target.closest("[data-mode]");if(b){setMode(b.dataset.mode);if(b.dataset.mode!=="sel")window.scrollTo(0,0)}});
+  const key=()=>{const t=$("ttB");return (t&&t.value.trim().replace(/^@/,""))||(window.GW&&GW.NETX.who)||""};
+  const urls=()=>{const n=key();if(!n||!window.GW||!GW.NETX.ok){$("pUrl1").textContent=$("pUrl2").textContent="サーバーにつながると出ます";return}
+    const iv=window.GW&&GW.INV?`&inv=${encodeURIComponent(GW.INV)}`:"";$("pUrl1").textContent=`${location.origin}/?stream=${encodeURIComponent(n)}&v=push${iv}`;$("pUrl2").textContent=`${location.origin}/?stream=${encodeURIComponent(n)}&v=count${iv}`};
+  for(const [b,c] of [["pCopy1","pUrl1"],["pCopy2","pUrl2"]])$(b).onclick=async()=>{const t=$(c).textContent;if(!/^https?:/.test(t))return;try{await navigator.clipboard.writeText(t);$(b).textContent="コピーしました";setTimeout(()=>$(b).textContent="コピー",1500)}catch(e){const r=document.createRange();r.selectNodeContents($(c));const se=getSelection();se.removeAllRanges();se.addRange(r)}};
+  // gift pickers: same price as the slot
+  function gifts(){const box=$("pGifts");box.innerHTML="";const cur=slots();
+    for(const sd of ["h","x"])DEF[sd].forEach((d,i)=>{const lab=document.createElement("label");lab.className=sd;lab.textContent=`${sd==="h"?"🟢":"🔴"} ${d[4]}`;lab.htmlFor=`pg-${sd}-${i}`;
+      const sel=document.createElement("select");sel.id=`pg-${sd}-${i}`;const c=cur[sd][i];
+      const opts=CAT.filter(g=>g.coins===d[3]);if(!opts.some(g=>g.id===c.id))opts.unshift({id:c.id,name:c.name,coins:c.coins,img:c.img});
+      for(const g of opts){const o=document.createElement("option");o.value=g.id;o.textContent=`${g.name}（${g.coins}）`;sel.appendChild(o)}sel.value=c.id;
+      sel.onchange=()=>{const all=slots();const used=["h","x"].some(s2=>all[s2].some((q,j)=>!(s2===sd&&j===i)&&q.id===sel.value));if(used){sel.value=c.id;$("pGMsg").textContent="そのギフトはほかのキャラで使っています。同じギフトは1つのキャラにしか割り当てられません";return}
+        const g=opts.find(x=>x.id===sel.value);all[sd][i]={id:g.id,name:g.name,coins:g.coins,img:g.img||""};PC.gifts=all;save();$("pGMsg").textContent="変えました。試合中でもすぐ反映されます。";if(RUN)NET.send({t:"pslots",gifts:all});gifts()};
+      const tb=document.createElement("button");tb.type="button";tb.textContent="テスト";tb.onclick=()=>NET.send({t:"ptest",side:sd,i});
+      box.append(lab,sel,tb)})}
+  fetch("gift-catalog.json").then(r=>r.json()).then(j=>{CAT=(j.gifts||[]).map(g=>({id:String(g.id),name:g.name,coins:+g.coins,img:g.img||""}));const all=slots();for(const sd of ["h","x"])all[sd].forEach(v=>{if(!v.img){const g=CAT.find(x=>x.id===v.id);if(g)v.img=g.img}});PC.gifts=all;gifts()}).catch(()=>gifts());
+  gifts();
+  for(const [id,k] of [["pGoal","goal"],["pFort","fort"],["pCastle","castle"]]){$(id).value=String(PC[k]);$(id).onchange=e=>{PC[k]=+e.target.value;save()}}
+  const frame=()=>{const f=$("pFrame"),n=(window.GW&&GW.NETX.who)||key();const src=`push.html?stream=${encodeURIComponent(n)}&v=push&embed=1`;if(f.getAttribute("src")!==src)f.setAttribute("src",src);f.hidden=false;$("pWait").hidden=true};
+  $("pStart").onclick=()=>{if(RUN&&!confirmRestart())return;PC.gifts=slots();save();if(window.GW)NET.send(Object.assign({t:"cfg"},GW.cfgMsg()));NET.send({t:"pstart",cfg:{goal:PC.goal,fort:PC.fort,castle:PC.castle},gifts:PC.gifts});frame()};
+  let armed=0;const confirmRestart=()=>{if(Date.now()-armed<4000)return true;armed=Date.now();$("pStart").textContent="もう一度押すと最初からやり直します";setTimeout(()=>{$("pStart").textContent=RUN?"設定を変えて最初から":"押し合いを始める"},4000);return false};
+  $("pStop").onclick=()=>{if(Date.now()-(armed||0)<4000&&$("pStop").dataset.a){NET.send({t:"pstop"});return}armed=Date.now();$("pStop").dataset.a=1;$("pStop").textContent="もう一度押すとやめます";setTimeout(()=>{$("pStop").textContent="押し合いをやめる";delete $("pStop").dataset.a},4000)};
+  $("pSk1").onclick=()=>NET.send({t:"pskill",k:1});$("pSk2").onclick=()=>NET.send({t:"pskill",k:2});
+  const runUI=()=>{$("pStop").hidden=!RUN;$("pStart").textContent=RUN?"設定を変えて最初から":"押し合いを始める";$("pRunTag").textContent=RUN?"▶ 進行中":"ひとりで配信";if(!RUN){$("pSk1").disabled=$("pSk2").disabled=true;$("pGauge").style.width="0";$("pGaugeT").textContent="勇者ゲージ 0/10（2秒で1たまる）"}};
+  window.PUSHUI={
+    hi(m){OWNER=!!m.owner;if(!OWNER){setMode(null);return}NET.send({t:"pjoin"});if(!H.classList.contains("mpush")&&!H.classList.contains("mbat"))setMode("sel");urls()},
+    msg(m){if(m.t==="pend"){RUN=false;LAST=null;$("pFrame").hidden=true;$("pWait").hidden=false;$("pTT").textContent="";runUI();return}
+      if(m.t==="ptt"){const i=m.info||{};$("pTT").textContent=i.st==="ok"?"● TikTok 配信中":i.st==="wait"?"TikTok 接続中…":i.st?(i.msg||"TikTokにつながっていません"):"";return}
+      if(m.t==="psnap"&&m.s){const was=RUN;RUN=true;LAST=m.s;if(!was){runUI();frame()}const gv=m.s.g;$("pGauge").style.width=gv*10+"%";$("pGaugeT").textContent=`勇者ゲージ ${Math.floor(gv)}/10（2秒で1たまる）`+(m.s.over?"　—　周の合間":"");
+        const busy=!!m.s.over||!!(m.s.hero&&m.s.hero.act);$("pSk1").disabled=busy||gv<1;$("pSk2").disabled=busy||gv<5}}
+  };
+  const t=$("ttB");if(t)t.addEventListener("input",urls);
+  runUI();
 })();
 </script>
