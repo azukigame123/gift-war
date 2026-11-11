@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>押し合いモード 配信用画面</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+1p:wght@500;800&display=swap">
+<style>
+html,body{margin:0;background:transparent;overflow:hidden;height:100%}
+body{font-family:"M PLUS 1p",sans-serif;color:#fff}
+#cv{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:block;visibility:hidden}
+#cv.on{visibility:visible}
+#cnt{position:absolute;inset:0;display:grid;place-items:center;visibility:hidden}#cnt.on{visibility:visible}
+#msg{position:absolute;left:8px;bottom:6px;font:800 12px "M PLUS 1p",sans-serif;color:#fff;text-shadow:0 1px 3px #000;opacity:.85}
+/* count overlay (decided design: big number + fort row) */
+:root{--gold:#ffcf3f;--red:#ff4d6a;--green:#3fd47a}
+.ov{font-family:"Dela Gothic One",sans-serif;color:#fff;position:relative}
+.stroke{paint-order:stroke fill;-webkit-text-stroke:6px #0b0f1d}
+.A{display:flex;align-items:center;gap:12px;background:rgba(11,15,29,.72);border:3px solid var(--gold);border-radius:22px;padding:6px 20px 6px 12px;box-shadow:0 6px 0 rgba(0,0,0,.35)}
+.A img{height:56px}.A .lab{font-size:15px;line-height:1.1}.A .n{font-size:58px;line-height:1;color:var(--gold)}.A .g{font-size:30px}
+.Dw{display:grid;justify-items:center;gap:6px}
+.Dw .row{display:flex;gap:4px;align-items:flex-end;background:rgba(11,15,29,.6);border-radius:14px;padding:6px 10px;border:2px solid rgba(255,255,255,.15)}
+.Dw .f{position:relative;width:calc(40px*var(--k));height:calc(46px*var(--k));display:grid;place-items:end center}
+.Dw .f.boss{width:calc(64px*var(--k));height:calc(54px*var(--k))}
+.Dw .f img{max-height:100%;max-width:100%;filter:grayscale(.85) brightness(.55)}
+.Dw .f.next img{filter:none;animation:bob 1.2s ease-in-out infinite}
+.Dw .f.done img{filter:grayscale(1) brightness(.45)}
+.Dw .f.done::after{content:"";position:absolute;left:50%;bottom:45%;width:24px;height:22px;transform:translateX(-15%) scale(var(--k));transform-origin:0 100%;background:linear-gradient(var(--green),var(--green)) 0 0/22px 14px no-repeat,linear-gradient(#fff,#fff) 0 0/3px 22px no-repeat;clip-path:polygon(0 0,100% 0,85% 35%,100% 65%,12% 65%,12% 100%,0 100%)}
+@keyframes bob{50%{transform:translateY(-4px)}}
+.pop{position:absolute;left:50%;top:-6px;transform:translate(-50%,-100%);white-space:nowrap;font-size:20px;pointer-events:none;animation:pop 1.8s forwards}
+.pop.plus{color:var(--gold)}.pop.minus{color:var(--red)}.pop.clear{font-size:26px;color:var(--gold)}
+@keyframes pop{0%{opacity:0;transform:translate(-50%,-60%) scale(.6)}15%{opacity:1;transform:translate(-50%,-100%) scale(1.15)}30%{transform:translate(-50%,-100%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-140%)}}
+.shake{animation:shake .45s}@keyframes shake{20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+.bump{animation:bump .5s}@keyframes bump{40%{transform:scale(1.12)}}
+</style></head>
+<body>
+<canvas id="cv" width="640" height="600"></canvas>
+<div id="cnt"><div class="ov" id="ov"></div></div>
+<div id="msg"></div>
+<script>
+"use strict";
+const Q=new URLSearchParams(location.search),VIEWM=Q.get("v")==="count"?"count":"push",NAME=(Q.get("stream")||"").replace(/^@/,"").trim(),EMBED=Q.get("embed")==="1";
+let INV=Q.get("inv")||"";try{if(!INV)INV=localStorage.getItem("giftwar_inv")||""}catch(e){}
+const $=id=>document.getElementById(id);
+// ---------- assets ----------
+const W=640,H=600,cv=$("cv"),g=cv.getContext("2d");
+const IM={};const load=n=>{const i=new Image();i.src=`img/${n}.webp`;IM[n]=i;return i};
+["soldier","archer","shield","rider","mage","dragon","rookie","bomber","golem"].forEach(u=>load(u+"_b"));
+const SZ={soldier:38,archer:40,shield:44,rider:50,mage:46,dragon:74,rookie:34,bomber:46,golem:74};
+const HI={},HM={idle:.42,walk1:.40,walk2:.40,attack:.35,hurt:.42,charge:.45,lunge:.33,spin:.40},HS=.56;
+["idle","walk1","walk2","attack","hurt","charge","lunge","spin","aura","ring","slash"].forEach(k=>{const i=new Image();i.src=`push/hero/${k}.webp`;HI[k]=i});
+function hspr(k,x,y,sc,alpha){const i=HI[k];if(!i||!i.complete||!i.naturalWidth)return false;const w=i.naturalWidth*sc,h=i.naturalHeight*sc,ax=(HM[k]??.5)*w;g.save();if(alpha!=null)g.globalAlpha=alpha;g.drawImage(i,x-ax,y-h,w,h);g.restore();return true}
+const EM={"goblin":{"idle":0.4715,"walk1":0.4216,"walk2":0.415,"attack":0.4141,"hit":0.4792},"bomb":{"idle":0.3907,"walk1":0.2485,"walk2":0.2649,"attack":0.5392,"hit":0.5962},"mage":{"idle":0.5029,"walk1":0.3626,"walk2":0.367,"attack":0.6551,"hit":0.5629},"giant":{"idle":0.4892,"walk1":0.2489,"walk2":0.3066,"attack":0.3606,"hit":0.617},"dragon":{"idle":0.4277,"walk1":0.4213,"walk2":0.4162,"attack":0.5597,"hit":0.4129},"wolf":{"idle":0.491,"walk1":0.5074,"walk2":0.4732,"attack":0.5621,"hit":0.4367},"shieldg":{"idle":0.4444,"walk1":0.4459,"walk2":0.4555,"attack":0.5784,"hit":0.5991}};
+const EMAP={soldier:"goblin",bomber:"bomb",mage:"mage",golem:"giant",dragon:"dragon",rookie:"goblin",archer:"goblin",shield:"shieldg",rider:"wolf"},EH={goblin:62,bomb:64,mage:72,giant:108,dragon:112,wolf:84,shieldg:68},EI={};
+Object.keys(EM).forEach(t=>["idle","walk1","walk2","attack","hit"].forEach(k=>{const i=new Image();i.src=`push/enemy/${t}_${k}.webp`;EI[t+"_"+k]=i}));
+function espr(t,k,x,y,hh,alpha){const i=EI[t+"_"+k],r=EI[t+"_idle"];if(!i||!i.complete||!i.naturalWidth||!r||!r.naturalHeight)return false;const sc=hh/r.naturalHeight,w=i.naturalWidth*sc,h=i.naturalHeight*sc;g.save();if(alpha!=null)g.globalAlpha=alpha;g.drawImage(i,x-EM[t][k]*w,y-h,w,h);g.restore();return true}
+const BLD={fort:new Image(),demon:new Image(),own:new Image()};BLD.fort.src="push/bld/fort.webp";BLD.demon.src="push/bld/demon.webp";BLD.own.src="push/bld/own.webp";
+const BGI=new Image();BGI.src="push/bg_course4.webp";
+const GIMG={},GURL={};fetch("gift-catalog.json").then(r=>r.json()).then(j=>{for(const x of (j.gifts||[]))if(x.img)GURL[x.id]=x.img}).catch(()=>{});
+const gimg=(id,url)=>{const u=url||GURL[id];if(!u)return null;if(!GIMG[u]){const i=new Image();i.referrerPolicy="no-referrer";i.src=u;GIMG[u]=i}return GIMG[u]};
+// ---------- layout ----------
+const SH=96,GX=0,GW=64,TOP=SH+4,BOT=H-SH-4,CX=GW+6,CW=W-CX,LANE=BOT-95;
+const L=3000,PX=1,GMAX=10,AREA=5,R1=200,R2=300,WF=3;
+// ---------- state from server snapshots (interpolated) ----------
+let SN=null,PREV=null,tSn=0,iv=66,S=null;
+function hydrate(now){if(!SN)return null;const a=Math.min(1.5,(now-tSn)/iv),pm={};if(PREV)for(const u of PREV.u)pm[u[0]]=u;
+ const lerp=(p,c)=>p==null?c:p+(c-p)*Math.min(1,a);const el=Math.max(0,(now-tSn)/1000);
+ const hero=Object.assign({},SN.hero,{s:lerp(PREV&&PREV.hero.s,SN.hero.s)});
+ return {t:SN.t+el,gauge:Math.min(GMAX,SN.g+(SN.over?0:el/2)),hero,final:SN.fin,over:SN.over,clear:SN.clear,it:SN.it,fortB:SN.fb,maxB:SN.mb,fortR:SN.fr,maxR:SN.mr,cfg:SN.cfg,n:SN.n,
+  units:SN.u.map(u=>{const p=pm[u[0]];return {i:u[0],side:u[1],id:u[2],s:lerp(p&&p[3],u[3]),y:lerp(p&&p[4],u[4]),hp:u[5],atk:u[6],mv:u[7],hit:u[8],bob:u[9]}}),
+  fx:SN.fx.map(f=>({s:f[0],y:f[1],t:f[2]-el,c:f[3]})).filter(f=>f.t>0),vfx:SN.vfx.map(f=>({k:f[0],s:f[1],t:f[2]-el,d:f[3]})).filter(f=>f.t>0),
+  pops:SN.pops.map(p=>({s:p[0],y:p[1],txt:p[2],t:p[3]-el,c:p[4],big:p[5]})).filter(p=>p.t>0),feed:SN.feed.map(f=>({side:f[0],txt:f[1],age:f[2]+el})),
+  cut:SN.cut&&SN.cut.t-el>0?Object.assign({},SN.cut,{t:SN.cut.t-el}):null,shake:Math.max(0,SN.sh-el*40),flash:Math.max(0,SN.fl-el),mvp:SN.mvp,slots:SN.slots}}
+// ---------- drawing (same as the approved preview) ----------
+const camS=()=>Math.max((CW*.4)/PX,Math.min(L-(CW*.6)/PX,S.hero.s));
+const X=s=>CX+CW*.4+(s-camS())*PX;
+function spr(n,x,y,sz,flip){const i=IM[n];if(!i||!i.complete||!i.naturalWidth)return;const h=sz*i.naturalHeight/i.naturalWidth;g.save();g.translate(x,y);if(flip)g.scale(-1,1);g.drawImage(i,-sz/2,-h,sz,h);g.restore()}
+function txt(t,x,y,size,col,al,stroke,mw){g.font=`${size}px "Dela Gothic One","M PLUS 1p",sans-serif`;g.textAlign=al||"center";g.lineJoin="round";if(stroke!==0){g.lineWidth=stroke||5;g.strokeStyle="#0b0f1d";g.strokeText(t,x,y,mw)}g.fillStyle=col;g.fillText(t,x,y,mw)}
+function rr(x,y,w,h,r,f){g.beginPath();g.roundRect(x,y,w,h,r);g.fillStyle=f;g.fill()}
+function arrow(x1,x2,y,col){g.strokeStyle=col;g.lineWidth=4;g.beginPath();g.moveTo(x1,y);g.lineTo(x2,y);g.stroke();const d=Math.sign(x2-x1);g.fillStyle=col;g.beginPath();g.moveTo(x2+d*10,y);g.lineTo(x2-d*4,y-8);g.lineTo(x2-d*4,y+8);g.fill()}
+function strip(Lst,y,side){const h=side==="h",x0=CX+6,x1=W-8,n=Lst.length,cw=(x1-x0)/n;
+ rr(CX,y,W-CX-4,SH,12,h?"rgba(14,52,30,.94)":"rgba(64,14,26,.94)");
+ Lst.forEach(([id,gid,url],i)=>{const k=h?i:n-1-i,x=x0+k*cw;rr(x+2,y+4,cw-4,SH-16,9,"rgba(255,255,255,.08)");
+  const gi=gimg(gid,url);if(gi&&gi.complete&&gi.naturalWidth)g.drawImage(gi,x+5,y+8,32,32);
+  ((!h&&espr(EMAP[id],"idle",x+cw/2+6,y+SH-13,id==="dragon"||id==="golem"?70:62))||spr(id+(h?"_b":"_r"),x+cw/2+8,y+SH-13,id==="dragon"||id==="golem"?80:72,!h))});
+ arrow(h?x0:x1-10,h?x1-10:x0,y+SH-5,h?"#3fd47a":"#ff4d6a")}
+function draw(){const hero=S.hero;g.clearRect(0,0,W,H);g.fillStyle="#0b0f1d";g.fillRect(0,0,W,H);
+ g.save();g.beginPath();g.rect(CX,TOP,CW,BOT-TOP);g.clip();if(S.shake>0)g.translate((Math.random()-.5)*S.shake,(Math.random()-.5)*S.shake);
+ if(BGI.complete&&BGI.naturalWidth){const tw=1400,th=tw*BGI.naturalHeight/BGI.naturalWidth,y0=BOT-th-14,off=((camS()*PX)%tw+tw)%tw;for(let x=CX-off;x<W;x+=tw)g.drawImage(BGI,x,y0,tw+1,th)}else{g.fillStyle="#6f9a4c";g.fillRect(CX,TOP,CW,BOT-TOP)}
+ const xb=X(0),xr=X(L),hpb=(x,y,v,col,label,lc)=>{const bw=170,bh=22;x=Math.max(CX+bw/2+6,Math.min(W-bw/2-6,x));rr(x-bw/2-3,y-3,bw+6,bh+6,8,"#0b0f1d");rr(x-bw/2,y,bw,bh,6,"#3a3f52");rr(x-bw/2,y,Math.max(0,bw*v),bh,6,v<.3?"#ffcf3f":col);g.fillStyle="rgba(255,255,255,.25)";g.fillRect(x-bw/2+3,y+3,Math.max(0,bw*v-6),4);txt(String(Math.max(0,Math.ceil(v*100)))+"%",x,y+bh-4,17,"#fff","center",4);txt(label,x,y-9,17,lc||"#fff","center",5)};
+ if(xb>CX-200){{const b=BLD.own;if(b.complete&&b.naturalWidth){const bw=190,bh2=bw*b.naturalHeight/b.naturalWidth;g.drawImage(b,xb+50-bw/2,LANE+66-bh2,bw,bh2)}}hpb(xb+50,LANE-150,S.fortB/S.maxB,"#3fd47a","自分の城")}
+ if(xr<W+200){const yy=LANE-(S.final?190:130);{const b=S.final?BLD.demon:BLD.fort;if(b.complete&&b.naturalWidth){const bw=S.final?330:190,bh2=bw*b.naturalHeight/b.naturalWidth;g.drawImage(b,xr-50-bw/2,LANE+62-bh2,bw,bh2)}}hpb(xr-50,yy,S.fortR/S.maxR,"#ff4d6a",S.final?"魔王城":`敵の砦 ${S.n+1}/${S.cfg.goal}`,S.final?"#ffcf3f":"#fff")}
+ if(!S.over){const hx0=X(hero.s),gy=LANE+40;g.save();
+  const r2=R2*PX,ok2=S.gauge>=AREA;g.globalAlpha=ok2?.28:.1;g.fillStyle="#ff9d2e";g.beginPath();g.ellipse(hx0+r2/2-15,gy,r2/2+15,34,0,0,7);g.fill();
+  g.globalAlpha=ok2?1:.4;g.strokeStyle="#fff3c4";g.lineWidth=3;g.setLineDash([10,7]);g.stroke();g.setLineDash([]);
+  const r1=R1*PX,ok1=S.gauge>=1;g.globalAlpha=ok1?.95:.35;g.strokeStyle="#7dffae";g.lineWidth=4;g.beginPath();g.moveTo(hx0+r1,gy-22);g.lineTo(hx0+r1,gy+22);g.stroke();
+  g.globalAlpha=1;g.restore();txt("範囲",hx0+r2-8,gy+30,12,ok2?"#ffcf3f":"#cbd3ea","center",3);txt("単体",hx0+r1,gy-28,12,ok1?"#7dffae":"#cbd3ea","center",3)}
+ const list=S.units.map(u=>({u,y:LANE+u.y+36})).sort((a,b)=>a.y-b.y);
+ for(const {u,y:yy} of list){const x=X(u.s),y=yy+Math.sin(S.t*8+u.bob)*1.5;if(x<CX-60||x>W+60)continue;(u.side==="x"&&espr(EMAP[u.id],u.hit?"hit":u.atk?"attack":u.mv?(Math.floor(S.t*6+u.bob)%2?"walk1":"walk2"):"idle",x,y,EH[EMAP[u.id]]))||spr(u.id+(u.side==="h"?"_b":"_r"),x,y,(SZ[u.id]||40)*1.35,u.side==="x")}
+ {const a=hero.act,x0=X(hero.s),y=LANE+40;let k,dx=0;
+  if(a){k=a.k;if(a.k==="lunge")dx=Math.sin(Math.PI*Math.min(1,a.t/a.d))*80}else if(hero.kb>0)k="hurt";else if(hero.at)k="attack";else if(hero.mv)k=Math.floor(S.t*WF)%2?"walk1":"walk2";else k="idle";
+  const x=x0+dx;g.fillStyle="rgba(255,207,63,.4)";g.beginPath();g.ellipse(x,y-3,52,13,0,0,7);g.fill();
+  if(a&&(a.k==="charge"||a.k==="spin")){const p=a.k==="charge"?Math.min(1,a.t/.3):1-a.t/a.d;hspr("aura",x,y+10,.5+.08*Math.sin(S.t*20),.85*p)}
+  if(a&&a.k==="lunge"){hspr(k,x-30,y,HS,.25);hspr(k,x-15,y,HS,.45)}
+  hspr(k,x,y,HS);
+  txt("勇者",x,y+20,16,"#ffcf3f");if(hero.kb>0&&!a)txt("後退！",x,y-130,18,"#ff8da0");if(a&&a.k==="charge")txt("ためる…！",x,y-140,20,"#ffcf3f")}
+ S.vfx.forEach(f=>{const x=X(f.s),p=1-f.t/f.d;if(f.k==="slash")hspr("slash",x+40*p,LANE+10,.5,1-p);if(f.k==="ring"){const i=HI.ring;if(i.complete&&i.naturalWidth){const w=i.naturalWidth*(.35+1.5*p),h=w*.42;g.save();g.globalAlpha=1-p*p;g.drawImage(i,x-w/2,LANE+36-h/2,w,h);g.globalAlpha=(1-p)*.6;g.drawImage(i,x-w*.35,LANE+36-h*.35-30*p,w*.7,h*.7);g.restore()}}});
+ S.pops.forEach(p=>{const q=1-p.t;txt(p.txt,X(p.s),LANE+p.y-40-q*50,p.big?34:22,p.c,"center",p.big?7:5)});
+ S.fx.forEach(f=>{g.globalAlpha=Math.min(1,f.t*3);g.fillStyle=f.c;g.beginPath();g.arc(X(f.s),LANE+(f.y||0)+8,12*(1.3-f.t*2),0,7);g.fill();g.globalAlpha=1});
+ g.fillStyle="rgba(10,14,28,.78)";g.fillRect(CX,TOP+2,CW,30);
+ const bx=CX+80,bw=CW-160,p=hero.s/L;rr(bx,TOP+10,bw,14,7,"#ff4d6a");rr(bx,TOP+10,Math.max(14,bw*p),14,7,"#3fd47a");g.fillStyle="#fff";g.beginPath();g.arc(bx+bw*p,TOP+17,9,0,7);g.fill();
+ g.font='800 11px "M PLUS 1p"';g.fillStyle="#bff5d2";g.textAlign="right";g.fillText("自分の城",bx-6,TOP+22);g.fillStyle=S.final?"#ffcf3f":"#ffd0d8";g.textAlign="left";g.fillText(S.final?"魔王城":"敵の砦",bx+bw+6,TOP+22);
+ S.feed.forEach((f,i)=>{if(f.age>4)return;g.globalAlpha=Math.min(1,4-f.age);txt(f.txt,CX+CW/2,TOP+56+i*20,14,f.side==="h"?"#7dffae":"#ff8da0","center",4);g.globalAlpha=1});
+ if(S.cut){const c=S.cut,e=c.d-c.t,h=c.side==="h",dir=h?1:-1,T=.28,eo=v=>1-Math.pow(1-Math.min(1,Math.max(0,v)),3);
+  let ox=0;if(e<T)ox=-dir*(1-eo(e/T))*(CW+80);else if(c.t<T)ox=dir*eo((T-c.t)/T)*(CW+80);
+  const y=TOP+150,bh=96;g.save();g.translate(ox,0);
+  g.fillStyle=h?"rgba(16,96,52,.95)":"rgba(120,18,40,.95)";g.beginPath();g.moveTo(CX-20,y-bh/2);g.lineTo(W+20,y-bh/2-14);g.lineTo(W+20,y+bh/2-14);g.lineTo(CX-20,y+bh/2);g.closePath();g.fill();
+  g.strokeStyle=h?"#7dffae":"#ff8da0";g.lineWidth=4;g.stroke();
+  g.strokeStyle="rgba(255,255,255,.35)";g.lineWidth=2;for(let i=0;i<6;i++){const ly=y-bh/2+14+i*13,lx=CX+((i*97+S.t*900*dir)%CW+CW)%CW;g.beginPath();g.moveTo(lx,ly);g.lineTo(lx+70*dir,ly);g.stroke()}
+  const sx=h?CX+70:W-70;if(c.id==="hero")hspr("charge",sx,y+bh/2+8,.5);else if(!h&&EMAP[c.id])espr(EMAP[c.id],"attack",sx,y+bh/2+6,104);else spr(c.id+(h?"_b":"_r"),sx,y+bh/2+6,118,!h);
+  txt(c.txt,h?CX+CW/2+50:CX+CW/2-50,y+10,24,"#fff","center",6,CW-170);g.restore()}
+ if(S.over){g.fillStyle="rgba(4,6,14,.82)";g.fillRect(CX,TOP,CW,BOT-TOP);const win=S.over==="h",mx=CX+CW/2,goal=S.cfg.goal;
+  txt(S.clear?"目標達成！":win?"勇者の勝ち！":"妨害の勝ち！",mx,TOP+70,40,S.clear?"#ffcf3f":win?"#7dffae":"#ff8da0",null,8);txt(S.clear?`魔王城を落とした！（${S.n}/${goal}）`:win?`敵の砦を落とした ＋1（${S.n}/${goal}）`:`自分の城が落とされた −1（${S.n}/${goal}）`,mx,TOP+104,17,"#fff");
+  txt("MVP",mx,TOP+150,18,"#ffcf3f");(S.mvp||[]).forEach(([n,c],i)=>txt(`${i+1}位 ${n} ${c}コイン`,mx,TOP+182+i*28,16,"#fff"));
+  txt(S.clear?"おつかれさま！":`次の周まで ${Math.max(0,S.it)}秒`,mx,BOT-40,S.clear?22:28,"#ffcf3f",null,6)}
+ if(hero.act&&hero.act.k==="charge"){const v=g.createRadialGradient(CX+CW/2,(TOP+BOT)/2,80,CX+CW/2,(TOP+BOT)/2,CW*.7);v.addColorStop(0,"rgba(0,0,0,0)");v.addColorStop(1,"rgba(0,0,0,.65)");g.fillStyle=v;g.fillRect(CX,TOP,CW,BOT-TOP)}
+ if(S.flash>0){g.fillStyle=`rgba(255,250,220,${S.flash*1.6})`;g.fillRect(CX,TOP,CW,BOT-TOP)}
+ g.restore();
+ strip(S.slots.h,2,"h");strip(S.slots.x,H-SH-2,"x");
+ rr(GX+4,4,GW-8,H-8,10,"rgba(20,30,58,.95)");txt("勇者",GX+GW/2,26,14,"#ffcf3f");txt("ゲージ",GX+GW/2,44,12,"#fff","center",3);
+ const gy0=62,gy1=H-58,seg=(gy1-gy0)/GMAX,gv=S.gauge;
+ for(let i=0;i<GMAX;i++){const y=gy1-(i+1)*seg+2,f=Math.min(1,Math.max(0,gv-i)),hh=seg-4;rr(GX+16,y,GW-32,hh,5,"rgba(0,0,0,.55)");if(f>0)rr(GX+16,y+hh*(1-f),GW-32,hh*f,5,f>=1?(gv>=AREA?"#ffcf3f":"#3fd47a"):"rgba(63,212,122,.45)")}
+ {const ya=gy1-AREA*seg;g.fillStyle="#fff";g.fillRect(GX+8,ya-1,GW-16,3);txt("範囲",GX+GW/2,ya-5,11,gv>=AREA?"#ffcf3f":"#cbd3ea","center",3)}
+ txt(`${Math.floor(gv)}/${GMAX}`,GX+GW/2,H-28,16,"#fff")}
+// ---------- count overlay ----------
+let cn=null,cg=null,cfin=false;
+function countHTML(n,goal){const fin=n>=goal-1&&n<goal,k=Math.min(1,6/goal);let s="";for(let i=0;i<goal;i++){const boss=i===goal-1,cl=["f",boss?"boss":"",i<n?"done":"",i===n?"next":""].join(" ");s+=`<div class="${cl}"><img src="push/${boss?"c_demon":"c_fort"}.webp" alt=""></div>`}
+ return `<div class="Dw" style="--k:${k}"><div class="A"><img src="push/${fin||n>=goal?"c_demon":"c_fort"}.webp" alt=""><div class="lab stroke">${n>=goal?"クリア！":fin?"次は魔王城":"落とした砦"}</div><span class="n stroke">${n}</span><span class="g stroke">/ ${goal}</span></div><div class="row">${s}</div></div>`}
+function count(){if(!SN)return;const n=SN.n,goal=SN.cfg.goal;if(n===cn&&goal===cg)return;const ev=cn==null||goal!==cg?null:n>cn?(n>=goal?"clear":"plus"):"minus";cn=n;cg=goal;const el=$("ov");el.innerHTML=countHTML(n,goal);$("cnt").classList.add("on");
+ if(ev){el.classList.remove("shake","bump");void el.offsetWidth;el.classList.add(ev==="minus"?"shake":"bump");const p=document.createElement("div");p.className="pop stroke "+ev;p.textContent=ev==="plus"?"＋1 砦を落とした！":ev==="minus"?"−1 城を落とされた…":"魔王城撃破！クリア！";el.appendChild(p)}}
+// ---------- fit + loop ----------
+function fit(){const s=Math.min(innerWidth/W,innerHeight/H);cv.style.width=W*s+"px";cv.style.height=H*s+"px"}addEventListener("resize",fit);fit();
+function frame(now){if(VIEWM==="push"&&SN){S=hydrate(now);if(S){draw();cv.classList.add("on")}}requestAnimationFrame(frame)}requestAnimationFrame(frame);
+// ---------- network ----------
+let tries=0;
+function connect(){if(!NAME){$("msg").textContent="URLに ?stream=名前 が必要です";return}
+ const ws=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws?inv="+encodeURIComponent(INV));
+ ws.onopen=()=>{tries=0;ws.send(JSON.stringify({t:"watch",name:NAME}));$("msg").textContent=""};
+ ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}
+  if(m.t==="psnap"&&m.s){const now=performance.now();if(tSn)iv=iv*.8+Math.max(30,Math.min(250,now-tSn))*.2;PREV=SN;SN=m.s;tSn=now;if(VIEWM==="count")count();}
+  else if(m.t==="pend"){SN=PREV=null;cv.classList.remove("on");$("cnt").classList.remove("on");cn=null}};
+ ws.onclose=()=>{if(!EMBED)$("msg").textContent=tries>2?"サーバーにつながりません（再接続中）":"";setTimeout(connect,Math.min(15000,1000*(++tries)))};}
+connect();
+</script>
+</body></html>

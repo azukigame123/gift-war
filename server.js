@@ -7,6 +7,7 @@ const { WebSocketServer } = require("ws");
 const crypto = require("crypto");
 const { createSim, snapshot } = require("./sim");
 const TT = require("./tiktok");
+const { createPush } = require("./push");
 
 const PORT = +process.env.PORT || 8080;
 const SPEED = Math.max(1, Math.min(20, +process.env.GAME_SPEED || 1)); // testing only
@@ -251,6 +252,31 @@ function maybeClose(room) {
   if (!here) { clearTimeout(room.dieT); room.dieT = setTimeout(() => { const still = ["b", "r"].some(t => room.players[t] && room.players[t].ws && !room.players[t].cpu); if (!still) stopRoom(room); }, room.phase === "battle" ? 120000 : 15000); }
 }
 
+// ---------- 押し合いモード (owner only for now) ----------
+const PUSHG = new Map(); // owner invite name -> { game, ops:Set<ws>, live, on, name, loop, dieT }
+function pushKeys(G) { return [...new Set([G.name && wkey(G.name), G.who && wkey(G.who)].filter(Boolean))]; }
+function pushOf(k) { for (const G of PUSHG.values()) if (pushKeys(G).includes(k)) return G; return null; }
+function pushSend(G, o) {
+  const msg = JSON.stringify(o);
+  for (const w of G.ops) if (w.readyState === 1) w.send(msg);
+  for (const k of pushKeys(G)) { const W = WATCH.get(k); if (W) for (const w of W) if (w.readyState === 1 && !G.ops.has(w)) w.send(msg); }
+}
+function pushLive(G, name) {
+  name = TT.clean(name || "");
+  if (G.live && TT.clean(G.live.name).toLowerCase() === name.toLowerCase()) return;
+  if (G.live) { for (const k in G.on) G.live.off(k, G.on[k]); TT.release(G.live); G.live = null; }
+  G.name = name; if (!name) return;
+  const L = TT.acquire(name); if (!L) return; G.live = L;
+  G.on = { state: info => pushSend(G, { t: "ptt", info: L.info() }), gift: g => { const side = G.game.gift(g); TT.dbg(g.nick, side ? "push-gift" : "push-unmatched", `${g.giftId} ${g.giftName} x${g.count} -> ${side || "-"}`); } };
+  for (const k in G.on) L.on(k, G.on[k]);
+  G.on.state();
+}
+function pushStop(G) { clearInterval(G.loop); clearTimeout(G.dieT); if (G.live) { for (const k in G.on) G.live.off(k, G.on[k]); TT.release(G.live); G.live = null; } pushSend(G, { t: "pend" }); PUSHG.delete(G.who); }
+function pushRun(G) {
+  clearInterval(G.loop); let n = 0;
+  G.loop = setInterval(() => { for (let q = 0; q < SPEED; q++) G.game.tick(1 / 30); if (++n % 2 === 0) pushSend(G, { t: "psnap", s: G.game.snapshot() }); }, 1000 / 30);
+}
+
 // ---------- websocket ----------
 const wss = new WebSocketServer({ server, path: "/ws", verifyClient: (info, cb) => { const q = new URL(info.req.url, "http://x").searchParams; const who = checkInv(q.get("inv")); if (!who) return cb(false, 401, "invite required"); info.req.who = who; cb(true); }, perMessageDeflate: { threshold: 512 } , maxPayload: 64 * 1024 });
 wss.on("connection", (ws, req) => {
@@ -305,6 +331,7 @@ wss.on("connection", (ws, req) => {
         const P = me();
         if (P) { const nameChanged = P.name !== C.name; P.name = C.name; P.disp = C.disp || ""; P.icon = C.icon || ""; P.gifts = C.gifts; P.cheer = C.cheer; P.cheerEmote = C.cheerEmote || null; P.deck = C.deck; if (nameChanged) { clearTimeout(P.attT); const rm = C.room, tm = C.team; P.attT = setTimeout(() => attachLive(rm, tm), 2500); } lobbyUpdate(C.room); }
         else { clearTimeout(C.soloT); C.soloT = setTimeout(soloLive, 1500); }
+        if (C.push && PUSHG.get(WHO.name) === C.push) { const G = C.push; clearTimeout(C.pushT); C.pushT = setTimeout(() => pushLive(G, C.name), 1500); }
         break;
       }
       case "create": { leave(); const room = { code: newCode(), phase: "lobby", players: { b: null, r: null }, practice: false, offline: !!m.offline, cap: Math.max(10, Math.min(200, +m.cap || 60)) }; ROOMS.set(room.code, room); enter(room, "b"); break; }
@@ -358,13 +385,30 @@ wss.on("connection", (ws, req) => {
         if (C.watch) { const W = WATCH.get(C.watch); if (W) W.delete(ws); }
         C.watch = k; if (!WATCH.has(k)) WATCH.set(k, new Set()); WATCH.get(k).add(ws);
         const f = roomOf(k); if (f && f.room.sim && f.room.phase !== "lobby") send(ws, { t: "start", you: f.team, room: roomView(f.room), s: snapshot(f.room.sim.S), resume: true });
+        const pg = pushOf(k); if (pg) send(ws, { t: "psnap", s: pg.game.snapshot() });
+        break;
+      }
+      case "pstart": case "pslots": case "pskill": case "ptest": case "pstop": case "pjoin": {
+        if (!WHO.owner) return send(ws, { t: "err", msg: "押し合いモードは今はオーナーだけが使えます" });
+        let G = PUSHG.get(WHO.name);
+        if (m.t === "pjoin") { if (G) { G.ops.add(ws); C.push = G; clearTimeout(G.dieT); send(ws, { t: "psnap", s: G.game.snapshot() }); if (G.live) send(ws, { t: "ptt", info: G.live.info() }); } break; }
+        if (m.t === "pstart") {
+          if (!G) { G = { game: createPush(), ops: new Set(), who: WHO.name, name: "", live: null, on: null }; PUSHG.set(WHO.name, G); }
+          G.ops.add(ws); C.push = G; clearTimeout(G.dieT);
+          G.game.start(m.cfg || {}, m.gifts); pushLive(G, C.name); pushRun(G); pushSend(G, { t: "psnap", s: G.game.snapshot() }); break;
+        }
+        if (!G) return;
+        if (m.t === "pslots") G.game.setSlots(m.gifts);
+        else if (m.t === "pskill") G.game.skill(m.k === 2 ? 2 : 1);
+        else if (m.t === "ptest") G.game.test(m.side === "x" ? "x" : "h", Math.max(0, Math.min(5, m.i | 0)), "テスト");
+        else if (m.t === "pstop") pushStop(G);
         break;
       }
       case "ping": send(ws, { t: "pong", at: m.at }); break;
     }
   });
   const rt = setInterval(() => { C.rate = 0; }, 1000);
-  ws.on("close", () => { clearInterval(rt); if (C.watch) { const W = WATCH.get(C.watch); if (W) { W.delete(ws); if (!W.size) WATCH.delete(C.watch); } } leave(); dropSolo(); if (C.learn) C.learn.stop(); if (pc) { const S = CONNS.get(PK); if (S) { S.delete(pc); if (!S.size) CONNS.delete(PK); } const ux = INVDB.users.find(x => x.name === PK); if (ux) { ux.seen = new Date().toISOString(); saveInvDB(); } } });
+  ws.on("close", () => { clearInterval(rt); if (C.push) { const G = C.push; G.ops.delete(ws); if (!G.ops.size) { clearTimeout(G.dieT); G.dieT = setTimeout(() => { if (!G.ops.size) pushStop(G); }, 30 * 60000); } } if (C.watch) { const W = WATCH.get(C.watch); if (W) { W.delete(ws); if (!W.size) WATCH.delete(C.watch); } } leave(); dropSolo(); if (C.learn) C.learn.stop(); if (pc) { const S = CONNS.get(PK); if (S) { S.delete(pc); if (!S.size) CONNS.delete(PK); } const ux = INVDB.users.find(x => x.name === PK); if (ux) { ux.seen = new Date().toISOString(); saveInvDB(); } } });
   if (PK) { pc = C; let S = CONNS.get(PK); if (!S) CONNS.set(PK, S = new Set()); S.add(C); const ux = INVDB.users.find(x => x.name === PK); if (ux) { ux.seen = new Date().toISOString(); saveInvDB(); } }
   send(ws, { t: "hi", mock: TT.MOCK, version: 1, who: WHO.name, owner: !!WHO.owner });
 });
