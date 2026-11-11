@@ -87,13 +87,14 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
     return res.end(JSON.stringify(who ? { ok: true, name: who.name, owner: !!who.owner, gate: GATE } : { ok: false, gate: GATE }));
   }
-  if (u.pathname === "/api/pboost") { // 押し合いの2倍タイム: /api/pboost?k=KEY&x=2&sec=30&side=all|h|x
-    const k = String(u.searchParams.get("k") || ""); let G = null;
-    for (const g of PUSHG.values()) { if (!isOwnerName(g.who)) continue; const a = Buffer.from(k), b = Buffer.from(pboostKey(g.who)); if (a.length === b.length && crypto.timingSafeEqual(a, b)) G = g; }
-    res.writeHead(G ? 200 : 404, { "content-type": "application/json", "cache-control": "no-store" });
-    if (!G) return res.end(JSON.stringify({ ok: false, msg: "押し合いが動いていないか、キーが違います" }));
+  if (u.pathname === "/api/pboost") { // 押し合いの2倍タイム（オーナー専用）: /api/pboost?k=KEY&x=2&sec=30&side=all|h|x
+    const k = Buffer.from(String(u.searchParams.get("k") || "")), own = GATE ? "owner" : "guest", want = Buffer.from(pboostKey(own));
+    const okKey = k.length === want.length && crypto.timingSafeEqual(k, want), G = okKey ? PUSHG.get(own) : null;
+    res.writeHead(okKey ? 200 : 403, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+    if (!okKey) return res.end(JSON.stringify({ ok: false, msg: "鍵が違います。操作画面の「2倍タイムのURL」をコピーし直してください" }));
+    if (!G) return res.end(JSON.stringify({ ok: false, msg: "押し合いが始まっていないので、2倍タイムにはなりませんでした" }));
     const r = G.game.boost(u.searchParams.get("x"), u.searchParams.get("sec"), u.searchParams.get("side"));
-    TT.dbg(G.who, "push-boost", JSON.stringify(r)); return res.end(JSON.stringify(Object.assign({ ok: true }, r)));
+    TT.dbg(G.who, "push-boost", JSON.stringify(r)); return res.end(JSON.stringify(Object.assign({ ok: true, msg: `${r.x}倍タイム（残り${r.left}秒）` }, r)));
   }
   if (u.pathname === "/api/history") {
     const who = checkInv(u.searchParams.get("inv"));
