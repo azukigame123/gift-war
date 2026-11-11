@@ -53,11 +53,11 @@ function createPush() {
       S.units.push({ i: uid++, side, id, s, y: (Math.random() - .5) * 80, hp, max: hp, cd: Math.random(), bob: Math.random() * 6, m: hm, g: Math.random() * .3, run: 0 });
     }
     if (coins) { (h ? S.help : S.harm).push({ t: S.t, c: coins }); if (h) S.mvp[who] = (S.mvp[who] || 0) + coins; }
-    if (coins >= 99) S.cut = { side, txt: `${who} の ${label}！`, t: 2.2, d: 2.2, id };
+    if (coins >= 99 && !(S.cut && S.cut.id === "hero")) S.cut = { side, txt: `${who} の ${label}！`, t: 2.2, d: 2.2, id }; // the hero's big attack is never covered
     else { S.feed.unshift({ side, txt: `${who}：${label}`, t: S.t }); S.feed.length = Math.min(S.feed.length, 3); }
   }
   function skill(kind) {
-    if (!S || S.over || S.hero.act) return false; const need = kind === 2 ? AREA : 1; if (S.gauge < need) return false; S.gauge -= need;
+    if (!S || S.over || S.hero.act) return false; const need = kind === 2 ? AREA : 1; if (S.gauge < need - .05) return false; S.gauge = Math.max(0, S.gauge - need);
     if (kind === 1) S.hero.act = { k: "lunge", t: 0, d: .5 };
     else { S.hero.act = { k: "charge", t: 0, d: .75 }; S.cut = { side: "h", txt: "勇者の大回転斬り！", t: 1.6, d: 1.6, id: "hero" }; }
     return true;
@@ -184,7 +184,7 @@ function createPush() {
   function snapshot() {
     if (!S) return null;
     return {
-      t: r1(S.t), g: r1(S.gauge), n: COUNT, cfg: CFG, fin: S.final, over: S.over, clear: S.clear, it: Math.ceil(interT), push: r1(S.push),
+      t: r1(S.t), g: Math.floor(S.gauge * 10) / 10, n: COUNT, cfg: CFG, fin: S.final, over: S.over, clear: S.clear, it: Math.ceil(interT), push: r1(S.push),
       fb: Math.round(S.fortB), mb: S.maxB, fr: Math.round(S.fortR), mr: S.maxR,
       hero: { s: r1(S.hero.s), kb: Math.round(S.hero.kb), mv: S.hero.moving ? 1 : 0, at: S.hero.atkT > 0 ? 1 : 0, act: S.hero.act ? { k: S.hero.act.k, t: r1(S.hero.act.t), d: S.hero.act.d } : null },
       u: S.units.map(u => [u.i, u.side, u.id, r1(u.s), r1(u.y), Math.round(u.hp / u.max * 100), u.atkT > 0 ? 1 : 0, u.mv > 0 ? 1 : 0, u.hitT > 0 ? 1 : 0, r1(u.bob), (u.stun > 0 ? 1 : 0) | (u.guardT > 0 ? 2 : 0) | (u.mini ? 4 : 0) | (u.aura > 0 ? 8 : 0) | (u.dash > 0 ? 16 : 0) | (u.tauntT > 0 ? 32 : 0)]),
