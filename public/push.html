@@ -64,6 +64,9 @@ const SH=96,GX=0,GW=64,TOP=SH+4,BOT=H-SH-4,CX=GW+6,CW=W-CX,LANE=BOT-95;
 const L=3000,PX=1,GMAX=10,AREA=5,R1=200,R2=300,WF=3;
 // ---------- state from server snapshots (interpolated) ----------
 let SN=null,PREV=null,tSn=0,iv=66,S=null;
+// cut-ins run on this page's own clock: a new one starts when the server shows a different text, then plays once to the end
+let CUT=null;function cutNow(now){const c=SN&&SN.cut;if(c){const key=c.side+"|"+c.id+"|"+c.txt;if(!CUT||CUT.key!==key||(now-CUT.st)/1000>CUT.d+.5&&c.t>c.d-.3)CUT={key,st:now-(c.d-c.t)*1000,d:c.d,side:c.side,id:c.id,txt:c.txt}}
+ if(!CUT)return null;const t=CUT.d-(now-CUT.st)/1000;if(t<=0){if(!c)CUT=null;return null}return {side:CUT.side,id:CUT.id,txt:CUT.txt,d:CUT.d,t}}
 function hydrate(now){if(!SN)return null;const a=Math.min(1.5,(now-tSn)/iv),pm={};if(PREV)for(const u of PREV.u)pm[u[0]]=u;
  const lerp=(p,c)=>p==null?c:p+(c-p)*Math.min(1,a);const el=Math.max(0,(now-tSn)/1000);
  const hero=Object.assign({},SN.hero,{s:lerp(PREV&&PREV.hero.s,SN.hero.s)});
@@ -72,7 +75,7 @@ function hydrate(now){if(!SN)return null;const a=Math.min(1.5,(now-tSn)/iv),pm={
   shots:(SN.shots||[]).map(q=>({k:q[0],a:q[1],b:q[2],c:q[3],e:q[4],t:q[5]-el,d:q[6]})).filter(q=>q.t>0),zones:(SN.zones||[]).map(z=>({s:z[0],y:z[1],r:z[2],t:z[3]-el,side:z[4]})).filter(z=>z.t>0),hst:SN.hst,
   fx:SN.fx.map(f=>({s:f[0],y:f[1],t:f[2]-el,c:f[3]})).filter(f=>f.t>0),vfx:SN.vfx.map(f=>({k:f[0],s:f[1],t:f[2]-el,d:f[3],y:f[4]||0,side:f[5]})).filter(f=>f.t>0),
   pops:SN.pops.map(p=>({s:p[0],y:p[1],txt:p[2],t:p[3]-el,c:p[4],big:p[5]})).filter(p=>p.t>0),feed:SN.feed.map(f=>({side:f[0],txt:f[1],age:f[2]+el})),
-  cut:SN.cut&&SN.cut.t-el>0?Object.assign({},SN.cut,{t:SN.cut.t-el}):null,shake:Math.max(0,SN.sh-el*40),flash:Math.max(0,SN.fl-el),mvp:SN.mvp,slots:SN.slots}}
+  cut:cutNow(now),shake:Math.max(0,SN.sh-el*40),flash:Math.max(0,SN.fl-el),mvp:SN.mvp,slots:SN.slots}}
 // ---------- drawing (same as the approved preview) ----------
 const camS=()=>Math.max((CW*.4)/PX,Math.min(L-(CW*.6)/PX,S.hero.s));
 const X=s=>CX+CW*.4+(s-camS())*PX;
