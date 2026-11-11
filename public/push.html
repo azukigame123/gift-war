@@ -70,7 +70,7 @@ let CUT=null;function cutNow(now){const c=SN&&SN.cut;if(c){const key=c.side+"|"+
 function hydrate(now){if(!SN)return null;const a=Math.min(1.5,(now-tSn)/iv),pm={};if(PREV)for(const u of PREV.u)pm[u[0]]=u;
  const lerp=(p,c)=>p==null?c:p+(c-p)*Math.min(1,a);const el=Math.max(0,(now-tSn)/1000);
  const hero=Object.assign({},SN.hero,{s:lerp(PREV&&PREV.hero.s,SN.hero.s)});
- return {t:SN.t+el,gauge:Math.min(GMAX,SN.g+(SN.over?0:el/2)),hero,final:SN.fin,over:SN.over,clear:SN.clear,it:SN.it,fortB:SN.fb,maxB:SN.mb,fortR:SN.fr,maxR:SN.mr,cfg:SN.cfg,n:SN.n,
+ return {idle:SN.idle,t:SN.idle?now/1000:SN.t+el,gauge:SN.idle?0:Math.min(GMAX,SN.g+(SN.over?0:el/2)),hero,final:SN.fin,over:SN.over,clear:SN.clear,it:SN.it,fortB:SN.fb,maxB:SN.mb,fortR:SN.fr,maxR:SN.mr,cfg:SN.cfg,n:SN.n,
   units:SN.u.map(u=>{const p=pm[u[0]],f=u[10]||0;return {i:u[0],side:u[1],id:u[2],s:lerp(p&&p[3],u[3]),y:lerp(p&&p[4],u[4]),hp:u[5],atk:u[6],mv:u[7],hit:u[8],bob:u[9],stun:f&1,guard:f&2,mini:f&4,aura:f&8,dash:f&16,taunt:f&32}}),
   shots:(SN.shots||[]).map(q=>({k:q[0],a:q[1],b:q[2],c:q[3],e:q[4],t:q[5]-el,d:q[6]})).filter(q=>q.t>0),zones:(SN.zones||[]).map(z=>({s:z[0],y:z[1],r:z[2],t:z[3]-el,side:z[4]})).filter(z=>z.t>0),hst:SN.hst,
   fx:SN.fx.map(f=>({s:f[0],y:f[1],t:f[2]-el,c:f[3]})).filter(f=>f.t>0),vfx:SN.vfx.map(f=>({k:f[0],s:f[1],t:f[2]-el,d:f[3],y:f[4]||0,side:f[5]})).filter(f=>f.t>0),
@@ -151,6 +151,7 @@ function draw(){const hero=S.hero;g.clearRect(0,0,W,H);g.fillStyle="#0b0f1d";g.f
   txt(S.clear?"目標達成！":win?"勇者の勝ち！":"妨害の勝ち！",mx,TOP+70,40,S.clear?"#ffcf3f":win?"#7dffae":"#ff8da0",null,8);txt(S.clear?`魔王城を落とした！（${S.n}/${goal}）`:win?`敵の砦を落とした ＋1（${S.n}/${goal}）`:`自分の城が落とされた −1（${S.n}/${goal}）`,mx,TOP+104,17,"#fff");
   txt("MVP",mx,TOP+150,18,"#ffcf3f");(S.mvp||[]).forEach(([n,c],i)=>txt(`${i+1}位 ${n} ${c}コイン`,mx,TOP+182+i*28,16,"#fff"));
   txt(S.clear?"おつかれさま！":`次の周まで ${Math.max(0,S.it)}秒`,mx,BOT-40,S.clear?22:28,"#ffcf3f",null,6)}
+ if(S.idle){const w=Math.min(CW-60,300),y=TOP+44;rr(CX+CW/2-w/2,y,w,58,16,"rgba(10,14,28,.82)");g.strokeStyle="#ffcf3f";g.lineWidth=3;g.beginPath();g.roundRect(CX+CW/2-w/2,y,w,58,16);g.stroke();txt("押し合い 準備中",CX+CW/2,y+28,24,"#ffcf3f","center",6);txt("もうすぐ始まります",CX+CW/2,y+50,13,"#fff","center",4)}
  if(hero.act&&hero.act.k==="charge"){const v=g.createRadialGradient(CX+CW/2,(TOP+BOT)/2,80,CX+CW/2,(TOP+BOT)/2,CW*.7);v.addColorStop(0,"rgba(0,0,0,0)");v.addColorStop(1,"rgba(0,0,0,.65)");g.fillStyle=v;g.fillRect(CX,TOP,CW,BOT-TOP)}
  if(S.flash>0){g.fillStyle=`rgba(255,250,220,${S.flash*1.6})`;g.fillRect(CX,TOP,CW,BOT-TOP)}
  g.restore();
@@ -176,7 +177,7 @@ function connect(){if(!NAME){$("msg").textContent="URLに ?stream=名前 が必�
  ws.onopen=()=>{tries=0;ws.send(JSON.stringify({t:"watch",name:NAME}));$("msg").textContent=""};
  ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}
   if(m.t==="psnap"&&m.s){const now=performance.now();if(tSn)iv=iv*.8+Math.max(30,Math.min(250,now-tSn))*.2;PREV=SN;SN=m.s;tSn=now;if(VIEWM==="count")count();}
-  else if(m.t==="pend"){SN=PREV=null;cv.classList.remove("on");$("cnt").classList.remove("on");cn=null}};
+  else if(m.t==="pend"){cn=null}};
  ws.onclose=()=>{if(!EMBED)$("msg").textContent=tries>2?"サーバーにつながりません（再接続中）":"";setTimeout(connect,Math.min(15000,1000*(++tries)))};}
 // local mode (preview without the server): runs the same push.js in the page, controlled by the parent page
 if(Q.get("local")==="1"){const sc=document.createElement("script");sc.src="push.js";sc.onload=()=>{const G=PushGame.createPush(),PACE={h:4,x:4},NK=["mochi","rio","たけ","ゆう","ころ","なな","Ken","みか"];

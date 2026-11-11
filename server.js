@@ -280,7 +280,11 @@ function pushLive(G, name) {
   for (const k in G.on) L.on(k, G.on[k]);
   G.on.state();
 }
-function pushStop(G) { clearInterval(G.loop); clearTimeout(G.dieT); if (G.live) { for (const k in G.on) G.live.off(k, G.on[k]); TT.release(G.live); G.live = null; } pushSend(G, { t: "pend" }); PUSHG.delete(G.who); }
+// before a push game starts (and after it stops) the stream pages show a still field and "0 / goal", using the last settings
+const PUSHLAST = new Map(); // watch key -> { cfg, gifts }
+function idleSnap(k) { const L = PUSHLAST.get(k) || {}, g = createPush(); g.start(L.cfg || {}, L.gifts || null); const s = g.snapshot(); s.idle = 1; s.g = 0; return s; }
+function pushIdle(G) { for (const k of pushKeys(G)) { const W = WATCH.get(k), msg = JSON.stringify({ t: "psnap", s: idleSnap(k) }); if (W) for (const w of W) if (w.readyState === 1) w.send(msg); } }
+function pushStop(G) { clearInterval(G.loop); clearTimeout(G.dieT); if (G.live) { for (const k in G.on) G.live.off(k, G.on[k]); TT.release(G.live); G.live = null; } pushSend(G, { t: "pend" }); PUSHG.delete(G.who); pushIdle(G); }
 function pushRun(G) {
   clearInterval(G.loop); let n = 0;
   G.loop = setInterval(() => { for (let q = 0; q < SPEED; q++) G.game.tick(1 / 30); if (++n % 2 === 0) pushSend(G, { t: "psnap", s: G.game.snapshot() }); }, 1000 / 30);
@@ -394,7 +398,7 @@ wss.on("connection", (ws, req) => {
         if (C.watch) { const W = WATCH.get(C.watch); if (W) W.delete(ws); }
         C.watch = k; if (!WATCH.has(k)) WATCH.set(k, new Set()); WATCH.get(k).add(ws);
         const f = roomOf(k); if (f && f.room.sim && f.room.phase !== "lobby") send(ws, { t: "start", you: f.team, room: roomView(f.room), s: snapshot(f.room.sim.S), resume: true });
-        const pg = pushOf(k); if (pg) send(ws, { t: "psnap", s: pg.game.snapshot() });
+        const pg = pushOf(k); send(ws, { t: "psnap", s: pg ? pg.game.snapshot() : idleSnap(k) });
         break;
       }
       case "pstart": case "pslots": case "pskill": case "ptest": case "pstop": case "pjoin": case "pboost": {
@@ -405,10 +409,10 @@ wss.on("connection", (ws, req) => {
         if (m.t === "pstart") {
           if (!G) { G = { game: createPush(), ops: new Set(), who: WHO.name, name: "", live: null, on: null }; PUSHG.set(WHO.name, G); }
           G.ops.add(ws); C.push = G; clearTimeout(G.dieT);
-          G.game.start(m.cfg || {}, m.gifts); pushLive(G, C.name); pushRun(G); pushSend(G, { t: "psnap", s: G.game.snapshot() }); break;
+          G.game.start(m.cfg || {}, m.gifts); pushLive(G, C.name); for (const k of pushKeys(G)) PUSHLAST.set(k, { cfg: m.cfg || {}, gifts: m.gifts || null }); pushRun(G); pushSend(G, { t: "psnap", s: G.game.snapshot() }); break;
         }
         if (!G) return;
-        if (m.t === "pslots") G.game.setSlots(m.gifts);
+        if (m.t === "pslots") { G.game.setSlots(m.gifts); for (const k of pushKeys(G)) { const L = PUSHLAST.get(k); if (L) L.gifts = m.gifts; } }
         else if (m.t === "pskill") G.game.skill(m.k === 2 ? 2 : 1);
         else if (m.t === "ptest") G.game.test(m.side === "x" ? "x" : "h", Math.max(0, Math.min(5, m.i | 0)), "テスト");
         else if (m.t === "pstop") pushStop(G);
