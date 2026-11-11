@@ -342,6 +342,7 @@ html.mpush #wrap>*:not(header):not(#pushSec){display:none!important}
 <div class="pcard"><h3>配信用URL（押し合い）</h3>
  <div class="st"><span class="i">🏰</span><span><b>押し合い用URL</b><small>コースと勇者・ギフト欄が映る画面</small></span><span class="sz">640×600</span><code id="pUrl1">サーバーにつながると出ます</code><button type="button" id="pCopy1">コピー</button></div>
  <div class="st"><span class="i">🔢</span><span><b>カウント用URL</b><small>落とした砦の数。背景は透明で、好きな場所に重ねる</small></span><span class="sz">440×220</span><code id="pUrl2">サーバーにつながると出ます</code><button type="button" id="pCopy2">コピー</button></div>
+ <div class="st"><span class="i">🎮</span><span><b>押し合い用（攻撃ボタンつき）</b><small>押し合い用と同じ画面に、単体攻撃・範囲攻撃のボタンがのる。画面を触って攻撃できる（ボタンも配信に映ります）</small></span><span class="sz">640×600</span><code id="pUrl4">サーバーにつながると出ます</code><button type="button" id="pCopy4">コピー</button></div>
  <p class="note">バトクラ用のURL（バトル用・全体表示用）とは別です。OBSにそれぞれブラウザソースとして足します。このURLには入場用の鍵が入っているので、ほかの人に見せないでください。</p></div>
 <div class="pcard"><h3>ChainRouletteと連動（2倍タイム）</h3>
  <p class="note">このURLを呼ぶと、押し合いのギフトで出るキャラが一定時間2倍になります。ChainRouletteのアクションで「URLを呼ぶ」に貼ってください。</p>
@@ -1824,9 +1825,9 @@ refreshUI();netGate();frame();
   const setMode=k=>{H.classList.remove("msel","mpush","mbat");if(!OWNER)return;H.classList.add(k==="push"?"mpush":k==="bat"?"mbat":"msel");if(k==="push"){urls();frame()}window.dispatchEvent(new Event("resize"))};
   document.addEventListener("click",e=>{const b=e.target.closest("[data-mode]");if(b){setMode(b.dataset.mode);if(b.dataset.mode!=="sel")window.scrollTo(0,0)}});
   const key=()=>{const t=$("ttB");return (t&&t.value.trim().replace(/^@/,""))||(window.GW&&GW.NETX.who)||""};
-  const urls=()=>{const n=key();if(!n||!window.GW||!GW.NETX.ok){$("pUrl1").textContent=$("pUrl2").textContent="サーバーにつながると出ます";return}
-    const iv=window.GW&&GW.INV?`&inv=${encodeURIComponent(GW.INV)}`:"";$("pUrl1").textContent=`${location.origin}/?stream=${encodeURIComponent(n)}&v=push${iv}`;$("pUrl2").textContent=`${location.origin}/?stream=${encodeURIComponent(n)}&v=count${iv}`};
-  for(const [b,c] of [["pCopy1","pUrl1"],["pCopy2","pUrl2"],["pCopy3","pUrl3"]])$(b).onclick=async()=>{const t=$(c).textContent;if(!/^https?:/.test(t))return;try{await navigator.clipboard.writeText(t);$(b).textContent="コピーしました";setTimeout(()=>$(b).textContent="コピー",1500)}catch(e){const r=document.createRange();r.selectNodeContents($(c));const se=getSelection();se.removeAllRanges();se.addRange(r)}};
+  const urls=()=>{const n=key();if(!n||!window.GW||!GW.NETX.ok){$("pUrl1").textContent=$("pUrl2").textContent=$("pUrl4").textContent="サーバーにつながると出ます";return}
+    const iv=window.GW&&GW.INV?`&inv=${encodeURIComponent(GW.INV)}`:"";$("pUrl1").textContent=`${location.origin}/?stream=${encodeURIComponent(n)}&v=push${iv}`;$("pUrl2").textContent=`${location.origin}/?stream=${encodeURIComponent(n)}&v=count${iv}`;$("pUrl4").textContent=`${location.origin}/?stream=${encodeURIComponent(n)}&v=push&btn=1${iv}`};
+  for(const [b,c] of [["pCopy1","pUrl1"],["pCopy2","pUrl2"],["pCopy3","pUrl3"],["pCopy4","pUrl4"]])$(b).onclick=async()=>{const t=$(c).textContent;if(!/^https?:/.test(t))return;try{await navigator.clipboard.writeText(t);$(b).textContent="コピーしました";setTimeout(()=>$(b).textContent="コピー",1500)}catch(e){const r=document.createRange();r.selectNodeContents($(c));const se=getSelection();se.removeAllRanges();se.addRange(r)}};
   // gift pickers: same price as the slot
   function gifts(){const box=$("pGifts");box.innerHTML="";const cur=slots();
     for(const sd of ["h","x"])DEF[sd].forEach((d,i)=>{const lab=document.createElement("label");lab.className=sd;lab.textContent=`${sd==="h"?"🟢":"🔴"} ${d[4]}`;lab.htmlFor=`pg-${sd}-${i}`;

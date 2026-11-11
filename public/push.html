@@ -6,9 +6,13 @@
 <style>
 html,body{margin:0;background:transparent;overflow:hidden;height:100%}
 body{font-family:"M PLUS 1p",sans-serif;color:#fff}
-#cv{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:block;visibility:hidden}
+#stage{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(100vw,calc(100vh*640/600));aspect-ratio:640/600}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;visibility:hidden}
 #cv.on{visibility:visible}
 #cnt{position:absolute;inset:0;display:grid;place-items:center;visibility:hidden}#cnt.on{visibility:visible}
+.pbtn{position:absolute;right:1.6%;bottom:18.5%;display:none;gap:1.2%;z-index:5;width:44%}.pbtn.on{display:flex}
+.pbtn button{flex:1;font:400 clamp(11px,2.6vmin,17px) "Dela Gothic One","M PLUS 1p",sans-serif;color:#fff;border:3px solid #0b0f1d;border-radius:12px;padding:.5em .4em;white-space:nowrap;cursor:pointer;box-shadow:0 4px 0 #0b0f1d;touch-action:manipulation}
+.pbtn .b1{background:#2f9e5a}.pbtn .b2{background:#c9851a}.pbtn button:disabled{filter:grayscale(1) brightness(.6);cursor:default}.pbtn button:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 #0b0f1d}
 #msg{position:absolute;left:8px;bottom:6px;font:800 12px "M PLUS 1p",sans-serif;color:#fff;text-shadow:0 1px 3px #000;opacity:.85}
 /* count overlay (decided design: big number + fort row) */
 :root{--gold:#ffcf3f;--red:#ff4d6a;--green:#3fd47a}
@@ -32,7 +36,8 @@ body{font-family:"M PLUS 1p",sans-serif;color:#fff}
 .bump{animation:bump .5s}@keyframes bump{40%{transform:scale(1.12)}}
 </style></head>
 <body>
-<canvas id="cv" width="640" height="600"></canvas>
+<div id="stage"><canvas id="cv" width="640" height="600"></canvas>
+<div class="pbtn" id="pbtn"><button class="b1" id="pb1" type="button">⚔️ 単体</button><button class="b2" id="pb2" type="button">🌀 範囲</button></div></div>
 <div id="cnt"><div class="ov" id="ov"></div></div>
 <div id="msg"></div>
 <script>
@@ -168,12 +173,17 @@ function countHTML(n,goal){const fin=n>=goal-1&&n<goal,k=Math.min(1,6/goal);let 
 function count(){if(!SN)return;const n=SN.n,goal=SN.cfg.goal;if(n===cn&&goal===cg)return;const ev=cn==null||goal!==cg?null:n>cn?(n>=goal?"clear":"plus"):"minus";cn=n;cg=goal;const el=$("ov");el.innerHTML=countHTML(n,goal);$("cnt").classList.add("on");
  if(ev){el.classList.remove("shake","bump");void el.offsetWidth;el.classList.add(ev==="minus"?"shake":"bump");const p=document.createElement("div");p.className="pop stroke "+ev;p.textContent=ev==="plus"?"＋1 砦を落とした！":ev==="minus"?"−1 城を落とされた…":"魔王城撃破！クリア！";el.appendChild(p)}}
 // ---------- fit + loop ----------
-function fit(){const s=Math.min(innerWidth/W,innerHeight/H);cv.style.width=W*s+"px";cv.style.height=H*s+"px"}addEventListener("resize",fit);fit();
-function frame(now){if(VIEWM==="push"&&SN){S=hydrate(now);if(S){draw();cv.classList.add("on")}}requestAnimationFrame(frame)}requestAnimationFrame(frame);
+
+function frame(now){btnUI();if(VIEWM==="push"&&SN){S=hydrate(now);if(S){draw();cv.classList.add("on")}}requestAnimationFrame(frame)}requestAnimationFrame(frame);
 // ---------- network ----------
 let tries=0;
+// attack buttons on the stream page (&btn=1): the owner can press them on the screen itself
+const BTN=Q.get("btn")==="1";let WS=null,SKILL=null;
+if(BTN){$("pbtn").classList.add("on");const send=k=>{if(SKILL)SKILL(k);else if(WS&&WS.readyState===1)WS.send(JSON.stringify({t:"pskill",k}))};$("pb1").onclick=()=>send(1);$("pb2").onclick=()=>send(2)}
+function btnUI(){if(!BTN)return;
+ const gv=SN&&!SN.idle?SN.g:0,busy=!SN||SN.idle||!!SN.over||!!(SN.hero&&SN.hero.act);$("pb1").disabled=busy||gv<1;$("pb2").disabled=busy||gv<5}
 function connect(){if(!NAME){$("msg").textContent="URLに ?stream=名前 が必要です";return}
- const ws=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws?inv="+encodeURIComponent(INV));
+ const ws=WS=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws?inv="+encodeURIComponent(INV));
  ws.onopen=()=>{tries=0;ws.send(JSON.stringify({t:"watch",name:NAME}));$("msg").textContent=""};
  ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}
   if(m.t==="psnap"&&m.s){const now=performance.now();if(tSn)iv=iv*.8+Math.max(30,Math.min(250,now-tSn))*.2;PREV=SN;SN=m.s;tSn=now;if(VIEWM==="count")count();}
@@ -182,7 +192,7 @@ function connect(){if(!NAME){$("msg").textContent="URLに ?stream=名前 が必�
 // local mode (preview without the server): runs the same push.js in the page, controlled by the parent page
 if(Q.get("local")==="1"){const sc=document.createElement("script");sc.src="push.js";sc.onload=()=>{const G=PushGame.createPush(),PACE={h:4,x:4},NK=["mochi","rio","たけ","ゆう","ころ","なな","Ken","みか"];
   const DEF=PushGame.DEF,pick=(side,R)=>{const L=DEF[side].map((d,i)=>[d[3],i]).filter(([c])=>c<=Math.max(30,R*40));const w=L.map(([c])=>1/Math.sqrt(c)),sw=w.reduce((a,b)=>a+b),mean=L.reduce((a,[c],k)=>a+w[k]*c,0)/sw;return {L,w,sw,rate:R/mean}};
-  let auto=true;G.start({goal:5,fort:3000,castle:5000},null);let acc=0,last=performance.now(),k=0;
+  let auto=true;SKILL=k=>G.skill(k);G.start({goal:5,fort:3000,castle:5000},null);let acc=0,last=performance.now(),k=0;
   const post=()=>{const sn=G.snapshot();PREV=SN;SN=sn;const now=performance.now();if(tSn)iv=iv*.8+Math.max(30,Math.min(250,now-tSn))*.2;tSn=now;try{parent.postMessage({push:1,g:sn.g,n:sn.n,goal:sn.cfg.goal,over:sn.over,act:!!sn.hero.act},"*")}catch(e){}};
   setInterval(()=>{const dt=1/30;if(auto&&G.S&&!G.S.over)for(const sd of ["h","x"]){const R=PACE[sd];if(!R)continue;const p=pick(sd,R);if(Math.random()<p.rate*dt){let q=Math.random()*p.sw;for(let j=0;j<p.L.length;j++){q-=p.w[j];if(q<=0){G.test(sd,p.L[j][1],NK[Math.random()*NK.length|0]);break}}}}G.tick(dt);if(++k%2===0)post()},1000/30);
   addEventListener("message",e=>{const m=e.data||{};if(m.skill)G.skill(m.skill);if(m.test)G.test(m.test[0],m.test[1],"あなた");if(m.pace)Object.assign(PACE,m.pace);if("auto" in m)auto=!!m.auto;if(m.start)G.start(m.start,null)})};document.head.appendChild(sc)}
