@@ -32,15 +32,20 @@ const SME = { archer: { up: .8 }, bomber: { up: .6, dn: .6 }, shield: { dn: .8 }
 function smOf(id, coins) { const b = COINV[id]; if (!b || !coins) return 1; return Math.max(.5, Math.min(2, coins / b)); }
 function powOf(id, coins) { if (id === "soldier") return 1; const m = smOf(id, coins), e = SME[id] || {}; return Math.pow(m, m >= 1 ? (e.up || 1) : (e.dn || 1)); }
 function countOf(id, coins) { return id === "soldier" && coins >= 2 ? 2 : 1; }
+// each side picks up to 6 characters and their gifts: [{unit,id,name,coins,img}]; old saves without "unit" use the default lineup by position
+const NAMES = { h: { soldier: "兵士", archer: "弓使い", shield: "盾兵", rider: "騎兵", bomber: "爆弾工兵", mage: "魔法使い", golem: "ゴーレム", dragon: "ドラゴン" }, x: { soldier: "子分", archer: "弓ゴブリン", shield: "盾ゴブリン", rider: "狼騎兵", bomber: "爆弾魔", mage: "黒魔導士", golem: "岩の巨人", dragon: "魔竜" } };
 function cleanSlots(g) {
-  const out = { h: [], x: [] };
+  const out = { h: [], x: [] }, seen = new Set();
   for (const side of ["h", "x"]) {
-    const src = g && Array.isArray(g[side]) ? g[side] : [];
-    for (let i = 0; i < DEF[side].length; i++) {
-      const d = DEF[side][i], v = src[i] && typeof src[i] === "object" ? src[i] : {};
+    let src = g && Array.isArray(g[side]) && g[side].length ? g[side].slice(0, 6) : DEF[side].map(d => ({ unit: d[0], id: d[1], name: d[2], coins: d[3] }));
+    for (let i = 0; i < src.length; i++) {
+      const v = src[i] && typeof src[i] === "object" ? src[i] : {}, d = DEF[side][i] || DEF[side][0];
+      const unit = NAMES.h[v.unit] ? v.unit : d[0], id = String(v.id || d[1]).slice(0, 32);
+      if (seen.has(id) || out[side].some(q => q.unit === unit)) continue; seen.add(id);
       const coins = Math.max(0, Math.min(1e6, +v.coins || d[3]));
-      out[side].push({ unit: d[0], label: d[4], pw: powOf(d[0], coins), n: countOf(d[0], coins), id: String(v.id || d[1]).slice(0, 32), name: String(v.name || d[2]).slice(0, 40), coins, img: typeof v.img === "string" && /^https:\/\//.test(v.img) ? v.img.slice(0, 600) : "" });
+      out[side].push({ unit, label: NAMES[side][unit], pw: powOf(unit, coins), n: countOf(unit, coins), id, name: String(v.name || d[2]).slice(0, 40), coins, img: typeof v.img === "string" && /^https:\/\//.test(v.img) ? v.img.slice(0, 600) : "" });
     }
+    out[side].sort((a, b) => a.coins - b.coins);
   }
   return out;
 }
@@ -227,7 +232,7 @@ function createPush() {
         add(side, sl.unit, `いいね${LIKE_EVERY}回→${sl.label}`, 1, String(nick || "みんな").slice(0, 24), sl.n, sl.pw); out++; }
       return out;
     },
-    test(side, i, who) { const sl = slots[side] && slots[side][i]; if (sl) add(side, sl.unit, `${sl.name}→${sl.label}`, sl.coins, who || "テスト", sl.n, sl.pw); },
+    test(side, i, who) { const sl = slots[side] && (typeof i === "string" ? slots[side].find(q => q.unit === i) : slots[side][i]); if (sl) add(side, sl.unit, `${sl.name}→${sl.label}`, sl.coins, who || "テスト", sl.n, sl.pw); },
   };
 }
 

@@ -305,6 +305,13 @@ html.mpush #wrap>*:not(header):not(#pushSec){display:none!important}
 #pushSec .pv{position:relative;width:100%;aspect-ratio:640/600;max-width:100%;border-radius:10px;overflow:hidden;background:#0b0f1d}
 #pushSec .pv iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 #pushSec [hidden]{display:none!important}#pushSec .pv .wait{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-weight:800;text-align:center;padding:12px}
+#pushSec .pside{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;margin-top:4px;min-width:0}#pushSec #pDeck,#pushSec .pref{min-width:0;max-width:100%}#pushSec .pside h4{margin:0;font-size:13px}#pushSec .pside.h h4{color:var(--green)}#pushSec .pside.x h4{color:var(--red)}
+#pushSec .pgrid8{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+#pushSec .pdc{display:grid;gap:3px;min-width:0}#pushSec .pdc .dc{width:100%}#pushSec .pdc .dc img{width:44px;height:44px}
+#pushSec .pdc .gf b{color:var(--fg)}#pushSec .pdc .smx{font-style:normal;font-size:10px;font-weight:800;color:var(--gold)}
+#pushSec .pdc .acts{display:flex;gap:3px}#pushSec .pdc .acts button{flex:1;padding:3px 2px;font-size:11px;border-radius:7px}
+#pushSec .pref summary{cursor:pointer;font-weight:800;font-size:13px}#pushSec .rtab{width:100%;border-collapse:collapse;font-size:12px}#pushSec .rtab th,#pushSec .rtab td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+#pushSec .rtab .gi img{width:18px;height:18px;vertical-align:middle}#pushSec .rtab .u{white-space:nowrap;font-weight:800}#pushSec .rtab .u.h{color:var(--green)}#pushSec .rtab .u.x{color:var(--red)}#pushSec .tw{overflow-x:auto}
 #pushSec .gsl{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 8px;align-items:center;font-size:13px;font-weight:800}
 #pushSec .gsl .h{color:var(--green)}#pushSec .gsl .x{color:var(--red)}#pushSec .gsl button{padding:4px 8px;font-size:12px}
 #pushSec .st{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 10px;align-items:center;background:var(--panel2);border-radius:10px;padding:10px}
@@ -336,7 +343,7 @@ html.mpush #wrap>*:not(header):not(#pushSec){display:none!important}
    <label for="pCastle">自分の城の耐久</label><select id="pCastle"><option>3000</option><option selected>5000</option><option>8000</option></select></div>
    <button type="button" class="go" id="pStart">押し合いを始める</button><button type="button" class="stop" id="pStop" hidden>押し合いをやめる</button>
    <p class="note">TikTokのユーザー名は、バトクラの「あなた」の欄と同じものを使います。魔王城（最後の1つ）は砦の耐久の2倍。</p></div>
-  <div class="pcard"><h3>ギフト</h3><div class="gsl" id="pGifts"></div><button type="button" id="pLike">いいね50回を試す（TikTokのキャラが出る）</button><p class="note" id="pGMsg">緑が救済、赤が妨害。いいね50回ごとに「TikTok」のギフトのキャラが1体出ます。基準の0.5〜2倍の値段のギフトから選べて、値段に合わせて強さが変わります（兵士は2コインで2体）。「テスト」でそのキャラを1体出せます（試合中だけ）。</p></div>
+  <div class="pcard"><h3>キャラとギフト</h3><p class="note">救済・妨害それぞれ6体まで選べます。カードを押すと入れる／外す、「ギフト」でギフトを選ぶ（バトクラと同じ画面）、「出す」で1体テストで出せます。</p><div id="pDeck"></div><details class="pref"><summary>コイン早見表（どのキャラが何コインか）</summary><div class="tw"><table class="rtab" id="pRef"></table></div></details><button type="button" id="pLike">いいね50回を試す（TikTokのキャラが出る）</button><p class="note" id="pGMsg">いいね50回ごとに「TikTok」のギフトのキャラが1体出ます。ギフトは基準の0.5〜2倍の値段から選べて、値段に合わせて強さが変わります（兵士は2コインで2体）。同じギフトは1体にしか使えません。「テスト」でそのキャラを1体出せます（試合中だけ）。</p></div>
  </div>
 </div>
 <div class="pcard"><h3>配信用URL（押し合い）</h3>
@@ -1372,11 +1379,11 @@ function buildRec(){const T=document.getElementById("recTable");if(!T)return;con
   T.innerHTML="<thead><tr><th>コイン</th><th>ギフトの例</th><th>いまのキャラ</th></tr></thead><tbody>"+COINREF.map(([c,ids])=>{const u=users(c);return `<tr class="${u?"has":""}"><td class="cc">${c.toLocaleString()}</td><td class="cg">${ids.map(id=>{const g=byId(id);return g?`<span class="cgi">${gIcon(g[1])}${g[0]}</span>`:""}).join("")}</td><td class="cus">${u||'<span class="free">空き</span>'}</td></tr>`}).join("")+"</tbody>"}
 document.getElementById("recApply").onclick=e=>{const byId=id=>GIFTS.find(x=>x[3]===id);const used={};for(const u of UNITS){if(u.id==="rookie")continue;const c=COINV[u.id];const row=COINREF.find(r=>r[0]===c);used[c]=(used[c]||0);const g=row&&byId(row[1][Math.min(used[c]++,row[1].length-1)]);if(g){CFG.gifts[u.id]=g[0];CFG.gid[u.id]=g[3]}}
   saveCfg();paintGifts&&paintGifts();drawDeck();buildDex();sendCfg();e.target.textContent="割り当てました";setTimeout(()=>e.target.textContent="この見本で割り当てる",1500)};
-function openPicker(id,cb){const m=document.getElementById("gm"),G=document.getElementById("gmG"),q=document.getElementById("gmQ"),so=document.getElementById("gmS"),fi=document.getElementById("gmF");
+function openPicker(id,cb,O){const m=document.getElementById("gm"),G=document.getElementById("gmG"),q=document.getElementById("gmQ"),so=document.getElementById("gmS"),fi=document.getElementById("gmF");
  const nm=id==="glove"?"グローブ（逆転用）":UNITS.find(u=>u.id===id).name;const bc=COINV[id],lo=id==="glove"?0:bc*SMR[0],hi=id==="glove"?1e9:bc*SMR[1];document.getElementById("gmT").textContent=id==="glove"?`${nm} に使うギフトを選ぶ`:`${nm} に使うギフトを選ぶ（${Math.ceil(lo)}〜${hi}コイン。基準${bc}コインより高いと強く、安いと弱くなる）`;
  const draw=()=>{let L=GIFTS.filter(g=>(!q.value||g[0].includes(q.value.trim())||(g[4]||"").includes(q.value.trim()))&&g[2]>=lo&&g[2]<=hi);const f=fi.value[0]==="g"?fi.value:+fi.value;L=L.filter(g=>(typeof f==="string"&&GALS[f.slice(1)].has(g[3]))||f===0||(f===1&&g[2]<100)||(f===2&&g[2]>=100&&g[2]<1000)||(f===3&&g[2]>=1000));L.sort((a,b)=>so.value==="a"?a[2]-b[2]:b[2]-a[2]);
-  const used=new Set(Object.entries(CFG.gifts).filter(([k])=>k!==id).map(([,v])=>v));
-  G.innerHTML=L.map(g=>`<button type="button" class="gc${CFG.gifts[id]===g[0]?" sel":""}${used.has(g[0])?" used":""}" data-n="${g[0]}">${gIcon(g[1])}<b>${g[0]}</b>${g[4]?`<small class="gjp">${g[4]}</small>`:""}<span>${g[2]}コイン${id!=="glove"&&g[2]!==bc?`<i class="smx ${g[2]>bc?"up":"dn"}">強さ×${Math.round(smOf(id,g[2])*100)/100}</i>`:""}</span>${used.has(g[0])?"<em>使用中</em>":""}</button>`).join("")||"<p class='note'>見つかりません</p>";
+  const used=O&&O.used?O.used:new Set(Object.entries(CFG.gifts).filter(([k])=>k!==id).map(([,v])=>v)),curG=O?O.cur:CFG.gifts[id];
+  G.innerHTML=L.map(g=>`<button type="button" class="gc${curG===g[0]?" sel":""}${used.has(g[0])?" used":""}" data-n="${g[0]}">${gIcon(g[1])}<b>${g[0]}</b>${g[4]?`<small class="gjp">${g[4]}</small>`:""}<span>${g[2]}コイン${id!=="glove"&&g[2]!==bc?`<i class="smx ${g[2]>bc?"up":"dn"}">強さ×${Math.round(smOf(id,g[2])*100)/100}</i>`:""}</span>${used.has(g[0])?"<em>使用中</em>":""}</button>`).join("")||"<p class='note'>見つかりません</p>";
   G.querySelectorAll(".gc").forEach(b=>b.onclick=()=>{cb(b.dataset.n);m.hidden=true})};
  q.value="";fi.value="0";q.oninput=draw;so.onchange=draw;fi.onchange=()=>{if(fi.value[0]==="g"){GTIER=fi.value.slice(1);try{localStorage.setItem("giftwar_tier",GTIER)}catch(e){}}draw()};document.getElementById("gmX").onclick=()=>m.hidden=true;draw();m.hidden=false}
 // ---------- controls & loop ----------
@@ -1776,7 +1783,7 @@ function frame(){const now=performance.now();fpsAcc+=now-lastT;lastT=now;fpsN++;
  const f=$("icFile"),clr=$("icClr"),paint=()=>{clr.hidden=!CFG.icon;avatar($("avB"),$("ttB").value,"b")};paint();
  $("icPick").onclick=()=>f.click();clr.onclick=()=>{CFG.icon="";saveCfg();sendCfg();clr.hidden=true;setAv($("avB"),TT.b==="ok"&&LASTAV,$("ttB").value)};
  f.onchange=()=>{const file=f.files&&f.files[0];if(!file)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement("canvas");c.width=c.height=160;const s=Math.min(im.width,im.height);c.getContext("2d").drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,160,160);CFG.icon=c.toDataURL("image/jpeg",.85);saveCfg();sendCfg();paint();f.value=""};im.src=rd.result};rd.readAsDataURL(file)}}
-window.GW={NET,get NETX(){return NETX},get INV(){return INV},cfgMsg};
+window.GW={NET,get NETX(){return NETX},get INV(){return INV},cfgMsg,openPicker:(id,cb,o)=>openPicker(id,cb,o),get GIFTS(){return GIFTS},get COINREF(){return COINREF},gIcon:u=>gIcon(u)};
 refreshUI();netGate();frame();
 })();
 
@@ -1817,10 +1824,16 @@ refreshUI();netGate();frame();
              x:[["soldier","5269","TikTok",1,"子分"],["rider","13538","おまもり",5,"狼騎兵"],["shield","51281","DJレコード",10,"盾ゴブリン"],["mage","8343","ハンドハート",100,"黒魔導士"],["golem","6267","コーギー",299,"岩の巨人"],["dragon","11583","DJメガネ",500,"魔竜"]]};
   let PC={goal:5,fort:3000,castle:5000,gifts:null};try{Object.assign(PC,JSON.parse(localStorage.getItem("giftwar_push")||"{}"))}catch(e){}
   const save=()=>{try{localStorage.setItem("giftwar_push",JSON.stringify(PC))}catch(e){}};
-  const PCV={soldier:1,rider:5,shield:10,mage:99,golem:299,dragon:500},PSME={shield:{dn:.8},dragon:{up:1.1},golem:{up:1.3,dn:1.7}};
+  const UN=["soldier","archer","shield","rider","bomber","mage","golem","dragon"];
+  const NM={h:{soldier:"兵士",archer:"弓使い",shield:"盾兵",rider:"騎兵",bomber:"爆弾工兵",mage:"魔法使い",golem:"ゴーレム",dragon:"ドラゴン"},x:{soldier:"子分",archer:"弓ゴブリン",shield:"盾ゴブリン",rider:"狼騎兵",bomber:"爆弾魔",mage:"黒魔導士",golem:"岩の巨人",dragon:"魔竜"}};
+  const EIMG={soldier:"goblin",archer:"goblin",shield:"shieldg",rider:"wolf",bomber:"bomb",mage:"mage",golem:"giant",dragon:"dragon"};
+  const PCV={soldier:1,archer:5,rider:5,shield:10,bomber:30,mage:99,golem:299,dragon:500},PSME={archer:{up:.8},bomber:{up:.6,dn:.6},shield:{dn:.8},dragon:{up:1.1},golem:{up:1.3,dn:1.7}};
   const ppow=(id,c)=>{if(id==="soldier")return 1;const m=Math.max(.5,Math.min(2,c/PCV[id])),e=PSME[id]||{};return Math.pow(m,m>=1?(e.up||1):(e.dn||1))};
-  const ptag=(id,c)=>{if(id==="soldier")return c>=2?"　2体":"";const p=ppow(id,c);return Math.abs(p-1)<.05?"":`　強さ×${p.toFixed(1)}`};
-  const slots=()=>{const o={};for(const sd of ["h","x"])o[sd]=DEF[sd].map((d,i)=>{const v=PC.gifts&&PC.gifts[sd]&&PC.gifts[sd][i];return v&&v.id?v:{id:d[1],name:d[2],coins:d[3],img:""}});return o};
+  const ptag=(id,c)=>{if(id==="soldier")return c>=2?"2体":"";const p=ppow(id,c);return Math.abs(p-1)<.05?"":`強さ×${p.toFixed(1)}`};
+  // the 6 characters of each side and their gifts: [{unit,id,name,coins,img}], cheapest first (old saves had fixed units)
+  const slots=()=>{const o={};for(const sd of ["h","x"]){const src=PC.gifts&&Array.isArray(PC.gifts[sd])?PC.gifts[sd]:null;
+    o[sd]=src?src.map((v,i)=>v&&v.id?{unit:UN.includes(v.unit)?v.unit:(DEF[sd][i]||DEF[sd][0])[0],id:String(v.id),name:v.name,coins:+v.coins,img:v.img||""}:null).filter(Boolean).slice(0,6):DEF[sd].map(d=>({unit:d[0],id:d[1],name:d[2],coins:d[3],img:""}));
+    if(!o[sd].length)o[sd]=DEF[sd].map(d=>({unit:d[0],id:d[1],name:d[2],coins:d[3],img:""}));o[sd].sort((a,b)=>a.coins-b.coins)}return o};
   let CAT=[],RUN=false,OWNER=false,LAST=null;
   const setMode=k=>{H.classList.remove("msel","mpush","mbat");if(!OWNER)return;H.classList.add(k==="push"?"mpush":k==="bat"?"mbat":"msel");if(k==="push"){urls();frame()}window.dispatchEvent(new Event("resize"))};
   document.addEventListener("click",e=>{const b=e.target.closest("[data-gmode]");if(b){setMode(b.dataset.gmode);if(b.dataset.gmode!=="sel")window.scrollTo(0,0)}});
@@ -1828,16 +1841,30 @@ refreshUI();netGate();frame();
   const urls=()=>{const n=key();if(!n||!window.GW||!GW.NETX.ok){$("pUrl1").textContent=$("pUrl2").textContent=$("pUrl4").textContent="サーバーにつながると出ます";return}
     const iv=window.GW&&GW.INV?`&inv=${encodeURIComponent(GW.INV)}`:"";$("pUrl1").textContent=`${location.origin}/?stream=${encodeURIComponent(n)}&v=push${iv}`;$("pUrl2").textContent=`${location.origin}/?stream=${encodeURIComponent(n)}&v=count${iv}`;$("pUrl4").textContent=`${location.origin}/?stream=${encodeURIComponent(n)}&v=push&btn=1${iv}`};
   for(const [b,c] of [["pCopy1","pUrl1"],["pCopy2","pUrl2"],["pCopy3","pUrl3"],["pCopy4","pUrl4"]])$(b).onclick=async()=>{const t=$(c).textContent;if(!/^https?:/.test(t))return;try{await navigator.clipboard.writeText(t);$(b).textContent="コピーしました";setTimeout(()=>$(b).textContent="コピー",1500)}catch(e){const r=document.createRange();r.selectNodeContents($(c));const se=getSelection();se.removeAllRanges();se.addRange(r)}};
-  // gift pickers: same price as the slot
-  function gifts(){const box=$("pGifts");box.innerHTML="";const cur=slots();
-    for(const sd of ["h","x"])DEF[sd].forEach((d,i)=>{const lab=document.createElement("label");lab.className=sd;lab.textContent=`${sd==="h"?"🟢":"🔴"} ${d[4]}`;lab.htmlFor=`pg-${sd}-${i}`;
-      const sel=document.createElement("select");sel.id=`pg-${sd}-${i}`;const c=cur[sd][i];
-      const base=PCV[d[0]],opts=CAT.filter(g=>g.coins>=base*.5&&g.coins<=base*2).sort((a,b)=>a.coins-b.coins||a.name.localeCompare(b.name,"ja"));if(!opts.some(g=>g.id===c.id))opts.unshift({id:c.id,name:c.name,coins:c.coins,img:c.img});
-      for(const g of opts){const o=document.createElement("option");o.value=g.id;o.textContent=`${g.name}（${g.coins}コイン）${ptag(d[0],g.coins)}`;sel.appendChild(o)}sel.value=c.id;
-      sel.onchange=()=>{const all=slots();const used=["h","x"].some(s2=>all[s2].some((q,j)=>!(s2===sd&&j===i)&&q.id===sel.value));if(used){sel.value=c.id;$("pGMsg").textContent="そのギフトはほかのキャラで使っています。同じギフトは1つのキャラにしか割り当てられません";return}
-        const g=opts.find(x=>x.id===sel.value);all[sd][i]={id:g.id,name:g.name,coins:g.coins,img:g.img||""};PC.gifts=all;save();$("pGMsg").textContent="変えました。試合中でもすぐ反映されます。";if(RUN)NET.send({t:"pslots",gifts:all});gifts()};
-      const tb=document.createElement("button");tb.type="button";tb.textContent="テスト";tb.onclick=()=>NET.send({t:"ptest",side:sd,i});
-      box.append(lab,sel,tb)})}
+  // character + gift picker per side (same card look and gift window as the battle deck)
+  const usedIds=(all,skipSd,skipU)=>new Set(["h","x"].flatMap(sd=>all[sd].filter(q=>!(sd===skipSd&&q.unit===skipU)).map(q=>q.id)));
+  const putSlots=all=>{for(const sd of ["h","x"])all[sd].sort((a,b)=>a.coins-b.coins);PC.gifts=all;save();if(RUN)NET.send({t:"pslots",gifts:all});gifts()};
+  const defGift=(unit,all)=>{const used=usedIds(all),c=PCV[unit],ref=window.GW&&GW.COINREF?GW.COINREF.find(r=>r[0]===c):null;
+    for(const id of (ref?ref[1]:[])){const g=CAT.find(x=>x.id===id);if(g&&!used.has(g.id))return g}
+    return CAT.filter(g=>g.coins>=c*.5&&g.coins<=c*2&&!used.has(g.id)).sort((a,b)=>Math.abs(a.coins-c)-Math.abs(b.coins-c))[0]};
+  function gifts(){const box=$("pDeck");if(!box)return;box.innerHTML="";const all=slots();
+    for(const sd of ["h","x"]){const wrap=document.createElement("div");wrap.className="pside "+sd;wrap.innerHTML=`<h4>${sd==="h"?"🟢 救済（味方）":"🔴 妨害（敵）"}　${all[sd].length} / 6体</h4>`;const grid=document.createElement("div");grid.className="pgrid8";
+      for(const u of UN){const sl=all[sd].find(q=>q.unit===u),i=all[sd].indexOf(sl),cell=document.createElement("div");cell.className="pdc";
+        const img=sd==="h"?`img/${u}_b.webp`:`push/enemy/${EIMG[u]}_idle.webp`,tg=sl?ptag(u,sl.coins):"";
+        cell.innerHTML=`<button type="button" class="dc ${sl?"in":"out"}" aria-pressed="${!!sl}"><span class="chk">${sl?"✓":""}</span><img src="${img}" alt=""><span class="nm">${NM[sd][u]}</span><span class="gf">${sl?`<b>${sl.name}</b>（${sl.coins}）`:`${PCV[u]}コイン`}</span>${tg?`<i class="smx">${tg}</i>`:""}</button>${sl?`<div class="acts"><button type="button" data-a="g">ギフト</button><button type="button" data-a="t">出す</button></div>`:""}`;
+        cell.querySelector(".dc").onclick=()=>{const A=slots();if(sl){if(A[sd].length<=1){$("pGMsg").textContent="1体は残してください";return}A[sd]=A[sd].filter(q=>q.unit!==u);putSlots(A);return}
+          if(A[sd].length>=6){$("pGMsg").textContent="6体までです。先にほかのキャラを外してください";return}const g=defGift(u,A);if(!g){$("pGMsg").textContent="空いているギフトが見つかりません";return}
+          A[sd].push({unit:u,id:g.id,name:g.name,coins:g.coins,img:g.img||""});putSlots(A);$("pGMsg").textContent=`${NM[sd][u]}を入れました（ギフト：${g.name}）`};
+        if(sl){cell.querySelector('[data-a="t"]').onclick=()=>NET.send({t:"ptest",side:sd,unit:u});
+          cell.querySelector('[data-a="g"]').onclick=()=>{if(!window.GW||!GW.openPicker)return;const A=slots(),used=new Set(CAT.filter(g=>usedIds(A,sd,u).has(g.id)).map(g=>g.name));
+            GW.openPicker(u,nm=>{const B=slots(),g=CAT.find(x=>x.name===nm)||(GW.GIFTS.find(x=>x[0]===nm)&&{id:GW.GIFTS.find(x=>x[0]===nm)[3],name:nm,coins:GW.GIFTS.find(x=>x[0]===nm)[2],img:""});if(!g)return;
+              if(usedIds(B,sd,u).has(g.id)){$("pGMsg").textContent="そのギフトはほかのキャラで使っています。同じギフトは1つのキャラにしか割り当てられません";return}
+              const t=B[sd].find(q=>q.unit===u);Object.assign(t,{id:g.id,name:g.name,coins:g.coins,img:g.img||""});putSlots(B);$("pGMsg").textContent=`${NM[sd][u]}のギフトを「${g.name}」にしました`},{cur:sl.name,used})}}
+        grid.appendChild(cell)}
+      wrap.appendChild(grid);box.appendChild(wrap)}
+    // coin quick-reference: which character sits at which coin value
+    const T=$("pRef");if(T&&window.GW&&GW.COINREF){const rows=GW.COINREF.filter(r=>r[0]<=1000);const by=(sd,c)=>all[sd].filter(q=>PCV[q.unit]===c).map(q=>`<span class="u ${sd}">${NM[sd][q.unit]}</span>`).join(" ");
+      T.innerHTML="<thead><tr><th>コイン</th><th>ギフトの例</th><th>救済</th><th>妨害</th></tr></thead><tbody>"+rows.map(([c,ids])=>`<tr><td><b>${c}</b></td><td class="gi">${ids.map(id=>{const g=CAT.find(x=>x.id===id);return g?`${g.img?`<img src="${g.img}" alt="" referrerpolicy="no-referrer">`:""}${g.name}`:""}).filter(Boolean).join("、")}</td><td>${by("h",c)}</td><td>${by("x",c)}</td></tr>`).join("")+"</tbody>"}}
   fetch("gift-catalog.json").then(r=>r.json()).then(j=>{CAT=(j.gifts||[]).map(g=>({id:String(g.id),name:g.name,coins:+g.coins,img:g.img||""}));const all=slots();for(const sd of ["h","x"])all[sd].forEach(v=>{if(!v.img){const g=CAT.find(x=>x.id===v.id);if(g)v.img=g.img}});PC.gifts=all;gifts()}).catch(()=>gifts());
   gifts();
   for(const [id,k] of [["pGoal","goal"],["pFort","fort"],["pCastle","castle"]]){$(id).value=String(PC[k]);$(id).onchange=e=>{PC[k]=+e.target.value;save()}}
