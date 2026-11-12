@@ -23,7 +23,7 @@ const DEF = {
   x: [["soldier", "5269", "TikTok", 1, "子分"], ["rider", "13538", "おまもり", 5, "狼騎兵"], ["shield", "51281", "DJレコード", 10, "盾ゴブリン"], ["mage", "8343", "ハンドハート", 100, "黒魔導士"], ["golem", "6267", "コーギー", 299, "岩の巨人"], ["dragon", "11583", "DJメガネ", 500, "魔竜"]],
 };
 const L = 3000, GMAX = 10, AREA = 5, GSEC = 2;
-const TUNE = { l1: 400, l2: 200, hk: 2, hx: 3, wall: 1, ha: 1, hw: 16, r1: 200, r2: 300, ab: 1 };
+const TUNE = { l1: 60, l2: 50, hk: 4, hx: 1.6, wall: 1, ha: 1, hw: 16, r1: 200, r2: 300, ab: 1 };
 const VIEW = 570 * 0.4; // camera: hero sits 40% from the left of a 570px wide course
 
 // gift price → strength, same as the main game: m = coins / base (0.5–2), hp and attack × m^SME; a 2-coin soldier gift gives 2 soldiers
