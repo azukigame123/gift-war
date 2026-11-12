@@ -23,7 +23,7 @@ const DEF = {
   x: [["soldier", "5269", "TikTok", 1, "子分"], ["rider", "13538", "おまもり", 5, "狼騎兵"], ["shield", "51281", "DJレコード", 10, "盾ゴブリン"], ["mage", "8343", "ハンドハート", 100, "黒魔導士"], ["golem", "6267", "コーギー", 299, "岩の巨人"], ["dragon", "11583", "DJメガネ", 500, "魔竜"]],
 };
 const L = 3000, GMAX = 10, AREA = 5, GSEC = 2;
-const TUNE = { hk: 2, hx: 3.5, wall: 1, ha: 1, hw: 16, r1: 200, r2: 300, ab: 1 };
+const TUNE = { l1: 400, l2: 200, hk: 2, hx: 2.8, wall: 1, ha: .6, hw: 16, r1: 200, r2: 300, ab: 1 };
 const VIEW = 570 * 0.4; // camera: hero sits 40% from the left of a 570px wide course
 
 // gift price → strength, same as the main game: m = coins / base (0.5–2), hp and attack × m^SME; a 2-coin soldier gift gives 2 soldiers
@@ -81,8 +81,8 @@ function createPush() {
   function heroAct(rdt) {
     const hero = S.hero, a = hero.act; if (!a) return; a.t += rdt;
     const foes = S.units.filter(u => u.side === "x" && u.s > hero.s - 30);
-    if (a.k === "lunge" && !a.hit && a.t >= .14) { a.hit = 1; const t = foes.filter(u => u.s < hero.s + TUNE.r1).sort((p, q) => p.s - q.s)[0]; if (t) { t.hp -= 600; S.pops.push({ s: t.s, y: t.y, txt: "600", t: 1, c: "#ffcf3f", big: 1 }); t.s += 30; } S.vfx.push({ k: "slash", s: hero.s + 70, t: .35, d: .35 }); S.shake = Math.max(S.shake, 7); }
-    if (a.k === "spin" && !a.hit) { a.hit = 1; foes.filter(u => u.s < hero.s + TUNE.r2).forEach(u => { u.hp -= 320; u.s += 70; S.pops.push({ s: u.s, y: u.y, txt: "320", t: .9, c: "#fff" }); }); S.vfx.push({ k: "ring", s: hero.s + 40, t: .6, d: .6 }); S.flash = .35; S.shake = 16; }
+    if (a.k === "lunge" && !a.hit && a.t >= .14) { a.hit = 1; const t = foes.filter(u => u.s < hero.s + TUNE.r1).sort((p, q) => p.s - q.s)[0]; if (t) { t.hp -= TUNE.l1; S.pops.push({ s: t.s, y: t.y, txt: String(TUNE.l1), t: 1, c: "#ffcf3f", big: 1 }); t.s += 30; } S.vfx.push({ k: "slash", s: hero.s + 70, t: .35, d: .35 }); S.shake = Math.max(S.shake, 7); }
+    if (a.k === "spin" && !a.hit) { a.hit = 1; foes.filter(u => u.s < hero.s + TUNE.r2).forEach(u => { u.hp -= TUNE.l2; u.s += 70; S.pops.push({ s: u.s, y: u.y, txt: String(TUNE.l2), t: .9, c: "#fff" }); }); S.vfx.push({ k: "ring", s: hero.s + 40, t: .6, d: .6 }); S.flash = .35; S.shake = 16; }
     if (a.t >= a.d) { if (a.k === "charge") hero.act = { k: "spin", t: 0, d: .6 }; else hero.act = null; }
   }
   const sgn = side => side === "h" ? 1 : -1;
