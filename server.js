@@ -278,7 +278,7 @@ function pushLive(G, name) {
   if (G.live) { for (const k in G.on) G.live.off(k, G.on[k]); TT.release(G.live); G.live = null; }
   G.name = name; if (!name) return;
   const L = TT.acquire(name); if (!L) return; G.live = L;
-  G.on = { state: info => pushSend(G, { t: "ptt", info: L.info() }), gift: g => { const side = G.game.gift(g); TT.dbg(g.nick, side ? "push-gift" : "push-unmatched", `${g.giftId} ${g.giftName} x${g.count} -> ${side || "-"}`); } };
+  G.on = { state: info => pushSend(G, { t: "ptt", info: L.info() }), like: l => { G.game.like(l.n, l.nick); }, gift: g => { const side = G.game.gift(g); TT.dbg(g.nick, side ? "push-gift" : "push-unmatched", `${g.giftId} ${g.giftName} x${g.count} -> ${side || "-"}`); } };
   for (const k in G.on) L.on(k, G.on[k]);
   G.on.state();
 }
@@ -403,7 +403,7 @@ wss.on("connection", (ws, req) => {
         const pg = pushOf(k); send(ws, { t: "psnap", s: pg ? pg.game.snapshot() : idleSnap(k) });
         break;
       }
-      case "pstart": case "pslots": case "pskill": case "ptest": case "pstop": case "pjoin": case "pboost": {
+      case "pstart": case "pslots": case "pskill": case "ptest": case "pstop": case "pjoin": case "pboost": case "plike": {
         if (!WHO.owner) return send(ws, { t: "err", msg: "押し合いモードは今はオーナーだけが使えます" });
         let G = PUSHG.get(WHO.name);
         if ((m.t === "pjoin" || m.t === "pstart") && WHO.owner) send(ws, { t: "pkey", k: pboostKey(WHO.name) });
@@ -416,6 +416,7 @@ wss.on("connection", (ws, req) => {
         if (!G) return;
         if (m.t === "pslots") { G.game.setSlots(m.gifts); for (const k of pushKeys(G)) { const L = PUSHLAST.get(k); if (L) L.gifts = m.gifts; } }
         else if (m.t === "pskill") G.game.skill(m.k === 2 ? 2 : 1);
+        else if (m.t === "plike") G.game.like(m.n === 50 ? 50 : 10, "テスト");
         else if (m.t === "ptest") G.game.test(m.side === "x" ? "x" : "h", Math.max(0, Math.min(5, m.i | 0)), "テスト");
         else if (m.t === "pstop") pushStop(G);
         else if (m.t === "pboost" && WHO.owner) G.game.boost(2, 30, "all");
