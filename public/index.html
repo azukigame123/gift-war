@@ -336,7 +336,7 @@ html.mpush #wrap>*:not(header):not(#pushSec){display:none!important}
    <label for="pCastle">自分の城の耐久</label><select id="pCastle"><option>3000</option><option selected>5000</option><option>8000</option></select></div>
    <button type="button" class="go" id="pStart">押し合いを始める</button><button type="button" class="stop" id="pStop" hidden>押し合いをやめる</button>
    <p class="note">TikTokのユーザー名は、バトクラの「あなた」の欄と同じものを使います。魔王城（最後の1つ）は砦の耐久の2倍。</p></div>
-  <div class="pcard"><h3>ギフト</h3><div class="gsl" id="pGifts"></div><p class="note" id="pGMsg">緑が救済、赤が妨害。基準の0.5〜2倍の値段のギフトから選べて、値段に合わせて強さが変わります（兵士は2コインで2体）。「テスト」でそのキャラを1体出せます（試合中だけ）。</p></div>
+  <div class="pcard"><h3>ギフト</h3><div class="gsl" id="pGifts"></div><button type="button" id="pLike">いいね50回を試す（TikTokのキャラが出る）</button><p class="note" id="pGMsg">緑が救済、赤が妨害。いいね50回ごとに「TikTok」のギフトのキャラが1体出ます。基準の0.5〜2倍の値段のギフトから選べて、値段に合わせて強さが変わります（兵士は2コインで2体）。「テスト」でそのキャラを1体出せます（試合中だけ）。</p></div>
  </div>
 </div>
 <div class="pcard"><h3>配信用URL（押し合い）</h3>
@@ -1845,7 +1845,7 @@ refreshUI();netGate();frame();
   $("pStart").onclick=()=>{if(RUN&&!confirmRestart())return;PC.gifts=slots();save();if(window.GW)NET.send(Object.assign({t:"cfg"},GW.cfgMsg()));NET.send({t:"pstart",cfg:{goal:PC.goal,fort:PC.fort,castle:PC.castle},gifts:PC.gifts});frame()};
   let armed=0;const confirmRestart=()=>{if(Date.now()-armed<4000)return true;armed=Date.now();$("pStart").textContent="もう一度押すと最初からやり直します";setTimeout(()=>{$("pStart").textContent=RUN?"設定を変えて最初から":"押し合いを始める"},4000);return false};
   $("pStop").onclick=()=>{if(Date.now()-(armed||0)<4000&&$("pStop").dataset.a){NET.send({t:"pstop"});return}armed=Date.now();$("pStop").dataset.a=1;$("pStop").textContent="もう一度押すとやめます";setTimeout(()=>{$("pStop").textContent="押し合いをやめる";delete $("pStop").dataset.a},4000)};
-  $("pBoost").onclick=()=>NET.send({t:"pboost"});
+  $("pBoost").onclick=()=>NET.send({t:"pboost"});$("pLike").onclick=()=>NET.send({t:"plike",n:50});
   $("pSk1").onclick=()=>NET.send({t:"pskill",k:1});$("pSk2").onclick=()=>NET.send({t:"pskill",k:2});
   const runUI=()=>{$("pStop").hidden=!RUN;$("pStart").textContent=RUN?"設定を変えて最初から":"押し合いを始める";$("pRunTag").textContent=RUN?"▶ 進行中":"ひとりで配信";if(!RUN){$("pSk1").disabled=$("pSk2").disabled=true;$("pGauge").style.width="0";$("pGaugeT").textContent="勇者ゲージ 0/10（2秒で1たまる）"}};
   window.PUSHUI={
