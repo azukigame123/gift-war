@@ -30,8 +30,9 @@ const VIEW = 570 * 0.4; // camera: hero sits 40% from the left of a 570px wide c
 const COINV = { soldier: 1, archer: 5, rider: 5, shield: 10, bomber: 30, mage: 99, golem: 299, dragon: 500 };
 const SME = { archer: { up: .8 }, bomber: { up: .6, dn: .6 }, shield: { dn: .8 }, dragon: { up: 1.1 }, golem: { up: 1.3, dn: 1.7 } }; // golem tuned for push mode (splits into two)
 function smOf(id, coins) { const b = COINV[id]; if (!b || !coins) return 1; return Math.max(.5, Math.min(2, coins / b)); }
-function powOf(id, coins) { if (id === "soldier") return 1; const m = smOf(id, coins), e = SME[id] || {}; return Math.pow(m, m >= 1 ? (e.up || 1) : (e.dn || 1)); }
-function countOf(id, coins) { return id === "soldier" && coins >= 2 ? 2 : 1; }
+function powOf(id, coins) { const n = countOf(id, coins); if (n > 1) return Math.max(1, coins / (COINV[id] * n)); if (id === "soldier") return 1; const m = smOf(id, coins), e = SME[id] || {}; return Math.pow(m, m >= 1 ? (e.up || 1) : (e.dn || 1)); }
+// above 2x the base price (or any soldier gift of 2+ coins) a gift brings coins÷base units, up to 30; past 30 each unit gets stronger instead
+function countOf(id, coins) { const b = COINV[id]; if (!b || (coins <= b * 2 && id !== "soldier")) return 1; return Math.max(1, Math.min(30, Math.round(coins / b))); }
 // each side picks up to 6 characters and their gifts: [{unit,id,name,coins,img}]; old saves without "unit" use the default lineup by position
 const NAMES = { h: { soldier: "兵士", archer: "弓使い", shield: "盾兵", rider: "騎兵", bomber: "爆弾工兵", mage: "魔法使い", golem: "ゴーレム", dragon: "ドラゴン" }, x: { soldier: "子分", archer: "弓ゴブリン", shield: "盾ゴブリン", rider: "狼騎兵", bomber: "爆弾魔", mage: "黒魔導士", golem: "岩の巨人", dragon: "魔竜" } };
 function cleanSlots(g) {
