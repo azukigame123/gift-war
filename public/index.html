@@ -312,6 +312,8 @@ html.mpush #wrap>*:not(header):not(#pushSec){display:none!important}
 #pushSec .pdc .acts{display:flex;gap:3px}#pushSec .pdc .acts button{flex:1;padding:3px 2px;font-size:11px;border-radius:7px}
 #pushSec .pref summary{cursor:pointer;font-weight:800;font-size:13px}#pushSec .rtab{width:100%;border-collapse:collapse;font-size:12px}#pushSec .rtab th,#pushSec .rtab td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
 #pushSec .rtab .gi img{width:18px;height:18px;vertical-align:middle}#pushSec .rtab .u{white-space:nowrap;font-weight:800}#pushSec .rtab .u.h{color:var(--green)}#pushSec .rtab .u.x{color:var(--red)}#pushSec .tw{overflow-x:auto}
+#pushSec .ptk{display:flex;gap:10px;align-items:center}#pushSec .pav{width:52px;height:52px;border-radius:50%;background:var(--panel2);display:grid;place-items:center;font-weight:800;flex:none;overflow:hidden;border:2px solid var(--line)}#pushSec .pav.live{border-color:var(--green)}#pushSec .pav img{width:100%;height:100%;object-fit:cover}
+#pushSec .ptki{display:grid;gap:4px;flex:1;min-width:0}#pushSec .ptki input{font:inherit;font-weight:800;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:0}
 #pushSec .gsl{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 8px;align-items:center;font-size:13px;font-weight:800}
 #pushSec .gsl .h{color:var(--green)}#pushSec .gsl .x{color:var(--red)}#pushSec .gsl button{padding:4px 8px;font-size:12px}
 #pushSec .st{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 10px;align-items:center;background:var(--panel2);border-radius:10px;padding:10px}
@@ -337,6 +339,9 @@ html.mpush #wrap>*:not(header):not(#pushSec){display:none!important}
   <div class="sk"><button type="button" id="pSk1" disabled>⚔️ 単体攻撃（1）</button><button type="button" id="pSk2" disabled>🌀 範囲攻撃（5）</button></div>
   <p class="note">勇者の攻撃はこのボタンで出します。自動では出ません。</p></div>
  <div style="display:grid;gap:12px;min-width:0">
+  <div class="pcard"><h3>TikTok</h3>
+   <div class="ptk"><div class="pav" id="pAv">?</div><div class="ptki"><label for="pTk" class="note">TikTokのユーザー名（@のあと）</label><input id="pTk" type="text" maxlength="24" placeholder="TikTokのユーザー名" autocomplete="off"><span class="tts" id="pTs">TikTok 未接続</span></div></div>
+   <p class="note">配信中ならアイコンと「配信中」が出て、ギフト・いいねが届きます。バトクラの「あなた」の欄と同じユーザー名です（どちらで変えても同じ）。</p></div>
   <div class="pcard"><h3>始める前の設定</h3>
    <div class="pcfg"><label for="pGoal">目標（落とす砦の数）</label><select id="pGoal"><option>3</option><option selected>5</option><option>7</option><option>10</option></select>
    <label for="pFort">敵の砦の耐久</label><select id="pFort"><option>1500</option><option selected>3000</option><option>5000</option></select>
@@ -1623,7 +1628,7 @@ function setAv(el,url,name){if(el&&el.id==="avB"&&CFG.icon)url=CFG.icon;if(url){
 function ttInfo(slot,info,name){const st=info&&info.st||"";TT[slot]=st;const el=$(slot==="b"?"tsB":"tsR");
   el.className="tts"+(st==="wait"?" wait":st==="ok"?" ok":st==="ng"||st==="err"?" ng":"");
   el.textContent=st==="wait"?(info.msg||"TikTok 接続中…"):st==="ok"?"配信中":st==="ng"?(info.msg||"配信していません"):st==="err"?(info.msg||"つながりませんでした"):(slot==="b"?"TikTok 未接続":"—");
-  if(slot==="b")LASTAV=st==="ok"&&info.avatar||"";setAv($(slot==="b"?"avB":"avR"),st==="ok"&&info.avatar,name)}let LASTAV="";
+  if(slot==="b"&&window.PUSHUI&&PUSHUI.tt)PUSHUI.tt(info);if(slot==="b")LASTAV=st==="ok"&&info.avatar||"";setAv($(slot==="b"?"avB":"avR"),st==="ok"&&info.avatar,name)}let LASTAV="";
 function netLobby(room,you){NETX.room=room;NETX.you=you;const me=room.players[you],rv=room.players[other(you)];
   LB.code=room.practice?null:room.code;LB.inB=!!(me&&me.here);LB.inR=!!(rv&&rv.here);LB.rdB=!!(me&&me.ready);LB.rdR=!!(rv&&rv.ready);LB.nameR=rv?rv.name:"";
   $("pcB").className="pcard "+you;$("pcR").className="pcard "+other(you);
@@ -1877,15 +1882,21 @@ refreshUI();netGate();frame();
   $("pBoost").onclick=()=>NET.send({t:"pboost"});$("pLike").onclick=()=>NET.send({t:"plike",n:50});
   $("pSk1").onclick=()=>NET.send({t:"pskill",k:1});$("pSk2").onclick=()=>NET.send({t:"pskill",k:2});
   const runUI=()=>{$("pStop").hidden=!RUN;$("pStart").textContent=RUN?"設定を変えて最初から":"押し合いを始める";$("pRunTag").textContent=RUN?"▶ 進行中":"ひとりで配信";if(!RUN){$("pSk1").disabled=$("pSk2").disabled=true;$("pGauge").style.width="0";$("pGaugeT").textContent="勇者ゲージ 0/10（2秒で1たまる）"}};
-  window.PUSHUI={
+  window.PUSHUI={tt(info){if(!RUN)ttShow(info)},
     hi(m){OWNER=!!m.owner;if(!OWNER){setMode(null);return}NET.send({t:"pjoin"});if(!H.classList.contains("mpush")&&!H.classList.contains("mbat"))setMode("sel");urls()},
     msg(m){if(m.t==="pend"){RUN=false;LAST=null;$("pTT").textContent="";runUI();return}
       if(m.t==="pkey"){$("pUrl3").textContent=`${location.origin}/api/pboost?k=${encodeURIComponent(m.k)}&x=2&sec=30&side=all`;return}
-      if(m.t==="ptt"){const i=m.info||{};$("pTT").textContent=i.st==="ok"?"● TikTok 配信中":i.st==="wait"?"TikTok 接続中…":i.st?(i.msg||"TikTokにつながっていません"):"";return}
+      if(m.t==="ptt"){const i=m.info||{};$("pTT").textContent=i.st==="ok"?"● TikTok 配信中":i.st==="wait"?"TikTok 接続中…":i.st?(i.msg||"TikTokにつながっていません"):"";ttShow(i);return}
       if(m.t==="psnap"&&m.s){if(m.s.idle)return;const was=RUN;RUN=true;LAST=m.s;if(!was){runUI();frame()}const gv=m.s.g;$("pGauge").style.width=gv*10+"%";$("pGaugeT").textContent=`勇者ゲージ ${Math.floor(gv)}/10（2秒で1たまる）`+(m.s.over?"　—　周の合間":"");
         const busy=!!m.s.over||!!(m.s.hero&&m.s.hero.act);$("pSk1").disabled=busy||gv<1;$("pSk2").disabled=busy||gv<5}}
   };
-  const t=$("ttB");if(t)t.addEventListener("input",urls);
+  const t=$("ttB");if(t)t.addEventListener("input",()=>{urls();if($("pTk").value!==t.value)$("pTk").value=t.value});
+  setTimeout(()=>ttShow(PTT),0);
+  if(t){$("pTk").value=t.value;$("pTk").addEventListener("input",()=>{t.value=$("pTk").value;t.dispatchEvent(new Event("input",{bubbles:true}));urls()})}
+  let PTT=null;const ttShow=info=>{PTT=info||null;const st=info&&info.st||"",el=$("pTs"),av=$("pAv");
+    el.className="tts"+(st==="wait"?" wait":st==="ok"?" ok":st==="ng"||st==="err"?" ng":"");
+    el.textContent=st==="wait"?(info.msg||"TikTok 接続中…"):st==="ok"?"配信中":st==="ng"?(info.msg||"配信していません"):st==="err"?(info.msg||"つながりませんでした"):($("pTk").value.trim()?"TikTok 未接続":"ユーザー名を入れてください");
+    if(st==="ok"&&info.avatar){av.innerHTML=`<img src="${info.avatar}" alt="" referrerpolicy="no-referrer">`;av.classList.add("live")}else{av.textContent=($("pTk").value.trim()[0]||"?").toUpperCase();av.classList.remove("live")}};
   runUI();
 })();
 </script>
