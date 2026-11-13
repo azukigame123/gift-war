@@ -23,7 +23,7 @@ const DEF = {
   x: [["soldier", "5269", "TikTok", 1, "子分"], ["rider", "13538", "おまもり", 5, "狼騎兵"], ["shield", "51281", "DJレコード", 10, "盾ゴブリン"], ["mage", "8343", "ハンドハート", 100, "黒魔導士"], ["golem", "6267", "コーギー", 299, "岩の巨人"], ["dragon", "11583", "DJメガネ", 500, "魔竜"]],
 };
 const L = 3000, GMAX = 10, AREA = 5, GSEC = 2;
-const TUNE = { hk: 2, hx: 3.5, wall: 1, ha: 1, hw: 16, r1: 200, r2: 300, ab: 1 };
+const TUNE = { l1: 60, l1p: .3, l2: 50, hk: 4, hx: 1.6, wall: 1, ha: 1, hw: 16, r1: 200, r2: 300, ab: 1 };
 const VIEW = 570 * 0.4; // camera: hero sits 40% from the left of a 570px wide course
 
 // gift price → strength, same as the main game: m = coins / base (0.5–2), hp and attack × m^SME; a 2-coin soldier gift gives 2 soldiers
@@ -32,15 +32,20 @@ const SME = { archer: { up: .8 }, bomber: { up: .6, dn: .6 }, shield: { dn: .8 }
 function smOf(id, coins) { const b = COINV[id]; if (!b || !coins) return 1; return Math.max(.5, Math.min(2, coins / b)); }
 function powOf(id, coins) { if (id === "soldier") return 1; const m = smOf(id, coins), e = SME[id] || {}; return Math.pow(m, m >= 1 ? (e.up || 1) : (e.dn || 1)); }
 function countOf(id, coins) { return id === "soldier" && coins >= 2 ? 2 : 1; }
+// each side picks up to 6 characters and their gifts: [{unit,id,name,coins,img}]; old saves without "unit" use the default lineup by position
+const NAMES = { h: { soldier: "兵士", archer: "弓使い", shield: "盾兵", rider: "騎兵", bomber: "爆弾工兵", mage: "魔法使い", golem: "ゴーレム", dragon: "ドラゴン" }, x: { soldier: "子分", archer: "弓ゴブリン", shield: "盾ゴブリン", rider: "狼騎兵", bomber: "爆弾魔", mage: "黒魔導士", golem: "岩の巨人", dragon: "魔竜" } };
 function cleanSlots(g) {
-  const out = { h: [], x: [] };
+  const out = { h: [], x: [] }, seen = new Set();
   for (const side of ["h", "x"]) {
-    const src = g && Array.isArray(g[side]) ? g[side] : [];
-    for (let i = 0; i < DEF[side].length; i++) {
-      const d = DEF[side][i], v = src[i] && typeof src[i] === "object" ? src[i] : {};
+    let src = g && Array.isArray(g[side]) && g[side].length ? g[side].slice(0, 6) : DEF[side].map(d => ({ unit: d[0], id: d[1], name: d[2], coins: d[3] }));
+    for (let i = 0; i < src.length; i++) {
+      const v = src[i] && typeof src[i] === "object" ? src[i] : {}, d = DEF[side][i] || DEF[side][0];
+      const unit = NAMES.h[v.unit] ? v.unit : d[0], id = String(v.id || d[1]).slice(0, 32);
+      if (seen.has(id) || out[side].some(q => q.unit === unit)) continue; seen.add(id);
       const coins = Math.max(0, Math.min(1e6, +v.coins || d[3]));
-      out[side].push({ unit: d[0], label: d[4], pw: powOf(d[0], coins), n: countOf(d[0], coins), id: String(v.id || d[1]).slice(0, 32), name: String(v.name || d[2]).slice(0, 40), coins, img: typeof v.img === "string" && /^https:\/\//.test(v.img) ? v.img.slice(0, 600) : "" });
+      out[side].push({ unit, label: NAMES[side][unit], pw: powOf(unit, coins), n: countOf(unit, coins), id, name: String(v.name || d[2]).slice(0, 40), coins, img: typeof v.img === "string" && /^https:\/\//.test(v.img) ? v.img.slice(0, 600) : "" });
     }
+    out[side].sort((a, b) => a.coins - b.coins);
   }
   return out;
 }
@@ -76,8 +81,8 @@ function createPush() {
   function heroAct(rdt) {
     const hero = S.hero, a = hero.act; if (!a) return; a.t += rdt;
     const foes = S.units.filter(u => u.side === "x" && u.s > hero.s - 30);
-    if (a.k === "lunge" && !a.hit && a.t >= .14) { a.hit = 1; const t = foes.filter(u => u.s < hero.s + TUNE.r1).sort((p, q) => p.s - q.s)[0]; if (t) { t.hp -= 600; S.pops.push({ s: t.s, y: t.y, txt: "600", t: 1, c: "#ffcf3f", big: 1 }); t.s += 30; } S.vfx.push({ k: "slash", s: hero.s + 70, t: .35, d: .35 }); S.shake = Math.max(S.shake, 7); }
-    if (a.k === "spin" && !a.hit) { a.hit = 1; foes.filter(u => u.s < hero.s + TUNE.r2).forEach(u => { u.hp -= 320; u.s += 70; S.pops.push({ s: u.s, y: u.y, txt: "320", t: .9, c: "#fff" }); }); S.vfx.push({ k: "ring", s: hero.s + 40, t: .6, d: .6 }); S.flash = .35; S.shake = 16; }
+    if (a.k === "lunge" && !a.hit && a.t >= .14) { a.hit = 1; const t = foes.filter(u => u.s < hero.s + TUNE.r1).sort((p, q) => p.s - q.s)[0]; if (t) { const D = Math.round(Math.max(TUNE.l1, t.max * TUNE.l1p)); t.hp -= D; S.pops.push({ s: t.s, y: t.y, txt: String(D), t: 1, c: "#ffcf3f", big: 1 }); t.s += 30; } S.vfx.push({ k: "slash", s: hero.s + 70, t: .35, d: .35 }); S.shake = Math.max(S.shake, 7); }
+    if (a.k === "spin" && !a.hit) { a.hit = 1; foes.filter(u => u.s < hero.s + TUNE.r2).forEach(u => { u.hp -= TUNE.l2; u.s += 70; S.pops.push({ s: u.s, y: u.y, txt: String(TUNE.l2), t: .9, c: "#fff" }); }); S.vfx.push({ k: "ring", s: hero.s + 40, t: .6, d: .6 }); S.flash = .35; S.shake = 16; }
     if (a.t >= a.d) { if (a.k === "charge") hero.act = { k: "spin", t: 0, d: .6 }; else hero.act = null; }
   }
   const sgn = side => side === "h" ? 1 : -1;
@@ -227,7 +232,7 @@ function createPush() {
         add(side, sl.unit, `いいね${LIKE_EVERY}回→${sl.label}`, 1, String(nick || "みんな").slice(0, 24), sl.n, sl.pw); out++; }
       return out;
     },
-    test(side, i, who) { const sl = slots[side] && slots[side][i]; if (sl) add(side, sl.unit, `${sl.name}→${sl.label}`, sl.coins, who || "テスト", sl.n, sl.pw); },
+    test(side, i, who) { const sl = slots[side] && (typeof i === "string" ? slots[side].find(q => q.unit === i) : slots[side][i]); if (sl) add(side, sl.unit, `${sl.name}→${sl.label}`, sl.coins, who || "テスト", sl.n, sl.pw); },
   };
 }
 

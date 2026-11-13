@@ -417,7 +417,7 @@ wss.on("connection", (ws, req) => {
         if (m.t === "pslots") { G.game.setSlots(m.gifts); for (const k of pushKeys(G)) { const L = PUSHLAST.get(k); if (L) L.gifts = m.gifts; } }
         else if (m.t === "pskill") G.game.skill(m.k === 2 ? 2 : 1);
         else if (m.t === "plike") G.game.like(m.n === 50 ? 50 : 10, "テスト");
-        else if (m.t === "ptest") G.game.test(m.side === "x" ? "x" : "h", Math.max(0, Math.min(5, m.i | 0)), "テスト");
+        else if (m.t === "ptest") G.game.test(m.side === "x" ? "x" : "h", typeof m.unit === "string" ? m.unit.slice(0, 12) : Math.max(0, Math.min(5, m.i | 0)), "テスト");
         else if (m.t === "pstop") pushStop(G);
         else if (m.t === "pboost" && WHO.owner) G.game.boost(2, 30, "all");
         break;
