@@ -66,7 +66,8 @@ function recordMatch(room) {
       me: { name: P.name, disp: P.disp || "" }, opp: o ? (o.cpu ? { cpu: true, lvl: room.lvl } : { name: o.name || "", disp: o.disp || "" }) : null,
       win: S.over.team === t ? 1 : S.over.team ? 0 : 0.5,
       gifts: Object.values(st.g).sort((a, b) => b.coins - a.coins).slice(0, 300),
-      likes: st.likes, cheers: st.cheers, units: (S.cnt && S.cnt[t]) || {}
+      likes: st.likes, cheers: st.cheers, units: (S.cnt && S.cnt[t]) || {},
+      gcap: S.gc ? S.gc.cap : 0, over: S.gc ? S.gc.ov[t] : 0
     };
     const L = HIST[key] = HIST[key] || []; L.unshift(rec); if (L.length > 200) L.length = 200;
   }
@@ -160,9 +161,12 @@ function cleanGifts(g) {
   return o;
 }
 
+// gift cap: each player picks one, the lower one applies (0 = none)
+const GCAPS = [0, 500, 1000, 2500, 5000, 10000];
+function gcapOf(room) { if (room.practice || room.offline) return 0; const a = (room.players.b && room.players.b.gcap) || 0, b = (room.players.r && room.players.r.gcap) || 0; return a && b ? Math.min(a, b) : a || b; }
 function roomView(room) {
-  const pv = t => { const P = room.players[t]; if (!P) return null; return { name: P.name, disp: P.disp || "", icon: P.icon || "", live: P.live ? P.live.info() : { st: "", msg: "", avatar: null }, here: !!P.ws, ready: !!P.ready, cpu: !!P.cpu, deck: cleanDeck(P.deck) }; };
-  return { code: room.code, phase: room.phase, practice: room.practice, offline: !!room.offline, players: { b: pv("b"), r: pv("r") } };
+  const pv = t => { const P = room.players[t]; if (!P) return null; return { name: P.name, disp: P.disp || "", icon: P.icon || "", live: P.live ? P.live.info() : { st: "", msg: "", avatar: null }, here: !!P.ws, ready: !!P.ready, cpu: !!P.cpu, deck: cleanDeck(P.deck), gcap: P.gcap || 0 }; };
+  return { code: room.code, phase: room.phase, practice: room.practice, offline: !!room.offline, gcap: gcapOf(room), players: { b: pv("b"), r: pv("r") } };
 }
 // stream-only pages (LIVE Studio "link" source) watch a streamer by TikTok username
 const WATCH = new Map();
@@ -207,7 +211,13 @@ function onGift(room, team, g) {
   const unit = UNIT_IDS.find(k => k !== "rookie" && match(k));
   if (!unit) { TT.dbg(g.nick, "gift-unmatched", `${g.giftId} ${g.giftName}`); return; }
   TT.dbg(g.nick, "gift-unit", `${g.giftName} -> ${unit} x${g.count}`); note(unit);
-  for (let i = 0; i < g.count; i++) sim.addStock(team, unit, g.nick);
+  const gc = sim.S.gc, each = Math.max(1, +g.coins || (P.gifts[unit] && P.gifts[unit].coins) || 1);
+  for (let i = 0; i < g.count; i++) {
+    if (gc && gc.cap) {
+      if (gc[team] + each > gc.cap) { sim.giftOver(team, each); gc.ov[team] += each; continue; }
+      gc[team] += each; sim.addStock(team, unit, g.nick); if (gc[team] >= gc.cap) sim.capHit(team);
+    } else sim.addStock(team, unit, g.nick);
+  }
 }
 function onLike(room, team, l) {
   if (!battling(room)) return; if (room.practice && team === "b" && room.src !== "live") return;
@@ -229,6 +239,7 @@ function startMatch(room) {
   sim.newState();
   for (const t of ["b", "r"]) { for (const id in sim.S.stock[t]) sim.S.stock[t][id] = sim.S.stock[t][id].map(() => "はじめの兵"); sim.S.q[t].forEach(e => e.name = "はじめの兵"); }
   sim.S.gf = { b: {}, r: {} };
+  { const c = gcapOf(room); sim.S.gc = c ? { cap: c, b: 0, r: 0, ov: { b: 0, r: 0 } } : null; }
   if (room.practice) { sim.setAuto(true, false); sim.setAutoGift(true); sim.AG.b = room.src === "auto"; sim.AG.r = true; sim.GR.r = room.lvl; sim.GR.b = 1; sim.PRAC.on = true; }
   else {
     sim.setAuto(false, false); sim.GR.b = sim.GR.r = 1; sim.PRAC.on = false;
@@ -322,7 +333,7 @@ wss.on("connection", (ws, req) => {
     dropSolo();
     let P = room.players[team];
     if (!P) P = room.players[team] = { name: "", gifts: {}, cheer: "", deck: [], ready: false };
-    P.ws = ws; P.who = WHO; P.name = C.name; P.disp = C.disp || ""; P.icon = C.icon || ""; P.gifts = C.gifts; P.cheer = C.cheer; P.cheerEmote = C.cheerEmote || null; P.deck = C.deck; P.ready = false;
+    P.ws = ws; P.who = WHO; P.name = C.name; P.disp = C.disp || ""; P.icon = C.icon || ""; P.gifts = C.gifts; P.cheer = C.cheer; P.cheerEmote = C.cheerEmote || null; P.deck = C.deck; P.gcap = C.gcap || 0; P.ready = false;
     C.room = room; C.team = team; clearTimeout(room.dieT);
     attachLive(room, team);
     send(ws, { t: "joined", you: team, room: roomView(room) });
@@ -343,7 +354,9 @@ wss.on("connection", (ws, req) => {
         if (typeof m.icon === "string") C.icon = (m.icon.length <= 40000 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(m.icon)) ? m.icon : "";
         if (typeof m.disp === "string") C.disp = m.disp.replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 16);
         if (m.deck) C.deck = cleanDeck(m.deck);
+        if ("gcap" in m) C.gcap = GCAPS.includes(+m.gcap) ? +m.gcap : 0;
         const P = me();
+        if (P && (P.gcap || 0) !== (C.gcap || 0)) { P.gcap = C.gcap || 0; if (C.room.phase === "lobby") for (const t of ["b", "r"]) if (C.room.players[t] && !C.room.players[t].cpu) C.room.players[t].ready = false; }
         if (P) { const nameChanged = P.name !== C.name; P.name = C.name; P.disp = C.disp || ""; P.icon = C.icon || ""; P.gifts = C.gifts; P.cheer = C.cheer; P.cheerEmote = C.cheerEmote || null; P.deck = C.deck; if (nameChanged) { clearTimeout(P.attT); const rm = C.room, tm = C.team; P.attT = setTimeout(() => attachLive(rm, tm), 2500); } lobbyUpdate(C.room); }
         else { clearTimeout(C.soloT); C.soloT = setTimeout(soloLive, 1500); }
         if (C.push && PUSHG.get(WHO.name) === C.push) { const G = C.push; clearTimeout(C.pushT); C.pushT = setTimeout(() => pushLive(G, C.name), 1500); }

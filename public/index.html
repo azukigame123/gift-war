@@ -96,6 +96,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .pinfo input{width:100%;letter-spacing:0}
 .lbtn{font-family:var(--f-body);font-size:13px;font-weight:800;color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
 .or{font-size:12px;color:var(--muted)}
+.gcrow{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-weight:800;font-size:13px;margin:8px 0 4px}.gcopts{display:flex;flex-wrap:wrap;gap:6px}.gcopts button{font:800 12.5px "M PLUS 1p",sans-serif;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);padding:5px 10px;cursor:pointer}.gcopts button.on{background:var(--gold);color:#2a2000;border-color:transparent}.gcopts button:disabled{opacity:.45;cursor:default}#gcRes b{color:var(--gold)}
 .lstat{margin:0;font-size:12.5px;color:var(--muted);line-height:1.6}
 .lstat b{color:var(--gold);font-size:18px;letter-spacing:.2em}
 .players{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -379,6 +380,8 @@ html.mpush #wrap>*:not(header):not(#pushSec){display:none!important}
         <h3>部屋</h3>
         <label class="offchk"><input type="checkbox" id="offChk"> 配信なしで遊ぶ（ライブのギフトといいねの代わりに、兵といいねが自動で届きます）</label>
         <div class="lrow"><button type="button" id="mkRoom" class="lbtn">部屋を作る</button><span class="or">または</span><input id="codeIn" type="text" maxlength="6" placeholder="入室コード" autocomplete="off"><button type="button" id="joinRoom" class="lbtn">入る</button></div>
+        <div class="gcrow"><span>ギフトの上限</span><div class="gcopts" id="gcOpts"></div></div>
+        <p class="lstat" id="gcRes">2人とも上限を選び、低いほうを使います。上限をこえたギフトはキャラが出ず「あふれパワー」（攻撃が強くなる）になります。</p>
         <p class="lstat" id="roomStat">部屋を作るか、相手から聞いた入室コードを入れてください。</p>
       </div>
       <div class="players">
@@ -695,7 +698,7 @@ const DECK={b:new Set(["rookie","soldier","archer","rider","shield","bomber","ma
 const DECK_CAP=30,DECK_MIN=6;
 function deckMap(team,id){if(DECK[team].has(id))return id;const order=["rookie","soldier","archer","rider","shield","bomber","mage","golem","dragon"];let i=order.indexOf(id);while(i>0){i--;if(DECK[team].has(order[i]))return order[i]}return "rookie"}
 const CFG={gifts:{soldier:"バラ",archer:"",rider:"",shield:"",bomber:"",mage:"",golem:"",dragon:"",glove:"グローブ"},cheer:"がんばれ",cap:60};
-CFG.gid={};try{const sv=JSON.parse(localStorage.getItem("giftwar_cfg")||"null");if(sv){if(sv.gid)Object.assign(CFG.gid,sv.gid);Object.assign(CFG.gifts,sv.gifts||{});if(sv.cheer)CFG.cheer=sv.cheer;if(sv.cheerEmote)CFG.cheerEmote=sv.cheerEmote;if(sv.disp)CFG.disp=sv.disp;if(sv.icon)CFG.icon=sv.icon;if(sv.cap)CFG.cap=sv.cap}}catch(e){}
+CFG.gid={};try{const sv=JSON.parse(localStorage.getItem("giftwar_cfg")||"null");if(sv){if(sv.gid)Object.assign(CFG.gid,sv.gid);Object.assign(CFG.gifts,sv.gifts||{});if(sv.cheer)CFG.cheer=sv.cheer;if(sv.cheerEmote)CFG.cheerEmote=sv.cheerEmote;if(sv.disp)CFG.disp=sv.disp;if(sv.icon)CFG.icon=sv.icon;if(sv.cap)CFG.cap=sv.cap;if(sv.gcap!=null)CFG.gcap=+sv.gcap||0}}catch(e){}
 let CE_WAIT=false;
 function ceUI(){const b=document.getElementById("ceBox");if(!b)return;const e=CFG.cheerEmote;b.innerHTML="";if(e){if(e.img){const im=new Image();im.src=e.img;im.alt="応援スタンプ";im.referrerPolicy="no-referrer";b.appendChild(im)}else b.textContent="登録ずみ"}else b.textContent="なし";
  const L=document.getElementById("ceLearn");L.textContent=CE_WAIT?"やめる":e?"登録しなおす":"スタンプを登録";document.getElementById("ceClr").hidden=!e||CE_WAIT;
@@ -716,6 +719,9 @@ const SMT={b:{},r:{}};function tplFor(team,id){const t=UNITS.find(u=>u.id===id),
 const isAuto=(team,id)=>MODE[team]==="all"||(MODE[team]==="5"&&COINV[id]<=5);
 const CAPW={rookie:0,soldier:.5,archer:.5,rider:1,shield:1,bomber:1,mage:1.5,golem:3,dragon:3};const capW=(id,mini)=>mini?1:(CAPW[id]??1);
 function capCnt(team){return S.units.reduce((n,u)=>n+(u.team===team&&(!CFG.capHome||u.field===team)?capW(u.t.id,u.mini):0),0)}
+/* gift cap (battle): gifts past the cap become overflow power instead of troops */
+function giftOver(team,coins){S.ovf=S.ovf||{b:0,r:0};const add=Math.min(OVF.max,S.ovf[team]+Math.max(1,coins)*OVF.k)-S.ovf[team];S.ovf[team]+=add;const f=team;S.fx.push({type:"txt",field:f,d:FW*.45,y:FH*(.36+Math.random()*.16),txt:`あふれ+${Math.max(1,Math.round(add))}%`,life:70,col:"#ffb35c"})}
+function capHit(team){S.fx.push({type:"txt",field:team,d:FW*.45,y:FH*.36,txt:"ギフト上限！",life:90,col:"#ffcf3f"});log("s",`${team==="b"?"青軍":"赤軍"}がギフトの上限に届きました。ここからのギフトはあふれパワーになります`)}
 function addStock(team,id,name,rep){if(id==="soldier"&&!rep&&(SM[team].soldier||1)>=2)addStock(team,id,name,1);/* 2-coin gift for the soldier = 2 soldiers (they fight as a pack) */if(id!=="rookie"){S.gf[team][name]=(S.gf[team][name]||0)+Math.round(COINV[id]*(SM[team][id]||1))}id=deckMap(team,id);S.gt=S.gt||{b:null,r:null};S.gt[team]={name,id,t:S.t};if(isAuto(team,id)){autoDeploy(team,id,name);return}S.stock[team][id].push(name);S.q[team].push({id,name,t:S.t})}
 function takeStock(team,id){const name=S.stock[team][id].shift();const i=S.q[team].findIndex(e=>e.id===id);if(i>=0)S.q[team].splice(i,1);return name}
 function lanePos(team,lane){const y=[GATES[0],FORT.y,GATES[1]][lane]+(Math.random()-.5)*36;return{d:40+Math.random()*(DEP-70),y:Math.max(30,Math.min(FH-30,y))}}
@@ -1096,6 +1102,7 @@ function renderCanvas(k){
   // corner label
   g.fillStyle="rgba(10,14,24,.55)";g.font="bold 12px 'M PLUS 1p',sans-serif";const lab=f==="b"?"青軍の陣地":"赤軍の陣地";const lw=g.measureText(lab).width+16;
   g.fillRect(m?FW-lw:0,0,lw,22);g.fillStyle=tcol(f);g.textAlign=m?"right":"left";g.textBaseline="middle";g.fillText(lab,m?FW-8:8,11);g.textBaseline="alphabetic";
+  if(S.gc&&S.gc.cap){const n=Math.min(S.gc.cap,S.gc[f]||0),full=n>=S.gc.cap,bw=170,bx=m?FW*.93-bw:FW*.07,by=FH*.885;g.fillStyle="rgba(10,14,24,.7)";g.fillRect(bx,by,bw,30);g.font="bold 11px 'M PLUS 1p',sans-serif";g.textBaseline="middle";g.textAlign="left";g.fillStyle=full?"#ffcf3f":"#fff";g.fillText(full?"🎁 ギフト上限！":"🎁 ギフト",bx+6,by+9);g.textAlign="right";g.fillText(`${n} / ${S.gc.cap}`,bx+bw-6,by+9);g.fillStyle="rgba(255,255,255,.15)";g.fillRect(bx+6,by+18,bw-12,7);g.fillStyle=full?"#ffcf3f":tcol(f);g.fillRect(bx+6,by+18,(bw-12)*n/S.gc.cap,7);g.textBaseline="alphabetic"}
   {let row=0;const BN=[];if(S.t<=30&&!S.over)BN.push(["#ff5468","ラスト30秒！ 塔へのダメージ2倍"]);for(const T of ["b","r"]){const M=mult(T);if(M>1){const parts=[];if(S.dbl[T]>0)parts.push("2倍タイム");if(S.glv[T]>0)parts.push("グローブ");BN.push([T==="b"?COL.b:COL.r,`${T==="b"?"青軍":"赤軍"} ${parts.join("＋")} ${M}倍！ 残り${Math.ceil(Math.max(S.dbl[T],S.glv[T])/60)}秒`])}}
    for(const [bc,txt] of BN){g.font="bold 16px 'M PLUS 1p',sans-serif";const w=g.measureText(txt).width+24,x=FW/2-w/2,y=30+row*30;
     g.fillStyle="rgba(10,14,24,.7)";g.fillRect(x,y,w,26);g.strokeStyle=bc;g.lineWidth=2;g.strokeRect(x,y,w,26);g.fillStyle=tick%30<15?"#ffcf3f":"#fff6c0";g.textAlign="center";g.textBaseline="middle";g.fillText(txt,FW/2,y+13);g.textBaseline="alphabetic";row++}}
@@ -1422,8 +1429,15 @@ function lobbyUI(){
   const offR=NETX&&NETX.room&&NETX.room.offline,both=LB.inB&&LB.inR&&(offR||(TT.b==="ok"&&TT.r==="ok")),deckOk=deckValid();const rb=$("readyBtn");
   rb.disabled=!both||!deckOk||LB.rdB;rb.classList.toggle("on",both&&deckOk&&!LB.rdB);rb.classList.toggle("done",LB.rdB);
   rb.textContent=LB.rdB?(LB.rdR?"まもなく開始！":"相手の準備を待っています…"):(TT.b!=="ok"&&!offR)?"準備完了（自分のライブ接続待ち）":!both?"準備完了（相手の入室待ち）":!deckOk?"準備完了（デッキを直してください）":"準備完了";
+  gcUI();
   $("roomStat").innerHTML=LB.code?`入室コード <b>${LB.code}</b>${NETX&&NETX.room&&NETX.room.offline?'<span class="offtag">配信なし</span>':""}　${LB.inR?"相手が入室しました":"相手の入室を待っています…"}`:"部屋を作るか、相手から聞いた入室コードを入れてください。";
 }
+var GCAPS=[0,500,1000,2500,5000,10000],gcLab=c=>c?c+"":"なし";
+function gcUI(){const box=$("gcOpts");if(!box)return;const my=CFG.gcap||0,lock=LB.rdB;if(box.childElementCount!==GCAPS.length){box.innerHTML="";GCAPS.forEach(c=>{const b=document.createElement("button");b.type="button";b.dataset.c=c;b.textContent=gcLab(c);b.onclick=()=>{if(LB.rdB)return;CFG.gcap=c;saveCfg();sendCfg();gcUI()};box.appendChild(b)})}
+  for(const b of box.children){b.classList.toggle("on",+b.dataset.c===my);b.disabled=lock}
+  const rm=NETX&&NETX.room,you=NETX&&NETX.you,op=rm&&you&&rm.players[you==="b"?"r":"b"],el=$("gcRes");
+  if(rm&&!rm.practice&&op&&op.here){const o=+op.gcap||0,c=my&&o?Math.min(my,o):my||o;el.innerHTML=`あなた <b>${gcLab(my)}</b> ／ 相手 <b>${gcLab(o)}</b> → この試合は ${c?`<b>${c}コイン</b>まで（低いほう）`:"<b>上限なし</b>"}`+(rm.offline?"（配信なしでは使いません）":"")}
+  else el.innerHTML=`2人とも上限を選び、低いほうを使います。上限をこえたギフトはキャラが出ず「あふれパワー」（攻撃が強くなる）になります。${my?"":"（「なし」＝今までどおり）"}`}
 function enterRoom(code){LB.code=code;LB.inB=true;LB.inR=false;LB.rdB=LB.rdR=false;lobbyUI();setTimeout(()=>{LB.inR=true;setTT("r","wait");lobbyUI();setTimeout(()=>{setTT("r","ok",LB.nameR);lobbyUI()},1200);setTimeout(()=>{LB.rdR=true;lobbyUI();tryStart()},2500)},2500)}
 $("mkRoom").onclick=()=>{const c=Array.from({length:6},()=>"ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.random()*32|0]).join("");enterRoom(c)};
 $("joinRoom").onclick=()=>{const c=$("codeIn").value.trim().toUpperCase();if(c.length<4){$("roomStat").textContent="入室コードを入れてください（4〜6文字）";return}enterRoom(c)};
@@ -1613,7 +1627,7 @@ if(STREAM_NAME){document.documentElement.classList.add("streamonly");stCv.style.
 var NETX={ok:false,url:null,tries:0,dt:66,lastSnap:0,you:"b",room:null,rival:"",avatars:{}};
 function wsURL(){const q=new URLSearchParams(location.search).get("server");if(q)return q.replace(/^http/,"ws").replace(/\/$/,"")+"/ws";if(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent|anthropic/.test(location.hostname))return null;return (location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws?inv="+encodeURIComponent(INV)}
 function gfor(id){const n=CFG.gifts[id];const g=gInfo(n);return {id:(CFG.gid&&CFG.gid[id])||(g&&g[3])||"",name:n||"",alt:(g&&g[4])||"",coins:(g&&g[2])||0}}
-function cfgMsg(){const gifts={};for(const k of ["soldier","archer","rider","shield","bomber","mage","golem","dragon","glove"])gifts[k]=gfor(k);return {name:$("ttB").value.trim().replace(/^@/,""),disp:CFG.disp||"",icon:CFG.icon||"",gifts,cheer:CFG.cheer,cheerEmote:CFG.cheerEmote||null,deck:[...DECK.b],cap:CFG.cap}}
+function cfgMsg(){const gifts={};for(const k of ["soldier","archer","rider","shield","bomber","mage","golem","dragon","glove"])gifts[k]=gfor(k);return {name:$("ttB").value.trim().replace(/^@/,""),disp:CFG.disp||"",icon:CFG.icon||"",gifts,cheer:CFG.cheer,cheerEmote:CFG.cheerEmote||null,deck:[...DECK.b],cap:CFG.cap,gcap:CFG.gcap||0}}
 let cfgT=null;function sendCfg(){if(!NETX.ok)return;clearTimeout(cfgT);cfgT=setTimeout(()=>NET.send(Object.assign({t:"cfg"},cfgMsg())),500)}
 async function netGate(){const u=wsURL();if(!u)return;try{const r=await fetch("/api/whoami?inv="+encodeURIComponent(INV),{cache:"no-store"});const j=await r.json();if(j.gate&&!j.ok){showGate();return}}catch(e){}netConnect()}
 function showGate(){const d=document.createElement("div");d.className="gate";d.innerHTML=`<div class="gbox2"><div class="gi2">🔒</div><h2>このゲームは招待制です</h2><p>招待してくれた人から届いたURLを開いてください。<br>一度開けば、このブラウザでは次から普通に開けます。</p></div>`;document.body.appendChild(d)}

@@ -91,7 +91,7 @@ function showList(j){
   <div class="card scroll"><table><thead><tr><th>日時</th><th>種類</th><th>相手</th><th>結果</th><th class="n">長さ</th><th class="n">ギフト</th><th class="n">いいね</th><th class="n">応援</th></tr></thead><tbody id="tb"></tbody></table>
   <p class="note" style="margin-top:8px">行を押すと、ギフトの内訳と出たキャラが開きます。最新200試合まで残ります。</p></div></div>`;
   const tb=document.getElementById("tb");
-  tb.innerHTML=L.map((r,i)=>`<tr class="m" data-i="${i}"><td>${fmtD(r.at)}</td><td>${r.mode==="battle"?'<span class="tag bt">対戦</span>':'<span class="tag pr">練習</span>'}</td><td>${oppTxt(r)}</td><td>${winTxt(r)}</td><td class="n">${fmtLen(r.len||0)}</td><td class="n">${num(giftSum(r))}コイン</td><td class="n">${num(r.likes)}</td><td class="n">${num(r.cheers)}回</td></tr>`).join("");
+  tb.innerHTML=L.map((r,i)=>`<tr class="m" data-i="${i}"><td>${fmtD(r.at)}</td><td>${r.mode==="battle"?'<span class="tag bt">対戦</span>':'<span class="tag pr">練習</span>'}</td><td>${oppTxt(r)}</td><td>${winTxt(r)}</td><td class="n">${fmtLen(r.len||0)}</td><td class="n">${num(giftSum(r))}コイン${r.gcap?`<br><small style="color:var(--muted)">上限${num(r.gcap)}${r.over?`・こえた分${num(r.over)}`:""}</small>`:""}</td><td class="n">${num(r.likes)}</td><td class="n">${num(r.cheers)}回</td></tr>`).join("");
   tb.querySelectorAll("tr.m").forEach(tr=>tr.onclick=()=>{const nx=tr.nextElementSibling;if(nx&&nx.classList.contains("det")){nx.remove();return}const d=document.createElement("tr");d.className="det";d.innerHTML=`<td colspan="8">${detail(L[+tr.dataset.i])}</td>`;tr.after(d)});
 }
 function showUsers(j){
