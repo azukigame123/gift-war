@@ -23,7 +23,7 @@ function load() {
     const PLAYERS=[];const feedEl={};let hover=null;const refreshUI=()=>{};
     ${body}
     return {
-      get S(){return S}, newState, step, addStock, sendGlove, cheer, doAct, gloveOK, mult, end,
+      get S(){return S}, newState, step, addStock, giftOver, capHit, sendGlove, cheer, doAct, gloveOK, mult, end,
       DECK, MODE, CFG, OVF, SM, smOf, costOf, AG, GR, PRAC, OFF, UNITS, COINV, SKILLS,
       tick(){tick++}, setAuto(r,b){autoR=r;autoB=b}, setAutoGift(v){autoGift=v}
     };
