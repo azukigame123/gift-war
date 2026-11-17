@@ -1254,7 +1254,7 @@ function drawBattleWide(g,W,H,team){
   STK.field=CANVAS[0].field;STK.mirror=CANVAS[0].mirror;OBJS=1.3;renderCanvas(STK);OBJS=1;
   const sw=FW*.96,sh0=FH*.9,sx0=FW*.04,sy0=FH*.05,FA=sw/sh0;let fh=H,fw=fh*FA;const pad=H*.02;
   let rem=W-fw;if(rem<H*.6){fw=W-H*.6;fh=fw/FA;rem=H*.6}const lw=Math.max(rem*.55,H*.32),rw=rem-lw,fx=lw,fy=(H-fh)/2;
-  g.fillStyle="rgba(14,18,30,.92)";g.fillRect(0,0,lw,H);g.fillRect(fx+fw,0,rw,H);
+  g.fillStyle="rgba(14,18,30,.92)";g.fillRect(0,0,lw,H);g.fillRect(fx+fw,0,rw,H);if(fh<H-1){g.fillStyle="#0c111c";g.fillRect(fx,0,fw,H)}
   g.drawImage(STK.cv,sx0,sy0,sw,sh0,fx,fy,fw,fh);g.fillStyle=tcol(team);g.fillRect(fx-3,0,3,H);
   const ids=legendIds().filter(id=>id!=="rookie"),cw2=(lw-pad*3)/2,ch2=(H-pad*2)/4;
   ids.forEach((id,i)=>{const x=pad+(i%2)*(cw2+pad),y=pad+Math.floor(i/2)*ch2;g.fillStyle="rgba(255,255,255,.06)";g.fillRect(x,y,cw2,ch2-pad);drawChip(g,id,team,x,y,cw2,ch2-pad)});
