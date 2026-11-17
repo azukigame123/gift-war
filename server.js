@@ -97,6 +97,23 @@ const server = http.createServer(async (req, res) => {
     const r = G.game.boost(u.searchParams.get("x"), u.searchParams.get("sec"), u.searchParams.get("side"));
     TT.dbg(G.who, "push-boost", JSON.stringify(r)); return res.end(JSON.stringify(Object.assign({ ok: true, msg: `${r.x}倍タイム（残り${r.left}秒）` }, r)));
   }
+  // ChainRoulette asks for new fall / capture events: /api/pevents?k=KEY&since=ID (no since: only returns the latest id, so old events are not replayed)
+  if (u.pathname === "/api/pevents") {
+    const ok = pkeyOk(u.searchParams.get("k"));
+    res.writeHead(ok ? 200 : 403, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+    if (!ok) return res.end(JSON.stringify({ ok: false, msg: "鍵が違います。操作画面の「2倍タイムのURL」の鍵を使ってください" }));
+    const since = u.searchParams.get("since"), G = PUSHG.get(GATE ? "owner" : "guest");
+    const events = since == null || since === "" ? [] : PEV.list.filter(e => e.id > +since).map(e => ({ id: e.id, t: e.t, at: e.at, top: e.top || null, clear: !!e.clear }));
+    return res.end(JSON.stringify({ ok: true, last: PEV.id, running: !!G, events }));
+  }
+  // ChainRoulette reports the punishment gacha result: /api/presult?k=KEY&text=電撃 → shown on the mini window, then the castle revives after the set seconds
+  if (u.pathname === "/api/presult") {
+    const ok = pkeyOk(u.searchParams.get("k")), G = ok ? PUSHG.get(GATE ? "owner" : "guest") : null;
+    res.writeHead(ok ? 200 : 403, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+    if (!ok) return res.end(JSON.stringify({ ok: false, msg: "鍵が違います" }));
+    const done = !!(G && G.game.result(u.searchParams.get("text")));
+    return res.end(JSON.stringify({ ok: done, msg: done ? "罰ゲームを小窓に出しました" : "いまは落城中ではありません" }));
+  }
   if (u.pathname === "/api/history") {
     const who = checkInv(u.searchParams.get("inv"));
     res.writeHead(who ? 200 : 403, { "content-type": "application/json", "cache-control": "no-store" });
@@ -293,14 +310,29 @@ function pushLive(G, name) {
   for (const k in G.on) L.on(k, G.on[k]);
   G.on.state();
 }
+// fall / capture events for ChainRoulette (it polls /api/pevents with the 2倍タイム key) and today's fall count (JST day)
+const PEV = { id: 0, list: [] };
+const FALLS_FILE = pathM.join(DATA_DIR, "pushfalls.json");
+let FALLS = {}; try { FALLS = JSON.parse(fs.readFileSync(FALLS_FILE, "utf8")) || {}; } catch (e) {}
+const jstDay = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+function fallsOf(who) { const f = FALLS[who]; return f && f.d === jstDay() ? f.n : 0; }
+function addFall(who) { FALLS[who] = { d: jstDay(), n: fallsOf(who) + 1 }; try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(FALLS_FILE, JSON.stringify(FALLS)); } catch (e) {} }
+function pushEvents(G) {
+  G.game.onEvent = ev => {
+    if (ev.t === "fall") addFall(G.who);
+    PEV.list.push(Object.assign({ id: ++PEV.id, at: Date.now(), who: G.who }, ev)); if (PEV.list.length > 50) PEV.list.shift();
+    TT.dbg(G.who, "push-event", JSON.stringify(ev));
+  };
+}
+const pkeyOk = q => { const k = Buffer.from(String(q || "")), want = Buffer.from(pboostKey(GATE ? "owner" : "guest")); return k.length === want.length && crypto.timingSafeEqual(k, want); };
 // before a push game starts (and after it stops) the stream pages show a still field and "0 / goal", using the last settings
 const PUSHLAST = new Map(); // watch key -> { cfg, gifts }
-function idleSnap(k) { const L = PUSHLAST.get(k) || {}, g = createPush(); g.start(L.cfg || {}, L.gifts || null); const s = g.snapshot(); s.idle = 1; s.g = 0; return s; }
+function idleSnap(k) { const L = PUSHLAST.get(k) || {}, g = createPush(); g.start(L.cfg || {}, L.gifts || null); const s = g.snapshot(); s.idle = 1; s.g = 0; const G = pushOf(k); s.falls = fallsOf(G ? G.who : (GATE ? "owner" : "guest")); return s; }
 function pushIdle(G) { for (const k of pushKeys(G)) { const W = WATCH.get(k), msg = JSON.stringify({ t: "psnap", s: idleSnap(k) }); if (W) for (const w of W) if (w.readyState === 1) w.send(msg); } }
 function pushStop(G) { clearInterval(G.loop); clearTimeout(G.dieT); if (G.live) { for (const k in G.on) G.live.off(k, G.on[k]); TT.release(G.live); G.live = null; } pushSend(G, { t: "pend" }); PUSHG.delete(G.who); pushIdle(G); }
 function pushRun(G) {
   clearInterval(G.loop); let n = 0;
-  G.loop = setInterval(() => { for (let q = 0; q < SPEED; q++) G.game.tick(1 / 30); if (++n % 2 === 0) pushSend(G, { t: "psnap", s: G.game.snapshot() }); }, 1000 / 30);
+  G.loop = setInterval(() => { for (let q = 0; q < SPEED; q++) G.game.tick(1 / 30); if (++n % 2 === 0) { const s = G.game.snapshot(); s.falls = fallsOf(G.who); pushSend(G, { t: "psnap", s }); } }, 1000 / 30);
 }
 
 // ---------- websocket ----------
@@ -416,13 +448,13 @@ wss.on("connection", (ws, req) => {
         const pg = pushOf(k); send(ws, { t: "psnap", s: pg ? pg.game.snapshot() : idleSnap(k) });
         break;
       }
-      case "pstart": case "pslots": case "pskill": case "ptest": case "pstop": case "pjoin": case "pboost": case "plike": {
+      case "pstart": case "pslots": case "pskill": case "ptest": case "pstop": case "pjoin": case "pboost": case "plike": case "previve": case "pfall": case "pwin": {
         if (!WHO.owner) return send(ws, { t: "err", msg: "押し合いモードは今はオーナーだけが使えます" });
         let G = PUSHG.get(WHO.name);
         if ((m.t === "pjoin" || m.t === "pstart") && WHO.owner) send(ws, { t: "pkey", k: pboostKey(WHO.name) });
         if (m.t === "pjoin") { if (G) { G.ops.add(ws); C.push = G; clearTimeout(G.dieT); send(ws, { t: "psnap", s: G.game.snapshot() }); if (G.live) send(ws, { t: "ptt", info: G.live.info() }); } break; }
         if (m.t === "pstart") {
-          if (!G) { G = { game: createPush(), ops: new Set(), who: WHO.name, name: "", live: null, on: null }; PUSHG.set(WHO.name, G); }
+          if (!G) { G = { game: createPush(), ops: new Set(), who: WHO.name, name: "", live: null, on: null }; PUSHG.set(WHO.name, G); pushEvents(G); }
           G.ops.add(ws); C.push = G; clearTimeout(G.dieT);
           G.game.start(m.cfg || {}, m.gifts); pushLive(G, C.name); for (const k of pushKeys(G)) PUSHLAST.set(k, { cfg: m.cfg || {}, gifts: m.gifts || null }); pushRun(G); pushSend(G, { t: "psnap", s: G.game.snapshot() }); break;
         }
@@ -433,6 +465,9 @@ wss.on("connection", (ws, req) => {
         else if (m.t === "ptest") G.game.test(m.side === "x" ? "x" : "h", typeof m.unit === "string" ? m.unit.slice(0, 12) : Math.max(0, Math.min(5, m.i | 0)), "テスト");
         else if (m.t === "pstop") pushStop(G);
         else if (m.t === "pboost" && WHO.owner) G.game.boost(2, 30, "all");
+        else if (m.t === "previve") G.game.revive();
+        else if (m.t === "pfall") { const S = G.game.S; if (S && !S.over) S.fortB = 0; } // test: knock the castle down
+        else if (m.t === "pwin") { const S = G.game.S; if (S && !S.over) S.fortR = 0; } // test: take the enemy fort
         break;
       }
       case "ping": send(ws, { t: "pong", at: m.at }); break;

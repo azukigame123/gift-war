@@ -14,6 +14,8 @@ body{font-family:"M PLUS 1p",sans-serif;color:#fff}
 html.btn #stage{aspect-ratio:640/672;width:min(100vw,calc(100vh*640/672))}html.btn #cv{height:auto;aspect-ratio:640/600;bottom:auto}html.btn #stage{background:#0b0f1d;border-radius:0 0 10px 10px}.pbtn.on{display:flex}
 .pbtn button{flex:1;height:100%;font:400 clamp(10px,2.9vmin,20px) "Dela Gothic One","M PLUS 1p",sans-serif;color:#fff;border:3px solid #0b0f1d;border-radius:12px;padding:0 .4em;white-space:nowrap;cursor:pointer;box-shadow:0 4px 0 #0b0f1d;touch-action:manipulation}
 .pbtn .b1{background:#2f9e5a}.pbtn .b2{background:#c9851a}.pbtn button:disabled{filter:grayscale(1) brightness(.6);cursor:default}.pbtn button:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 #0b0f1d}
+#mini{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(100vw,calc(100vh*450/190));aspect-ratio:450/190}
+html.mini #stage{display:none}html.mini #mini{display:block}
 #msg{position:absolute;left:8px;bottom:6px;font:800 12px "M PLUS 1p",sans-serif;color:#fff;text-shadow:0 1px 3px #000;opacity:.85}
 /* count overlay (decided design: big number + fort row) */
 :root{--gold:#ffcf3f;--red:#ff4d6a;--green:#3fd47a}
@@ -39,11 +41,12 @@ html.btn #stage{aspect-ratio:640/672;width:min(100vw,calc(100vh*640/672))}html.b
 <body>
 <div id="stage"><canvas id="cv" width="640" height="600"></canvas>
 <div class="pbtn" id="pbtn"><button class="b1" id="pb1" type="button">⚔️ 単体攻撃（1）</button><button class="b2" id="pb2" type="button">🌀 範囲攻撃（5）</button></div></div>
+<canvas id="mini" width="450" height="190"></canvas>
 <div id="cnt"><div class="ov" id="ov"></div></div>
 <div id="msg"></div>
 <script>
 "use strict";
-const Q=new URLSearchParams(location.search),VIEWM=Q.get("v")==="count"?"count":"push",NAME=(Q.get("stream")||"").replace(/^@/,"").trim(),EMBED=Q.get("embed")==="1";
+const Q=new URLSearchParams(location.search),VIEWM=Q.get("v")==="count"?"count":Q.get("v")==="mini"?"mini":"push",NAME=(Q.get("stream")||"").replace(/^@/,"").trim(),EMBED=Q.get("embed")==="1";
 let INV=Q.get("inv")||"";try{if(!INV)INV=localStorage.getItem("giftwar_inv")||""}catch(e){}
 const $=id=>document.getElementById(id);
 // ---------- assets ----------
@@ -100,7 +103,7 @@ function draw(){const hero=S.hero;g.clearRect(0,0,W,H);g.fillStyle="#0b0f1d";g.f
  if(BGI.complete&&BGI.naturalWidth){const tw=1400,th=tw*BGI.naturalHeight/BGI.naturalWidth,y0=BOT-th-14,off=((camS()*PX)%tw+tw)%tw;for(let x=CX-off;x<W;x+=tw)g.drawImage(BGI,x,y0,tw+1,th)}else{g.fillStyle="#6f9a4c";g.fillRect(CX,TOP,CW,BOT-TOP)}
  const xb=X(0),xr=X(L),hpb=(x,y,v,col,label,lc)=>{const bw=170,bh=22;x=Math.max(CX+bw/2+6,Math.min(W-bw/2-6,x));rr(x-bw/2-3,y-3,bw+6,bh+6,8,"#0b0f1d");rr(x-bw/2,y,bw,bh,6,"#3a3f52");rr(x-bw/2,y,Math.max(0,bw*v),bh,6,v<.3?"#ffcf3f":col);g.fillStyle="rgba(255,255,255,.25)";g.fillRect(x-bw/2+3,y+3,Math.max(0,bw*v-6),4);txt(String(Math.max(0,Math.ceil(v*100)))+"%",x,y+bh-4,17,"#fff","center",4);txt(label,x,y-9,17,lc||"#fff","center",5)};
  if(xb>CX-200){{const b=BLD.own;if(b.complete&&b.naturalWidth){const bw=190,bh2=bw*b.naturalHeight/b.naturalWidth;g.drawImage(b,xb+50-bw/2,LANE+66-bh2,bw,bh2)}}hpb(xb+50,LANE-150,S.fortB/S.maxB,"#3fd47a","自分の城")}
- if(xr<W+200){const yy=LANE-(S.final?190:130);{const b=S.final?BLD.demon:BLD.fort;if(b.complete&&b.naturalWidth){const bw=S.final?330:190,bh2=bw*b.naturalHeight/b.naturalWidth;g.drawImage(b,xr-50-bw/2,LANE+62-bh2,bw,bh2)}}hpb(xr-50,yy,S.fortR/S.maxR,"#ff4d6a",S.final?"魔王城":`敵の砦 ${S.n+1}/${S.cfg.goal}`,S.final?"#ffcf3f":"#fff")}
+ if(xr<W+200){const yy=LANE-(S.final?190:130);{const b=S.final?BLD.demon:BLD.fort;if(b.complete&&b.naturalWidth){const bw=S.final?330:190,bh2=bw*b.naturalHeight/b.naturalWidth;g.drawImage(b,xr-50-bw/2,LANE+62-bh2,bw,bh2)}}hpb(xr-50,yy,S.fortR/S.maxR,"#ff4d6a",S.final?"魔王城":`敵の砦${S.cfg.goal?" "+(S.n+1)+"/"+S.cfg.goal:""}`,S.final?"#ffcf3f":"#fff")}
  if(!S.over){const hx0=X(hero.s),gy=LANE+40;g.save();
   const r2=R2*PX,ok2=S.gauge>=AREA;g.globalAlpha=ok2?.28:.1;g.fillStyle="#ff9d2e";g.beginPath();g.ellipse(hx0+r2/2-15,gy,r2/2+15,34,0,0,7);g.fill();
   g.globalAlpha=ok2?1:.4;g.strokeStyle="#fff3c4";g.lineWidth=3;g.setLineDash([10,7]);g.stroke();g.setLineDash([]);
@@ -155,7 +158,7 @@ function draw(){const hero=S.hero;g.clearRect(0,0,W,H);g.fillStyle="#0b0f1d";g.f
   const sx=h?CX+70:W-70;if(c.id==="boost")txt("⚡",sx,y+24,56,"#ffcf3f","center",6);else if(c.id==="hero")hspr("charge",sx,y+bh/2+8,.5);else if(!h&&EMAP[c.id])espr(EMAP[c.id],"attack",sx,y+bh/2+6,104);else spr(c.id+(h?"_b":"_r"),sx,y+bh/2+6,118,!h);
   txt(c.txt,h?CX+CW/2+50:CX+CW/2-50,y+10,24,"#fff","center",6,CW-170);g.restore()}
  if(S.over){g.fillStyle="rgba(4,6,14,.82)";g.fillRect(CX,TOP,CW,BOT-TOP);const win=S.over==="h",mx=CX+CW/2,goal=S.cfg.goal;
-  txt(S.clear?"目標達成！":win?"勇者の勝ち！":"妨害の勝ち！",mx,TOP+70,40,S.clear?"#ffcf3f":win?"#7dffae":"#ff8da0",null,8);txt(S.clear?`魔王城を落とした！（${S.n}/${goal}）`:win?`敵の砦を落とした ＋1（${S.n}/${goal}）`:`自分の城が落とされた −1（${S.n}/${goal}）`,mx,TOP+104,17,"#fff");
+  txt(S.clear?"目標達成！":win?"勇者の勝ち！":"妨害の勝ち！",mx,TOP+70,40,S.clear?"#ffcf3f":win?"#7dffae":"#ff8da0",null,8);txt(S.clear?`魔王城を落とした！（${S.n}${goal?"/"+goal:""}）`:win?`敵の砦を落とした ＋1（${S.n}${goal?"/"+goal:""}）`:`自分の城が落とされた −1（${S.n}${goal?"/"+goal:""}）`,mx,TOP+104,17,"#fff");
   txt("MVP",mx,TOP+150,18,"#ffcf3f");(S.mvp||[]).forEach(([n,c],i)=>txt(`${i+1}位 ${n} ${c}コイン`,mx,TOP+182+i*28,16,"#fff"));
   txt(S.clear?"おつかれさま！":`次の周まで ${Math.max(0,S.it)}秒`,mx,BOT-40,S.clear?22:28,"#ffcf3f",null,6)}
  if(S.idle){const w=Math.min(CW-60,300),y=TOP+44;rr(CX+CW/2-w/2,y,w,58,16,"rgba(10,14,28,.82)");g.strokeStyle="#ffcf3f";g.lineWidth=3;g.beginPath();g.roundRect(CX+CW/2-w/2,y,w,58,16);g.stroke();txt("押し合い 準備中",CX+CW/2,y+28,24,"#ffcf3f","center",6);txt("もうすぐ始まります",CX+CW/2,y+50,13,"#fff","center",4)}
@@ -168,15 +171,52 @@ function draw(){const hero=S.hero;g.clearRect(0,0,W,H);g.fillStyle="#0b0f1d";g.f
  for(let i=0;i<GMAX;i++){const y=gy1-(i+1)*seg+2,f=Math.min(1,Math.max(0,gv-i)),hh=seg-4;rr(GX+16,y,GW-32,hh,5,"rgba(0,0,0,.55)");if(f>0)rr(GX+16,y+hh*(1-f),GW-32,hh*f,5,f>=1?(gv>=AREA?"#ffcf3f":"#3fd47a"):"rgba(63,212,122,.45)")}
  {const ya=gy1-AREA*seg;g.fillStyle="#fff";g.fillRect(GX+8,ya-1,GW-16,3);txt("範囲",GX+GW/2,ya-5,11,gv>=AREA?"#ffcf3f":"#cbd3ea","center",3)}
  txt(`${Math.floor(gv)}/${GMAX}`,GX+GW/2,H-28,16,"#fff")}
+// ---------- mini window (&v=mini): the push field as a strip for the top of a normal stream ----------
+const MW=450,MH=190,mcv=$("mini"),mg=mcv.getContext("2d"),MTOP=26,MFH=134,CROP_Y=330,CROP_H=170;
+if(VIEWM==="mini")document.documentElement.classList.add("mini");
+function mtxt(t,x,y,size,col,al,stroke,mw,font){mg.font=`${font||"800"} ${size}px ${font==="disp"?"":"\"M PLUS 1p\","}sans-serif`;if(font==="disp")mg.font=`${size}px "Dela Gothic One","M PLUS 1p",sans-serif`;mg.textAlign=al||"left";mg.textBaseline="middle";mg.lineJoin="round";if(mw==null)mw=MW;if(stroke){mg.lineWidth=stroke;mg.strokeStyle="#0b0f1d";mg.strokeText(t,x,y,mw)}mg.fillStyle=col;mg.fillText(t,x,y,mw)}
+function mrr(x,y,w,h,r,f){mg.beginPath();mg.roundRect(x,y,w,h,r);mg.fillStyle=f;mg.fill()}
+function mhp(x,y,w,v,col,label,right){mrr(x,y,w,9,4,"rgba(11,15,29,.85)");mrr(x+1.5,y+1.5,Math.max(0,(w-3)*v),6,3,v<.3?"#ffcf3f":col);mtxt(label,right?x+w:x,y+18,10,"#fff",right?"right":"left",3)}
+function drawMini(){const hero=S.hero;mg.setTransform(1,0,0,1,0,0);mg.clearRect(0,0,MW,MH);
+ mg.save();mg.beginPath();mg.roundRect(0,0,MW,MH,10);mg.clip();
+ mg.fillStyle="#0b0f1d";mg.fillRect(0,0,MW,MH);
+ mg.drawImage(cv,CX,CROP_Y,CW,CROP_H,0,MTOP,MW,MFH);
+ // castle hp on the field corners
+ mhp(8,MTOP+6,120,S.fortB/S.maxB,"#3fd47a",`豆の砦 ${Math.round(S.fortB/S.maxB*100)}%`,false);
+ mhp(MW-128,MTOP+6,120,S.fortR/S.maxR,"#ff4d6a",`${S.final?"魔王城":"敵の砦"} ${Math.round(S.fortR/S.maxR*100)}%`,true);
+ // newest gift line
+ const f=(S.feed||[]).find(q=>q.age<3);if(f){mg.globalAlpha=Math.min(1,3-f.age);mtxt(f.txt,MW/2,MTOP+16,11,f.side==="h"?"#7dffae":"#ff8da0","center",3,MW-280);mg.globalAlpha=1}
+ // top bar
+ mg.fillStyle="rgba(10,9,16,.86)";mg.fillRect(0,0,MW,MTOP);
+ mtxt("押し合い",10,13,13,"#ffd24a","left",0,null,"disp");
+ mtxt("豆の砦が落ちたら",76,13,11,"#d4d0e4","left");let w=mg.measureText("豆の砦が落ちたら ").width;mtxt("罰ゲームガチャ",76+w,13,11,"#ff7a8f","left");
+ mtxt(`今日の落城 ${SN&&SN.falls!=null?SN.falls:0}回`,MW-10,13,11,"#fff","right");
+ // push progress (hero position) as a thin line under the bar
+ {const p=hero.s/L;mg.fillStyle="#ff4d6a";mg.fillRect(0,MTOP,MW,3);mg.fillStyle="#3fd47a";mg.fillRect(0,MTOP,MW*p,3);mg.fillStyle="#fff";mg.fillRect(MW*p-1.5,MTOP-1,3,5)}
+ // bottom bar: which gifts defend / attack
+ const by=MTOP+MFH;mg.fillStyle="rgba(10,9,16,.9)";mg.fillRect(0,by,MW,MH-by);
+ const row=(Lst,x0,lab,col,right)=>{mtxt(lab,right?MW-8:x0,by+15,11,col,right?"right":"left");const lw=mg.measureText(lab).width+6;let x=right?MW-8-lw-22:x0+lw;
+  for(const sl of Lst.slice(0,6)){const gi=gimg(sl[1],sl[2]);if(gi&&gi.complete&&gi.naturalWidth)mg.drawImage(gi,x,by+5,20,20);x+=right?-22:22}};
+ row(S.slots.h,8,"守る","#7aa8ff",false);row(S.slots.x,0,"落とす","#ff7a8f",true);
+ // fall / capture
+ if(S.over){const fall=S.over==="x";mg.fillStyle=fall?"rgba(40,8,18,.96)":"rgba(8,30,18,.95)";mg.fillRect(0,0,MW,MH);
+  mtxt(fall?"落城！":"攻略！",MW/2,64,40,fall?"#ff5c8a":"#ffd24a","center",6,null,"disp");
+  if(fall){const top=(SN&&SN.mvpx&&SN.mvpx[0])||null;mtxt(top?`いちばん攻めた人：${top[0]}（${top[1]}コイン）`:"いちばん攻めた人：—",MW/2,108,13,"#fff","center",3);
+   if(SN&&SN.pun){mtxt(`罰ゲーム：${SN.pun}`,MW/2,138,18,"#ff7a8f","center",4,MW-30,"disp");mtxt(`砦の復活まで ${Math.max(0,S.it)}秒`,MW/2,170,11,"#d4d0e4","center")}
+   else if(SN&&SN.pw)mtxt("ChainRoulette で罰ゲームガチャを回しています…",MW/2,142,12,"#d4d0e4","center");
+   else mtxt(`砦の復活まで ${Math.max(0,S.it)}秒`,MW/2,142,12,"#d4d0e4","center")}
+  else{mtxt("ChainRoulette の 2倍タイム 発動！",MW/2,110,15,"#45d68a","center",3);mtxt(S.clear?"目標達成！おつかれさま":`次の押し合いまで ${Math.max(0,S.it)}秒`,MW/2,142,12,"#d4d0e4","center")}}
+ if(S.idle){mrr(MW/2-110,MTOP+44,220,40,12,"rgba(10,14,28,.85)");mtxt("押し合い 準備中",MW/2,MTOP+64,18,"#ffcf3f","center",4,null,"disp")}
+ mg.restore()}
 // ---------- count overlay ----------
 let cn=null,cg=null,cfin=false;
 function countHTML(n,goal){const fin=n>=goal-1&&n<goal,k=Math.min(1,6/goal);let s="";for(let i=0;i<goal;i++){const boss=i===goal-1,cl=["f",boss?"boss":"",i<n?"done":"",i===n?"next":""].join(" ");s+=`<div class="${cl}"><img src="push/${boss?"c_demon":"c_fort"}.webp" alt=""></div>`}
- return `<div class="Dw" style="--k:${k}"><div class="A"><img src="push/${fin||n>=goal?"c_demon":"c_fort"}.webp" alt=""><div class="lab stroke">${n>=goal?"クリア！":fin?"次は魔王城":"落とした砦"}</div><span class="n stroke">${n}</span><span class="g stroke">/ ${goal}</span></div><div class="row">${s}</div></div>`}
+ return `<div class="Dw" style="--k:${k}"><div class="A"><img src="push/${fin||n>=goal?"c_demon":"c_fort"}.webp" alt=""><div class="lab stroke">${n>=goal?"クリア！":fin?"次は魔王城":"落とした砦"}</div><span class="n stroke">${n}</span><span class="g stroke">${goal?"/ "+goal:""}</span></div><div class="row">${s}</div></div>`}
 function count(){if(!SN)return;const n=SN.n,goal=SN.cfg.goal;if(n===cn&&goal===cg)return;const ev=cn==null||goal!==cg?null:n>cn?(n>=goal?"clear":"plus"):"minus";cn=n;cg=goal;const el=$("ov");el.innerHTML=countHTML(n,goal);$("cnt").classList.add("on");
  if(ev){el.classList.remove("shake","bump");void el.offsetWidth;el.classList.add(ev==="minus"?"shake":"bump");const p=document.createElement("div");p.className="pop stroke "+ev;p.textContent=ev==="plus"?"＋1 砦を落とした！":ev==="minus"?"−1 城を落とされた…":"魔王城撃破！クリア！";el.appendChild(p)}}
 // ---------- fit + loop ----------
 
-function frame(now){btnUI();if(VIEWM==="push"&&SN){S=hydrate(now);if(S){draw();cv.classList.add("on")}}requestAnimationFrame(frame)}requestAnimationFrame(frame);
+function frame(now){btnUI();if((VIEWM==="push"||VIEWM==="mini")&&SN){S=hydrate(now);if(S){draw();cv.classList.add("on");if(VIEWM==="mini")drawMini()}}requestAnimationFrame(frame)}requestAnimationFrame(frame);
 // ---------- network ----------
 let tries=0;
 // attack buttons on the stream page (&btn=1): the owner can press them on the screen itself

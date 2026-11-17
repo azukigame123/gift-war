@@ -22,7 +22,7 @@ const DEF = {
   h: [["soldier", "5655", "バラ", 1, "兵士"], ["rider", "5487", "フィンガーハート", 5, "騎兵"], ["shield", "8913", "ローザ", 10, "盾兵"], ["mage", "5660", "ハートポーズ", 100, "魔法使い"], ["golem", "15194", "つながる心", 299, "ゴーレム"], ["dragon", "7168", "マネーガン", 500, "ドラゴン"]],
   x: [["soldier", "5269", "TikTok", 1, "子分"], ["rider", "13538", "おまもり", 5, "狼騎兵"], ["shield", "51281", "DJレコード", 10, "盾ゴブリン"], ["mage", "8343", "ハンドハート", 100, "黒魔導士"], ["golem", "6267", "コーギー", 299, "岩の巨人"], ["dragon", "11583", "DJメガネ", 500, "魔竜"]],
 };
-const L = 3000, GMAX = 10, AREA = 5, GSEC = 2;
+const L = 3000, GMAX = 10, AREA = 5, GSEC = 2, PUN_WAIT = 30; // PUN_WAIT: seconds to wait for the gacha result before counting down anyway
 const TUNE = { l1: 60, l1p: .3, l2: 50, hk: 4, hx: 1.6, wall: 1, ha: 1, hw: 16, r1: 200, r2: 300, ab: 1 };
 const VIEW = 570 * 0.4; // camera: hero sits 40% from the left of a 570px wide course
 
@@ -52,13 +52,14 @@ function cleanSlots(g) {
 }
 
 function createPush() {
+  let onEv = null; // set by the server: fall / capture events for ChainRoulette
   let S = null, COUNT = 0, CFG = { goal: 5, fort: 3000, castle: 5000 }, interT = 0, uid = 1, clock = 0;
   const BOOST = { h: { x: 1, until: 0 }, x: { x: 1, until: 0 } }; // 2倍タイム (from ChainRoulette etc.): gifts spawn x times the units
   const boostOf = side => BOOST[side].until > clock ? BOOST[side].x : 1;
   const LIKE_EVERY = 50; let likes = 0; // いいね50回ごとに「TikTok」のギフトと同じキャラが出る
   let slots = cleanSlots(null);
   const camS = () => Math.max(VIEW, Math.min(L - 570 * 0.6, S.hero.s));
-  function newLap() { const fin = COUNT >= CFG.goal - 1, fr = fin ? CFG.fort * 2 : CFG.fort; S = { t: 0, gauge: 0, hero: { s: 150, cd: 0, atk: 40 * TUNE.ha, kb: 0, act: null }, units: [], fx: [], help: [], harm: [], fortB: CFG.castle, maxB: CFG.castle, fortR: fr, maxR: fr, final: fin, over: null, clear: false, feed: [], cut: null, mvp: {}, vfx: [], pops: [], shots: [], zones: [], shake: 0, flash: 0, push: .5 }; }
+  function newLap() { const fin = CFG.goal > 0 && COUNT >= CFG.goal - 1, fr = fin ? CFG.fort * 2 : CFG.fort; S = { t: 0, gauge: 0, hero: { s: 150, cd: 0, atk: 40 * TUNE.ha, kb: 0, act: null }, units: [], fx: [], help: [], harm: [], fortB: CFG.castle, maxB: CFG.castle, fortR: fr, maxR: fr, final: fin, over: null, clear: false, feed: [], cut: null, mvp: {}, mvpx: {}, pun: null, punWait: false, vfx: [], pops: [], shots: [], zones: [], shake: 0, flash: 0, push: .5 }; }
   function recent(a) { while (a.length && S.t - a[0].t > 20) a.shift(); return a.reduce((p, q) => p + q.c, 0); }
   function add(side, id, label, coins, who, n, pw) {
     if (!S || S.over || !U[id]) return; const u = U[id], h = side === "h", c = camS();
@@ -69,7 +70,7 @@ function createPush() {
       const hp = Math.round(u.hp * hm * (pw || 1));
       S.units.push({ i: uid++, side, id, s, y: (Math.random() - .5) * 80, hp, max: hp, cd: Math.random(), bob: Math.random() * 6, m: hm * (pw || 1), g: Math.random() * .3, run: 0 });
     }
-    if (coins) { (h ? S.help : S.harm).push({ t: S.t, c: coins }); if (h) S.mvp[who] = (S.mvp[who] || 0) + coins; }
+    if (coins) { (h ? S.help : S.harm).push({ t: S.t, c: coins }); if (h) S.mvp[who] = (S.mvp[who] || 0) + coins; else S.mvpx[who] = (S.mvpx[who] || 0) + coins; }
     if (coins >= 99 && !(S.cut && S.cut.id === "hero")) S.cut = { side, txt: `${who} の ${label}！`, t: 2.2, d: 2.2, id }; // the hero's big attack is never covered
     else { S.feed.unshift({ side, txt: `${who}：${label}`, t: S.t }); S.feed.length = Math.min(S.feed.length, 3); }
   }
@@ -184,7 +185,9 @@ function createPush() {
     for (const k of ["fx", "vfx", "pops", "shots"]) { S[k].forEach(f => f.t -= dt); S[k] = S[k].filter(f => f.t > 0); }
     S.shake = Math.max(0, S.shake - dt * 40); S.flash = Math.max(0, S.flash - dt);
     if (S.cut) { S.cut.t -= dt; if (S.cut.t <= 0) S.cut = null; }
-    const end = w => { S.over = w; if (w === "h") { COUNT++; if (S.final) S.clear = true; } else COUNT--; interT = 10; };
+    const end = w => { S.over = w; if (w === "h") { COUNT++; if (S.final) S.clear = true; } else COUNT--; interT = 10;
+      if (w === "x" && CFG.pun) { S.punWait = true; interT = PUN_WAIT + CFG.rv; } // revive CFG.rv seconds after the gacha result (or after PUN_WAIT if no result comes)
+      if (onEv) try { onEv(w === "x" ? { t: "fall", top: Object.entries(S.mvpx).sort((a, b) => b[1] - a[1])[0] || null } : { t: "capture", clear: !!S.clear }); } catch (e) { } };
     if (S.fortR <= 0) { S.fortR = 0; end("h"); } else if (S.fortB <= 0) { S.fortB = 0; end("x"); }
   }
   // one server tick: the charge pose slows time like the preview
@@ -209,13 +212,15 @@ function createPush() {
       feed: S.feed.filter(f => S.t - f.t < 4).map(f => [f.side, f.txt, r1(S.t - f.t)]), cut: S.cut, sh: r1(S.shake), fl: r1(S.flash),
       lk: [likes, LIKE_EVERY],
       bst: { h: BOOST.h.until > clock ? [BOOST.h.x, Math.ceil(BOOST.h.until - clock)] : null, x: BOOST.x.until > clock ? [BOOST.x.x, Math.ceil(BOOST.x.until - clock)] : null },
-      mvp: Object.entries(S.mvp).sort((a, b) => b[1] - a[1]).slice(0, 3),
+      mvp: Object.entries(S.mvp).sort((a, b) => b[1] - a[1]).slice(0, 3), mvpx: Object.entries(S.mvpx).sort((a, b) => b[1] - a[1]).slice(0, 3), pun: S.pun, pw: S.punWait ? 1 : 0,
       slots: { h: slots.h.map(s => [s.unit, s.id, s.img, s.label, Math.round(s.pw * 10) / 10, s.n]), x: slots.x.map(s => [s.unit, s.id, s.img, s.label, Math.round(s.pw * 10) / 10, s.n]) },
     };
   }
   return {
-    start(cfg, g) { CFG = { goal: [3, 5, 7, 10].includes(+cfg.goal) ? +cfg.goal : 5, fort: [1500, 3000, 5000].includes(+cfg.fort) ? +cfg.fort : 3000, castle: [3000, 5000, 8000].includes(+cfg.castle) ? +cfg.castle : 5000 }; if (g) slots = cleanSlots(g); COUNT = 0; interT = 0; newLap(); },
+    start(cfg, g) { CFG = { goal: [0, 3, 5, 7, 10].includes(+cfg.goal) ? +cfg.goal : 5, fort: [1500, 3000, 5000, 8000, 12000].includes(+cfg.fort) ? +cfg.fort : 3000, castle: [3000, 5000, 8000, 12000, 20000, 30000].includes(+cfg.castle) ? +cfg.castle : 5000, pun: !!cfg.pun, rv: [10, 30, 60, 90, 120].includes(+cfg.rv) ? +cfg.rv : 60 }; if (g) slots = cleanSlots(g); COUNT = 0; interT = 0; newLap(); },
     setSlots(g) { slots = cleanSlots(g); },
+    result(text) { if (!S || S.over !== "x") return false; S.pun = String(text || "").slice(0, 40); if (S.punWait) { S.punWait = false; interT = CFG.rv; } return true; },
+    revive() { if (!S || !S.over || S.clear) return false; interT = 0; S.punWait = false; return true; },
     boost(x, sec, side) { // calling again while it runs adds the time
       x = Math.max(2, Math.min(5, Math.round(+x || 2))); sec = Math.max(5, Math.min(600, Math.round(+sec || 30)));
       const sides = side === "h" || side === "x" ? [side] : ["h", "x"]; let until = 0;
@@ -223,7 +228,7 @@ function createPush() {
       if (S && !S.over) S.cut = { side: sides.length === 1 ? sides[0] : "h", txt: `${sides.length === 2 ? "" : sides[0] === "h" ? "救済 " : "妨害 "}${x}倍タイム！（${sec}秒）`, t: 2.2, d: 2.2, id: "boost" };
       return { x, side: sides.length === 2 ? "all" : sides[0], left: Math.ceil(until) };
     },
-    get slots() { return slots; },
+    get slots() { return slots; }, set onEvent(f) { onEv = f; },
     get running() { return !!S; }, get S() { return S; }, TUNE, heroAct,
     tick, skill, gift, snapshot,
     like(n, nick) { // returns how many units came out
