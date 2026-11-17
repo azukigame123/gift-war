@@ -338,7 +338,7 @@ html.mpush #wrap>*:not(header):not(#pushSec){display:none!important}
  <div class="pcard"><h3>画面（配信に映るもの）</h3><div class="pv"><iframe id="pFrame" title="押し合いの画面" hidden></iframe><div class="wait" id="pWait">サーバーにつながると、ここに画面が出ます</div></div>
   <div class="gauge"><i id="pGauge"></i></div><p class="note" id="pGaugeT">勇者ゲージ 0/10（2秒で1たまる）</p>
   <div class="sk"><button type="button" id="pSk1" disabled>⚔️ 単体攻撃（1）</button><button type="button" id="pSk2" disabled>🌀 範囲攻撃（5）</button></div>
-  <p class="note">勇者の攻撃はこのボタンで出します。自動では出ません。</p></div>
+  <p class="note">「勇者のゲージ攻撃」を「自動で出す」にすると、敵が3体以上近いと範囲攻撃、ゲージに余裕があるか城が危ないと単体攻撃を自動で出します。ボタンでも出せます。</p></div>
  <div style="display:grid;gap:12px;min-width:0">
   <div class="pcard"><h3>TikTok</h3>
    <div class="ptk"><div class="pav" id="pAv">?</div><div class="ptki"><label for="pTk" class="note">TikTokのユーザー名（@のあと）</label><input id="pTk" type="text" maxlength="24" placeholder="TikTokのユーザー名" autocomplete="off"><span class="tts" id="pTs">TikTok 未接続</span></div></div>
@@ -348,6 +348,7 @@ html.mpush #wrap>*:not(header):not(#pushSec){display:none!important}
    <label for="pFort">敵の砦の耐久</label><select id="pFort"><option>1500</option><option selected>3000</option><option>5000</option><option>8000</option><option>12000</option></select>
    <label for="pCastle">自分の城（豆の砦）の耐久</label><select id="pCastle"><option>3000</option><option selected>5000</option><option>8000</option><option>12000</option><option>20000</option><option>30000</option></select>
    <label for="pPun">豆の砦が落ちたら</label><select id="pPun"><option value="1">ChainRouletteで罰ゲームガチャ</option><option value="0">何もしない（10秒で次へ）</option></select>
+   <label for="pAuto">勇者のゲージ攻撃</label><select id="pAuto"><option value="1">自動で出す</option><option value="0">ボタンで出す</option></select>
    <label for="pRv">罰ゲームのあと復活まで</label><select id="pRv"><option>10</option><option>30</option><option selected>60</option><option>90</option><option>120</option></select></div>
    <button type="button" class="go" id="pStart">押し合いを始める</button><button type="button" class="stop" id="pStop" hidden>押し合いをやめる</button>
    <p class="note">TikTokのユーザー名は、バトクラの「あなた」の欄と同じものを使います。魔王城（最後の1つ）は砦の耐久の2倍。目標「なし」は魔王城が出ず、ずっと押し合いが続きます（小窓で配信の上に置くとき向け）。「30分に1回くらい落ちる」強さは、ギフトの多さで変わるので、自分の城の耐久で合わせてください。</p>
@@ -1876,7 +1877,7 @@ refreshUI();netGate();frame();
   const $=id=>document.getElementById(id),H=document.documentElement,NET={send:o=>window.GW&&GW.NET.send(o)};
   const DEF={h:[["soldier","5655","バラ",1,"兵士"],["rider","5487","フィンガーハート",5,"騎兵"],["shield","8913","ローザ",10,"盾兵"],["mage","5660","ハートポーズ",100,"魔法使い"],["golem","15194","つながる心",299,"ゴーレム"],["dragon","7168","マネーガン",500,"ドラゴン"]],
              x:[["soldier","5269","TikTok",1,"子分"],["rider","13538","おまもり",5,"狼騎兵"],["shield","51281","DJレコード",10,"盾ゴブリン"],["mage","8343","ハンドハート",100,"黒魔導士"],["golem","6267","コーギー",299,"岩の巨人"],["dragon","11583","DJメガネ",500,"魔竜"]]};
-  let PC={goal:5,fort:3000,castle:5000,pun:1,rv:60,gifts:null};try{Object.assign(PC,JSON.parse(localStorage.getItem("giftwar_push")||"{}"))}catch(e){}
+  let PC={goal:5,fort:3000,castle:5000,pun:1,auto:1,rv:60,gifts:null};try{Object.assign(PC,JSON.parse(localStorage.getItem("giftwar_push")||"{}"))}catch(e){}
   const save=()=>{try{localStorage.setItem("giftwar_push",JSON.stringify(PC))}catch(e){}};
   const UN=["soldier","archer","shield","rider","bomber","mage","golem","dragon"];
   const NM={h:{soldier:"兵士",archer:"弓使い",shield:"盾兵",rider:"騎兵",bomber:"爆弾工兵",mage:"魔法使い",golem:"ゴーレム",dragon:"ドラゴン"},x:{soldier:"子分",archer:"弓ゴブリン",shield:"盾ゴブリン",rider:"狼騎兵",bomber:"爆弾魔",mage:"黒魔導士",golem:"岩の巨人",dragon:"魔竜"}};
@@ -1923,9 +1924,9 @@ refreshUI();netGate();frame();
       T.innerHTML="<thead><tr><th>コイン</th><th>ギフトの例</th><th>救済</th><th>妨害</th></tr></thead><tbody>"+rows.map(([c,ids])=>`<tr><td><b>${c}</b></td><td class="gi">${ids.map(id=>{const g=CAT.find(x=>x.id===id);return g?`${g.img?`<img src="${g.img}" alt="" referrerpolicy="no-referrer">`:""}${g.name}`:""}).filter(Boolean).join("、")}</td><td>${by("h",c)}</td><td>${by("x",c)}</td></tr>`).join("")+"</tbody>"}}
   fetch("gift-catalog.json").then(r=>r.json()).then(j=>{CAT=(j.gifts||[]).map(g=>({id:String(g.id),name:g.name,coins:+g.coins,img:g.img||""}));const all=slots();for(const sd of ["h","x"])all[sd].forEach(v=>{if(!v.img){const g=CAT.find(x=>x.id===v.id);if(g)v.img=g.img}});PC.gifts=all;gifts()}).catch(()=>gifts());
   gifts();
-  for(const [id,k] of [["pGoal","goal"],["pFort","fort"],["pCastle","castle"],["pPun","pun"],["pRv","rv"]]){$(id).value=String(PC[k]);$(id).onchange=e=>{PC[k]=+e.target.value;save()}}
+  for(const [id,k] of [["pGoal","goal"],["pFort","fort"],["pCastle","castle"],["pPun","pun"],["pAuto","auto"],["pRv","rv"]]){$(id).value=String(PC[k]);$(id).onchange=e=>{PC[k]=+e.target.value;save()}}
   const frame=()=>{const f=$("pFrame"),n=(window.GW&&GW.NETX.who)||key();const src=`push.html?stream=${encodeURIComponent(n)}&v=push&embed=1`;if(f.getAttribute("src")!==src)f.setAttribute("src",src);f.hidden=false;$("pWait").hidden=true};
-  $("pStart").onclick=()=>{if(RUN&&!confirmRestart())return;PC.gifts=slots();save();if(window.GW)NET.send(Object.assign({t:"cfg"},GW.cfgMsg()));NET.send({t:"pstart",cfg:{goal:PC.goal,fort:PC.fort,castle:PC.castle,pun:PC.pun,rv:PC.rv},gifts:PC.gifts});frame()};
+  $("pStart").onclick=()=>{if(RUN&&!confirmRestart())return;PC.gifts=slots();save();if(window.GW)NET.send(Object.assign({t:"cfg"},GW.cfgMsg()));NET.send({t:"pstart",cfg:{goal:PC.goal,fort:PC.fort,castle:PC.castle,pun:PC.pun,auto:PC.auto,rv:PC.rv},gifts:PC.gifts});frame()};
   let armed=0;const confirmRestart=()=>{if(Date.now()-armed<4000)return true;armed=Date.now();$("pStart").textContent="もう一度押すと最初からやり直します";setTimeout(()=>{$("pStart").textContent=RUN?"設定を変えて最初から":"押し合いを始める"},4000);return false};
   $("pStop").onclick=()=>{if(Date.now()-(armed||0)<4000&&$("pStop").dataset.a){NET.send({t:"pstop"});return}armed=Date.now();$("pStop").dataset.a=1;$("pStop").textContent="もう一度押すとやめます";setTimeout(()=>{$("pStop").textContent="押し合いをやめる";delete $("pStop").dataset.a},4000)};
   $("pBoost").onclick=()=>NET.send({t:"pboost"});$("pFallT").onclick=()=>NET.send({t:"pfall"});$("pWinT").onclick=()=>NET.send({t:"pwin"});$("pRevT").onclick=()=>NET.send({t:"previve"});$("pLike").onclick=()=>NET.send({t:"plike",n:50});

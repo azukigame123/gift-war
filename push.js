@@ -191,7 +191,14 @@ function createPush() {
     if (S.fortR <= 0) { S.fortR = 0; end("h"); } else if (S.fortB <= 0) { S.fortB = 0; end("x"); }
   }
   // one server tick: the charge pose slows time like the preview
-  function tick(dt) { if (!S) return; clock += dt; if (!S.over) heroAct(dt); const slow = S.hero.act && S.hero.act.k === "charge" ? .22 : 1; step(dt * slow); }
+  // 自動のゲージ攻撃 (CFG.auto): 範囲 when 3+ enemies are in its reach (or 2+ with a full gauge); 単体 only with gauge to spare (8+) or when the castle is in danger
+  function autoSkill() {
+    const hero = S.hero; if (hero.act || hero.stun > 0) return;
+    const foes = S.units.filter(u => u.side === "x" && u.s > hero.s - 30), in2 = foes.filter(u => u.s < hero.s + TUNE.r2).length, in1 = foes.some(u => u.s < hero.s + TUNE.r1);
+    if (S.gauge >= AREA - .05 && (in2 >= 3 || (in2 >= 2 && S.gauge >= GMAX - .05))) { skill(2); return; }
+    if (in1 && (S.gauge >= 8 || (S.gauge >= 1 && S.fortB < S.maxB * .3))) skill(1);
+  }
+  function tick(dt) { if (!S) return; clock += dt; if (!S.over && CFG.auto && (S.ac = (S.ac || 0) - dt) <= 0) { S.ac = .25; autoSkill(); } if (!S.over) heroAct(dt); const slow = S.hero.act && S.hero.act.k === "charge" ? .22 : 1; step(dt * slow); }
   function gift(g) { // g: {giftId, giftName, count, nick}
     if (!S || S.over) return null; const gn = String(g.giftName || "").toLowerCase();
     for (const side of ["h", "x"]) for (const sl of slots[side]) if ((sl.id && sl.id === String(g.giftId)) || (sl.name && sl.name.toLowerCase() === gn)) {
@@ -217,7 +224,7 @@ function createPush() {
     };
   }
   return {
-    start(cfg, g) { CFG = { goal: [0, 3, 5, 7, 10].includes(+cfg.goal) ? +cfg.goal : 5, fort: [1500, 3000, 5000, 8000, 12000].includes(+cfg.fort) ? +cfg.fort : 3000, castle: [3000, 5000, 8000, 12000, 20000, 30000].includes(+cfg.castle) ? +cfg.castle : 5000, pun: !!cfg.pun, rv: [10, 30, 60, 90, 120].includes(+cfg.rv) ? +cfg.rv : 60 }; if (g) slots = cleanSlots(g); COUNT = 0; interT = 0; newLap(); },
+    start(cfg, g) { CFG = { goal: [0, 3, 5, 7, 10].includes(+cfg.goal) ? +cfg.goal : 5, fort: [1500, 3000, 5000, 8000, 12000].includes(+cfg.fort) ? +cfg.fort : 3000, castle: [3000, 5000, 8000, 12000, 20000, 30000].includes(+cfg.castle) ? +cfg.castle : 5000, pun: !!cfg.pun, auto: !!cfg.auto, rv: [10, 30, 60, 90, 120].includes(+cfg.rv) ? +cfg.rv : 60 }; if (g) slots = cleanSlots(g); COUNT = 0; interT = 0; newLap(); },
     setSlots(g) { slots = cleanSlots(g); },
     result(text) { if (!S || S.over !== "x") return false; S.pun = String(text || "").slice(0, 40); if (S.punWait) { S.punWait = false; interT = CFG.rv; } return true; },
     revive() { if (!S || !S.over || S.clear) return false; interT = 0; S.punWait = false; return true; },

@@ -50,7 +50,8 @@ const Q=new URLSearchParams(location.search),VIEWM=Q.get("v")==="count"?"count":
 let INV=Q.get("inv")||"";try{if(!INV)INV=localStorage.getItem("giftwar_inv")||""}catch(e){}
 const $=id=>document.getElementById(id);
 // ---------- assets ----------
-const W=640,H=600,cv=$("cv"),g=cv.getContext("2d");
+// the mini window draws a wider course (900 instead of 570 wide) and shrinks it, so more of the field shows
+const W=VIEWM==="mini"?970:640,H=600,cv=$("cv"),g=cv.getContext("2d");cv.width=W;
 const IM={};const load=n=>{const i=new Image();i.src=`img/${n}.webp`;IM[n]=i;return i};
 ["soldier","archer","shield","rider","mage","dragon","rookie","bomber","golem"].forEach(u=>{load(u+"_b");load(u+"_r");for(const k of ["idle","walk1","walk2","attack","hurt"])load(u+"_"+k+"_b")});
 const POSES={"soldier":{"idle":{"x0":-51.5,"y0":-120,"h":120},"walk1":{"x0":-71.0,"y0":-121},"walk2":{"x0":-79.0,"y0":-123},"attack":{"x0":-66.5,"y0":-120},"hurt":{"x0":-75.5,"y0":-116}},"rider":{"idle":{"x0":-58.6,"y0":-115.3,"h":115.3},"walk1":{"x0":-64.0,"y0":-111.0},"walk2":{"x0":-58.4,"y0":-112.8},"attack":{"x0":-61.0,"y0":-107.6},"hurt":{"x0":-59.9,"y0":-109.4}},"shield":{"idle":{"x0":-55.7,"y0":-117.1,"h":117.1},"walk1":{"x0":-64.4,"y0":-118.6},"walk2":{"x0":-64.4,"y0":-118.3},"attack":{"x0":-56.9,"y0":-107.2},"hurt":{"x0":-54.5,"y0":-113.6}},"mage":{"idle":{"x0":-53.0,"y0":-119.4,"h":119.4},"walk1":{"x0":-54.1,"y0":-118.8},"walk2":{"x0":-55.0,"y0":-119.0},"attack":{"x0":-59.6,"y0":-114.2},"hurt":{"x0":-52.6,"y0":-107.2}},"golem":{"idle":{"x0":-60.5,"y0":-112.8,"h":112.8},"walk1":{"x0":-60.8,"y0":-114.0},"walk2":{"x0":-58.1,"y0":-114.4},"attack":{"x0":-60.0,"y0":-107.5},"hurt":{"x0":-60.2,"y0":-109.9}},"dragon":{"idle":{"x0":-55.9,"y0":-94.9,"h":94.9},"walk1":{"x0":-57.0,"y0":-110.5},"walk2":{"x0":-79.9,"y0":-82.1},"attack":{"x0":-57.1,"y0":-73.2},"hurt":{"x0":-51.4,"y0":-96.0}},"archer":{"idle":{"x0":-60.5,"y0":-120.2,"h":120.2},"walk1":{"x0":-57.4,"y0":-119.4},"walk2":{"x0":-57.5,"y0":-118.3},"attack":{"x0":-61.4,"y0":-117.2},"hurt":{"x0":-59.6,"y0":-115.4}},"bomber":{"idle":{"x0":-43.2,"y0":-118.8,"h":118.8},"walk1":{"x0":-49.5,"y0":-115.1},"walk2":{"x0":-49.9,"y0":-114.7},"attack":{"x0":-57.8,"y0":-112.4},"hurt":{"x0":-53.5,"y0":-117.8}}};
@@ -101,7 +102,7 @@ function strip(Lst,y,side){const h=side==="h",x0=CX+6,x1=W-8,n=Lst.length,cw=(x1
 function draw(){const hero=S.hero;g.clearRect(0,0,W,H);g.fillStyle="#0b0f1d";g.fillRect(0,0,W,H);
  g.save();g.beginPath();g.rect(CX,TOP,CW,BOT-TOP);g.clip();if(S.shake>0)g.translate((Math.random()-.5)*S.shake,(Math.random()-.5)*S.shake);
  if(BGI.complete&&BGI.naturalWidth){const tw=1400,th=tw*BGI.naturalHeight/BGI.naturalWidth,y0=BOT-th-14,off=((camS()*PX)%tw+tw)%tw;for(let x=CX-off;x<W;x+=tw)g.drawImage(BGI,x,y0,tw+1,th)}else{g.fillStyle="#6f9a4c";g.fillRect(CX,TOP,CW,BOT-TOP)}
- const xb=X(0),xr=X(L),hpb=(x,y,v,col,label,lc)=>{const bw=170,bh=22;x=Math.max(CX+bw/2+6,Math.min(W-bw/2-6,x));rr(x-bw/2-3,y-3,bw+6,bh+6,8,"#0b0f1d");rr(x-bw/2,y,bw,bh,6,"#3a3f52");rr(x-bw/2,y,Math.max(0,bw*v),bh,6,v<.3?"#ffcf3f":col);g.fillStyle="rgba(255,255,255,.25)";g.fillRect(x-bw/2+3,y+3,Math.max(0,bw*v-6),4);txt(String(Math.max(0,Math.ceil(v*100)))+"%",x,y+bh-4,17,"#fff","center",4);txt(label,x,y-9,17,lc||"#fff","center",5)};
+ const xb=X(0),xr=X(L),hpb=(x,y,v,col,label,lc)=>{if(VIEWM==="mini")return;const bw=170,bh=22;x=Math.max(CX+bw/2+6,Math.min(W-bw/2-6,x));rr(x-bw/2-3,y-3,bw+6,bh+6,8,"#0b0f1d");rr(x-bw/2,y,bw,bh,6,"#3a3f52");rr(x-bw/2,y,Math.max(0,bw*v),bh,6,v<.3?"#ffcf3f":col);g.fillStyle="rgba(255,255,255,.25)";g.fillRect(x-bw/2+3,y+3,Math.max(0,bw*v-6),4);txt(String(Math.max(0,Math.ceil(v*100)))+"%",x,y+bh-4,17,"#fff","center",4);txt(label,x,y-9,17,lc||"#fff","center",5)};
  if(xb>CX-200){{const b=BLD.own;if(b.complete&&b.naturalWidth){const bw=190,bh2=bw*b.naturalHeight/b.naturalWidth;g.drawImage(b,xb+50-bw/2,LANE+66-bh2,bw,bh2)}}hpb(xb+50,LANE-150,S.fortB/S.maxB,"#3fd47a","自分の城")}
  if(xr<W+200){const yy=LANE-(S.final?190:130);{const b=S.final?BLD.demon:BLD.fort;if(b.complete&&b.naturalWidth){const bw=S.final?330:190,bh2=bw*b.naturalHeight/b.naturalWidth;g.drawImage(b,xr-50-bw/2,LANE+62-bh2,bw,bh2)}}hpb(xr-50,yy,S.fortR/S.maxR,"#ff4d6a",S.final?"魔王城":`敵の砦${S.cfg.goal?" "+(S.n+1)+"/"+S.cfg.goal:""}`,S.final?"#ffcf3f":"#fff")}
  if(!S.over){const hx0=X(hero.s),gy=LANE+40;g.save();
@@ -157,7 +158,7 @@ function draw(){const hero=S.hero;g.clearRect(0,0,W,H);g.fillStyle="#0b0f1d";g.f
   g.strokeStyle="rgba(255,255,255,.35)";g.lineWidth=2;for(let i=0;i<6;i++){const ly=y-bh/2+14+i*13,lx=CX+((i*97+S.t*900*dir)%CW+CW)%CW;g.beginPath();g.moveTo(lx,ly);g.lineTo(lx+70*dir,ly);g.stroke()}
   const sx=h?CX+70:W-70;if(c.id==="boost")txt("⚡",sx,y+24,56,"#ffcf3f","center",6);else if(c.id==="hero")hspr("charge",sx,y+bh/2+8,.5);else if(!h&&EMAP[c.id])espr(EMAP[c.id],"attack",sx,y+bh/2+6,104);else spr(c.id+(h?"_b":"_r"),sx,y+bh/2+6,118,!h);
   txt(c.txt,h?CX+CW/2+50:CX+CW/2-50,y+10,24,"#fff","center",6,CW-170);g.restore()}
- if(S.over){g.fillStyle="rgba(4,6,14,.82)";g.fillRect(CX,TOP,CW,BOT-TOP);const win=S.over==="h",mx=CX+CW/2,goal=S.cfg.goal;
+ if(S.over&&VIEWM!=="mini"){g.fillStyle="rgba(4,6,14,.82)";g.fillRect(CX,TOP,CW,BOT-TOP);const win=S.over==="h",mx=CX+CW/2,goal=S.cfg.goal;
   txt(S.clear?"目標達成！":win?"勇者の勝ち！":"妨害の勝ち！",mx,TOP+70,40,S.clear?"#ffcf3f":win?"#7dffae":"#ff8da0",null,8);txt(S.clear?`魔王城を落とした！（${S.n}${goal?"/"+goal:""}）`:win?`敵の砦を落とした ＋1（${S.n}${goal?"/"+goal:""}）`:`自分の城が落とされた −1（${S.n}${goal?"/"+goal:""}）`,mx,TOP+104,17,"#fff");
   txt("MVP",mx,TOP+150,18,"#ffcf3f");(S.mvp||[]).forEach(([n,c],i)=>txt(`${i+1}位 ${n} ${c}コイン`,mx,TOP+182+i*28,16,"#fff"));
   txt(S.clear?"おつかれさま！":`次の周まで ${Math.max(0,S.it)}秒`,mx,BOT-40,S.clear?22:28,"#ffcf3f",null,6)}
@@ -172,15 +173,47 @@ function draw(){const hero=S.hero;g.clearRect(0,0,W,H);g.fillStyle="#0b0f1d";g.f
  {const ya=gy1-AREA*seg;g.fillStyle="#fff";g.fillRect(GX+8,ya-1,GW-16,3);txt("範囲",GX+GW/2,ya-5,11,gv>=AREA?"#ffcf3f":"#cbd3ea","center",3)}
  txt(`${Math.floor(gv)}/${GMAX}`,GX+GW/2,H-28,16,"#fff")}
 // ---------- mini window (&v=mini): the push field as a strip for the top of a normal stream ----------
-const MW=450,MH=190,mcv=$("mini"),mg=mcv.getContext("2d"),MTOP=26,MFH=134,CROP_Y=330,CROP_H=170;
+const MW=450,MH=190,mcv=$("mini"),mg=mcv.getContext("2d"),MTOP=26,MFH=134,CROP_Y=232,CROP_H=268;
 if(VIEWM==="mini")document.documentElement.classList.add("mini");
 function mtxt(t,x,y,size,col,al,stroke,mw,font){mg.font=`${font||"800"} ${size}px ${font==="disp"?"":"\"M PLUS 1p\","}sans-serif`;if(font==="disp")mg.font=`${size}px "Dela Gothic One","M PLUS 1p",sans-serif`;mg.textAlign=al||"left";mg.textBaseline="middle";mg.lineJoin="round";if(mw==null)mw=MW;if(stroke){mg.lineWidth=stroke;mg.strokeStyle="#0b0f1d";mg.strokeText(t,x,y,mw)}mg.fillStyle=col;mg.fillText(t,x,y,mw)}
 function mrr(x,y,w,h,r,f){mg.beginPath();mg.roundRect(x,y,w,h,r);mg.fillStyle=f;mg.fill()}
 function mhp(x,y,w,v,col,label,right){mrr(x,y,w,9,4,"rgba(11,15,29,.85)");mrr(x+1.5,y+1.5,Math.max(0,(w-3)*v),6,3,v<.3?"#ffcf3f":col);mtxt(label,right?x+w:x,y+18,10,"#fff",right?"right":"left",3)}
+const OV={k:null,t0:0,p:[]};
+// where a fort sits in the mini window (big-canvas x → mini x)
+const mx=xb=>(xb-CX)*MW/CW,FY=MTOP+MFH*.55;
+function ovInit(k){const fall=k==="x",fx=Math.max(24,Math.min(MW-24,fall?mx(X(0)+50):mx(X(L)-50)));OV.p=[];
+ for(let i=0;i<26;i++){const a=-Math.PI*(.1+.8*Math.random());OV.p.push({k:"rock",x:fx+(Math.random()-.5)*30,y:FY-10,vx:Math.cos(a)*(60+Math.random()*140),vy:Math.sin(a)*(90+Math.random()*160),r:2+Math.random()*4,c:fall?["#6b7280","#8b8f99","#4b5160"][i%3]:["#8a4b3a","#6b3a2a","#9d6b55"][i%3],rot:Math.random()*6})}
+ for(let i=0;i<10;i++)OV.p.push({k:"smoke",x:fx+(Math.random()-.5)*50,y:FY-Math.random()*20,vx:(Math.random()-.5)*20,vy:-12-Math.random()*16,r:10+Math.random()*12,d:Math.random()*.4});
+ if(!fall)for(let i=0;i<70;i++)OV.p.push({k:"conf",x:Math.random()*MW,y:-Math.random()*90,vx:(Math.random()-.5)*30,vy:40+Math.random()*50,w:3+Math.random()*3,h:5+Math.random()*4,c:["#ffd24a","#45d68a","#7aa8ff","#ff7a8f","#fff"][i%5],rot:Math.random()*6,vr:(Math.random()-.5)*10})}
+function ovDraw(fall,e){const dt=1/60;
+ // flash
+ if(e<.35){mg.fillStyle=fall?`rgba(255,60,90,${.55*(1-e/.35)})`:`rgba(255,250,210,${.6*(1-e/.35)})`;mg.fillRect(0,0,MW,MH)}
+ // debris, smoke, confetti
+ for(const q of OV.p){if(q.k==="rock"){q.vy+=380*dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.rot+=6*dt;if(q.y>MTOP+MFH-6){q.y=MTOP+MFH-6;q.vy*=-.3;q.vx*=.6}mg.save();mg.translate(q.x,q.y);mg.rotate(q.rot);mg.fillStyle=q.c;mg.fillRect(-q.r,-q.r,q.r*2,q.r*2);mg.restore()}
+  else if(q.k==="smoke"){if(e<q.d)continue;q.x+=q.vx*dt;q.y+=q.vy*dt;q.r+=6*dt;const a=Math.max(0,.55-(e-q.d)*.12);if(a<=0)continue;mg.fillStyle=fall?`rgba(40,36,44,${a})`:`rgba(120,110,100,${a*.8})`;mg.beginPath();mg.arc(q.x,q.y,q.r,0,7);mg.fill()}
+  else{q.x+=q.vx*dt+Math.sin(e*3+q.rot)*.4;q.y+=q.vy*dt;q.rot+=q.vr*dt;if(q.y>MH+10){q.y=-10;q.x=Math.random()*MW}mg.save();mg.translate(q.x,q.y);mg.rotate(q.rot);mg.fillStyle=q.c;mg.fillRect(-q.w/2,-q.h/2,q.w,q.h);mg.restore()}}
+ // result band (slides in after the crash)
+ const a=Math.min(1,Math.max(0,(e-.45)/.3)),ease=1-Math.pow(1-a,3);if(a<=0)return;
+ const bh=60,by=MTOP+MFH-bh-6,off=(1-ease)*MW*(fall?-1:1);
+ mg.save();mg.translate(off,0);mg.globalAlpha=Math.min(1,a*1.5);
+ const gr=mg.createLinearGradient(0,by,0,by+bh);if(fall){gr.addColorStop(0,"rgba(90,10,30,.92)");gr.addColorStop(1,"rgba(40,6,16,.92)")}else{gr.addColorStop(0,"rgba(20,80,44,.9)");gr.addColorStop(1,"rgba(8,40,22,.9)")}
+ mg.fillStyle=gr;mg.beginPath();mg.moveTo(0,by+6);mg.lineTo(MW,by);mg.lineTo(MW,by+bh-6);mg.lineTo(0,by+bh);mg.closePath();mg.fill();
+ mg.strokeStyle=fall?"#ff5c8a":"#ffd24a";mg.lineWidth=2;mg.stroke();
+ const pop=e<.9?1+(.9-e)*1.2:1;mg.save();mg.translate(80,by+bh/2+2);mg.scale(pop,pop);mtxt(fall?"落城！":"攻略！",0,0,28,fall?"#ff5c8a":"#ffd24a","center",6,null,"disp");mg.restore();
+ const tx=156,tw=MW-tx-12,l1=by+13,l2=by+31,l3=by+49;
+ if(fall){const t=(SN&&SN.mvpx)||[];mtxt(t[0]?`いちばん攻めた人：${t[0][0]}（${t[0][1]}コイン）`:"いちばん攻めた人：—",tx,l1,12,"#fff","left",3,tw);
+  if(SN&&SN.pun){mtxt(`罰ゲーム：${SN.pun}`,tx,l2,15,"#ff7a8f","left",4,tw,"disp");mtxt(`砦の復活まで ${Math.max(0,S.it)}秒`,tx,l3,11,"#d4d0e4","left",3,tw)}
+  else if(SN&&SN.pw){if(t[1])mtxt(`2位 ${t[1][0]}（${t[1][1]}）`+(t[2]?`　3位 ${t[2][0]}（${t[2][1]}）`:""),tx,l2+4,11,"#d4d0e4","left",3,tw)}
+  else mtxt(`砦の復活まで ${Math.max(0,S.it)}秒`,tx,l2,13,"#d4d0e4","left",3,tw)}
+ else{const t=(SN&&SN.mvp)||[];mtxt(t[0]?`いちばん守った人：${t[0][0]}（${t[0][1]}コイン）`:"みんなの力で攻略！",tx,l1,12,"#fff","left",3,tw);
+  mtxt(S.clear?"目標達成！おつかれさま":`次の押し合いまで ${Math.max(0,S.it)}秒`,tx,l2+4,12,"#d4d0e4","left",3,tw)}
+ mg.restore()}
 function drawMini(){const hero=S.hero;mg.setTransform(1,0,0,1,0,0);mg.clearRect(0,0,MW,MH);
  mg.save();mg.beginPath();mg.roundRect(0,0,MW,MH,10);mg.clip();
  mg.fillStyle="#0b0f1d";mg.fillRect(0,0,MW,MH);
- mg.drawImage(cv,CX,CROP_Y,CW,CROP_H,0,MTOP,MW,MFH);
+ const now=performance.now();if(S.over&&OV.k!==S.over){OV.k=S.over;OV.t0=now;ovInit(S.over)}if(!S.over)OV.k=null;
+ const oe=S.over?(now-OV.t0)/1000:9,shk=oe<.7?(1-oe/.7)*9:0;
+ mg.save();if(shk)mg.translate((Math.random()-.5)*shk,(Math.random()-.5)*shk);mg.drawImage(cv,CX,CROP_Y,CW,CROP_H,0,MTOP,MW,MFH);mg.restore();
  // castle hp on the field corners
  mhp(8,MTOP+6,120,S.fortB/S.maxB,"#3fd47a",`豆の砦 ${Math.round(S.fortB/S.maxB*100)}%`,false);
  mhp(MW-128,MTOP+6,120,S.fortR/S.maxR,"#ff4d6a",`${S.final?"魔王城":"敵の砦"} ${Math.round(S.fortR/S.maxR*100)}%`,true);
@@ -198,14 +231,8 @@ function drawMini(){const hero=S.hero;mg.setTransform(1,0,0,1,0,0);mg.clearRect(
  const row=(Lst,x0,lab,col,right)=>{mtxt(lab,right?MW-8:x0,by+15,11,col,right?"right":"left");const lw=mg.measureText(lab).width+6;let x=right?MW-8-lw-22:x0+lw;
   for(const sl of Lst.slice(0,6)){const gi=gimg(sl[1],sl[2]);if(gi&&gi.complete&&gi.naturalWidth)mg.drawImage(gi,x,by+5,20,20);x+=right?-22:22}};
  row(S.slots.h,8,"守る","#7aa8ff",false);row(S.slots.x,0,"落とす","#ff7a8f",true);
- // fall / capture
- if(S.over){const fall=S.over==="x";mg.fillStyle=fall?"rgba(40,8,18,.96)":"rgba(8,30,18,.95)";mg.fillRect(0,0,MW,MH);
-  mtxt(fall?"落城！":"攻略！",MW/2,64,40,fall?"#ff5c8a":"#ffd24a","center",6,null,"disp");
-  if(fall){const top=(SN&&SN.mvpx&&SN.mvpx[0])||null;mtxt(top?`いちばん攻めた人：${top[0]}（${top[1]}コイン）`:"いちばん攻めた人：—",MW/2,108,13,"#fff","center",3);
-   if(SN&&SN.pun){mtxt(`罰ゲーム：${SN.pun}`,MW/2,138,18,"#ff7a8f","center",4,MW-30,"disp");mtxt(`砦の復活まで ${Math.max(0,S.it)}秒`,MW/2,170,11,"#d4d0e4","center")}
-   else if(SN&&SN.pw)mtxt("ChainRoulette で罰ゲームガチャを回しています…",MW/2,142,12,"#d4d0e4","center");
-   else mtxt(`砦の復活まで ${Math.max(0,S.it)}秒`,MW/2,142,12,"#d4d0e4","center")}
-  else{mtxt("ChainRoulette の 2倍タイム 発動！",MW/2,110,15,"#45d68a","center",3);mtxt(S.clear?"目標達成！おつかれさま":`次の押し合いまで ${Math.max(0,S.it)}秒`,MW/2,142,12,"#d4d0e4","center")}}
+ // fall / capture: the field stays visible; the fort breaks (debris, smoke / confetti), then a band with the result
+ if(S.over)ovDraw(S.over==="x",oe);
  if(S.idle){mrr(MW/2-110,MTOP+44,220,40,12,"rgba(10,14,28,.85)");mtxt("押し合い 準備中",MW/2,MTOP+64,18,"#ffcf3f","center",4,null,"disp")}
  mg.restore()}
 // ---------- count overlay ----------
