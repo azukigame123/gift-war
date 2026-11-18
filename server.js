@@ -111,7 +111,7 @@ const server = http.createServer(async (req, res) => {
     const ok = pkeyOk(u.searchParams.get("k")), G = ok ? PUSHG.get(GATE ? "owner" : "guest") : null;
     res.writeHead(ok ? 200 : 403, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
     if (!ok) return res.end(JSON.stringify({ ok: false, msg: "鍵が違います" }));
-    const done = !!(G && G.game.result(u.searchParams.get("text")));
+    const done = !!(G && (isBat(G) ? batResult(G, u.searchParams.get("text")) : G.game.result(u.searchParams.get("text"))));
     return res.end(JSON.stringify({ ok: done, msg: done ? "罰ゲームを小窓に出しました" : "いまは落城中ではありません" }));
   }
   if (u.pathname === "/api/history") {
@@ -306,7 +306,7 @@ function pushLive(G, name) {
   if (G.live) { for (const k in G.on) G.live.off(k, G.on[k]); TT.release(G.live); G.live = null; }
   G.name = name; if (!name) return;
   const L = TT.acquire(name); if (!L) return; G.live = L;
-  G.on = { state: info => pushSend(G, { t: "ptt", info: L.info() }), like: l => { G.game.like(l.n, l.nick); }, gift: g => { const side = G.game.gift(g); TT.dbg(g.nick, side ? "push-gift" : "push-unmatched", `${g.giftId} ${g.giftName} x${g.count} -> ${side || "-"}`); } };
+  G.on = { state: info => pushSend(G, { t: "ptt", info: L.info() }), like: l => { if (isBat(G)) batLike(G, l.n, l.nick); else G.game.like(l.n, l.nick); }, gift: g => { const side = isBat(G) ? batGift(G, g) : G.game.gift(g); TT.dbg(g.nick, side ? "push-gift" : "push-unmatched", `${g.giftId} ${g.giftName} x${g.count} -> ${side || "-"}`); } };
   for (const k in G.on) L.on(k, G.on[k]);
   G.on.state();
 }
@@ -318,7 +318,7 @@ const jstDay = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10
 function fallsOf(who) { const f = FALLS[who]; return f && f.d === jstDay() ? f.n : 0; }
 function addFall(who) { FALLS[who] = { d: jstDay(), n: fallsOf(who) + 1 }; try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(FALLS_FILE, JSON.stringify(FALLS)); } catch (e) {} }
 function pushEvents(G) {
-  G.game.onEvent = ev => {
+  G.game.onEvent = G.emit = ev => {
     if (ev.t === "fall") addFall(G.who);
     PEV.list.push(Object.assign({ id: ++PEV.id, at: Date.now(), who: G.who }, ev)); if (PEV.list.length > 50) PEV.list.shift();
     TT.dbg(G.who, "push-event", JSON.stringify(ev));
@@ -329,8 +329,73 @@ const pkeyOk = q => { const k = Buffer.from(String(q || "")), want = Buffer.from
 const PUSHLAST = new Map(); // watch key -> { cfg, gifts }
 function idleSnap(k) { const L = PUSHLAST.get(k) || {}, g = createPush(); g.start(L.cfg || {}, L.gifts || null); const s = g.snapshot(); s.idle = 1; s.g = 0; const G = pushOf(k); s.falls = fallsOf(G ? G.who : (GATE ? "owner" : "guest")); return s; }
 function pushIdle(G) { for (const k of pushKeys(G)) { const W = WATCH.get(k), msg = JSON.stringify({ t: "psnap", s: idleSnap(k) }); if (W) for (const w of W) if (w.readyState === 1) w.send(msg); } }
-function pushStop(G) { clearInterval(G.loop); clearTimeout(G.dieT); if (G.live) { for (const k in G.on) G.live.off(k, G.on[k]); TT.release(G.live); G.live = null; } pushSend(G, { t: "pend" }); PUSHG.delete(G.who); pushIdle(G); }
+function pushStop(G) { clearInterval(G.loop); batStop(G); clearTimeout(G.dieT); if (G.live) { for (const k in G.on) G.live.off(k, G.on[k]); TT.release(G.live); G.live = null; } pushSend(G, { t: "pend" }); PUSHG.delete(G.who); pushIdle(G); }
+// ---------- 押し合い（バトクラの戦場）: the battle sim with both armies from one stream's gifts ----------
+// 救済 gifts → blue, 妨害 gifts → red. No timer, no CPU. Blue king down = 落城 (punishment, then a new match); red king down = 攻略.
+const isBat = G => !!(G && G.cfg && G.cfg.field === "battle");
+const COINV_OF = id => ({ soldier: 1, archer: 5, rider: 5, shield: 10, bomber: 30, mage: 99, golem: 299, dragon: 500 })[id] || 1;
+function batStart(G) {
+  const B = G.bat || (G.bat = { mvp: {}, mvpx: {}, likes: 0 });
+  if (!B.room) { B.room = { code: "PB" + newCode(), phase: "battle", practice: true, pushb: true, players: { b: { name: "", who: { name: G.who }, gifts: {}, deck: [], ws: null }, r: { name: "妨害", cpu: true, gifts: {}, deck: [], ready: true } }, cap: 60, ev: [] }; ROOMS.set(B.room.code, B.room); }
+  const room = B.room; room.players.b.name = G.name || G.who; room.phase = "battle";
+  const sim = room.sim = B.sim = createSim({ log: (c, t) => room.ev.push(["l", c, t]), play: k => room.ev.push(["s", k]) });
+  const slots = G.game.slots;
+  for (const t of ["b", "r"]) { sim.DECK[t].clear(); UNIT_IDS.forEach(x => sim.DECK[t].add(x)); sim.MODE[t] = "5"; sim.SM[t] = {}; }
+  for (const [side, t] of [["h", "b"], ["x", "r"]]) for (const sl of slots[side]) { const m = sim.smOf(sl.unit, sl.n > 1 ? COINV_OF(sl.unit) : sl.coins); if (m !== 1) sim.SM[t][sl.unit] = m; }
+  sim.CFG.cap = 60; sim.setAuto(false, false); sim.AG.b = sim.AG.r = false; sim.setAutoGift(false); sim.GR.b = sim.GR.r = 1; sim.PRAC.on = false; sim.OFF.b = sim.OFF.r = false;
+  sim.newState(); const S = sim.S; S.t = 1e9; S.gf = { b: {}, r: {} }; S.gc = null;
+  const kb = (+G.cfg.castle || 5000) / 5000, kr = (+G.cfg.fort || 3000) / 3000; // 自分の城の耐久 → blue towers, 敵の砦の耐久 → red towers
+  for (const T of S.towers) { const k = T.team === "b" ? kb : kr; T.hp = T.max = Math.round(T.max * k); }
+  for (const t of ["b", "r"]) { for (const id in S.stock[t]) S.stock[t][id] = S.stock[t][id].map(() => "はじめの兵"); S.q[t].forEach(e => e.name = "はじめの兵"); }
+  B.over = null; B.it = 0; B.pun = null; B.pw = false; B.mvp = {}; B.mvpx = {}; room.ev = [];
+  broadcast(room, { t: "start", room: roomView(room), s: snapshot(S) });
+}
+function batSnap(G) {
+  const B = G.bat, top = o => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, 3), sn = G.game.snapshot() || {};
+  return { field: "battle", idle: 0, over: B ? B.over : null, it: B ? Math.ceil(B.it) : 0, pun: B ? B.pun : null, pw: B && B.pw ? 1 : 0, mvp: B ? top(B.mvp) : [], mvpx: B ? top(B.mvpx) : [], falls: fallsOf(G.who), cfg: sn.cfg, slots: sn.slots, lk: [B ? B.likes : 0, 50] };
+}
+function batAdd(G, side, slot, nick, coins) {
+  const B = G.bat; if (!B || !B.sim || B.over) return; const t = side === "h" ? "b" : "r";
+  for (let k = 0; k < (slot.n || 1); k++) B.sim.addStock(t, slot.unit, nick);
+  if (coins) { const o = side === "h" ? B.mvp : B.mvpx; o[nick] = (o[nick] || 0) + coins; }
+}
+function batGift(G, g) {
+  const gn = String(g.giftName || "").toLowerCase();
+  for (const side of ["h", "x"]) for (const sl of G.game.slots[side]) if ((sl.id && sl.id === String(g.giftId)) || (sl.name && sl.name.toLowerCase() === gn)) {
+    for (let i = 0; i < Math.min(200, g.count || 1); i++) batAdd(G, side, sl, String(g.nick || "だれか").slice(0, 24), sl.coins);
+    return side;
+  }
+  return null;
+}
+function batLike(G, n, nick) {
+  const B = G.bat; if (!B || B.over) return; B.likes += Math.max(0, Math.min(10000, n | 0));
+  while (B.likes >= 50) {
+    B.likes -= 50; const S2 = G.game.slots; let side = "x", sl = S2.x.find(q => q.id === "5269" || q.name === "TikTok");
+    if (!sl) { sl = S2.h.find(q => q.id === "5269" || q.name === "TikTok"); side = "h"; } if (!sl) { sl = S2.x[0]; side = "x"; }
+    if (sl) batAdd(G, side, sl, String(nick || "みんな").slice(0, 24), 1);
+  }
+}
+function batResult(G, text) { const B = G.bat; if (!B || B.over !== "x") return false; B.pun = String(text || "").slice(0, 40); if (B.pw) { B.pw = false; B.it = +G.cfg.rv || 60; } return true; }
+function batRun(G) {
+  clearInterval(G.loop); batStart(G); let n = 0;
+  G.loop = setInterval(() => {
+    const B = G.bat; if (!B) return; const sim = B.sim, room = B.room;
+    if (!B.over) {
+      for (let q = 0; q < SPEED && !sim.S.over; q++) { sim.tick(); sim.step(); }
+      if (sim.S.over) {
+        B.over = sim.S.over.team === "r" ? "x" : "h"; const pun = B.over === "x" && !!G.cfg.pun;
+        B.pw = pun; B.it = pun ? 30 + (+G.cfg.rv || 60) : 10;
+        if (G.emit) G.emit(B.over === "x" ? { t: "fall", top: Object.entries(B.mvpx).sort((a, b) => b[1] - a[1])[0] || null } : { t: "capture", clear: false });
+        broadcast(room, { t: "snap", s: snapshot(sim.S), ev: room.ev.splice(0) });
+      }
+    } else { B.it -= 1 / 60; if (B.it <= 0) batStart(G); }
+    if (++n % 4 === 0 && !B.over) broadcast(room, { t: "snap", s: snapshot(sim.S), ev: room.ev.splice(0) });
+    if (n % 4 === 0) pushSend(G, { t: "psnap", s: batSnap(G) });
+  }, 1000 / 60);
+}
+function batStop(G) { const B = G.bat; if (B && B.room) ROOMS.delete(B.room.code); G.bat = null; }
 function pushRun(G) {
+  if (isBat(G)) return batRun(G); batStop(G);
   clearInterval(G.loop); let n = 0;
   G.loop = setInterval(() => { for (let q = 0; q < SPEED; q++) G.game.tick(1 / 30); if (++n % 2 === 0) { const s = G.game.snapshot(); s.falls = fallsOf(G.who); pushSend(G, { t: "psnap", s }); } }, 1000 / 30);
 }
@@ -445,26 +510,32 @@ wss.on("connection", (ws, req) => {
         if (C.watch) { const W = WATCH.get(C.watch); if (W) W.delete(ws); }
         C.watch = k; if (!WATCH.has(k)) WATCH.set(k, new Set()); WATCH.get(k).add(ws);
         const f = roomOf(k); if (f && f.room.sim && f.room.phase !== "lobby") send(ws, { t: "start", you: f.team, room: roomView(f.room), s: snapshot(f.room.sim.S), resume: true });
-        const pg = pushOf(k); send(ws, { t: "psnap", s: pg ? pg.game.snapshot() : idleSnap(k) });
+        const pg = pushOf(k); send(ws, { t: "psnap", s: pg ? (isBat(pg) ? batSnap(pg) : pg.game.snapshot()) : idleSnap(k) });
         break;
       }
       case "pstart": case "pslots": case "pskill": case "ptest": case "pstop": case "pjoin": case "pboost": case "plike": case "previve": case "pfall": case "pwin": {
         if (!WHO.owner) return send(ws, { t: "err", msg: "押し合いモードは今はオーナーだけが使えます" });
         let G = PUSHG.get(WHO.name);
         if ((m.t === "pjoin" || m.t === "pstart") && WHO.owner) send(ws, { t: "pkey", k: pboostKey(WHO.name) });
-        if (m.t === "pjoin") { if (G) { G.ops.add(ws); C.push = G; clearTimeout(G.dieT); send(ws, { t: "psnap", s: G.game.snapshot() }); if (G.live) send(ws, { t: "ptt", info: G.live.info() }); } break; }
+        if (m.t === "pjoin") { if (G) { G.ops.add(ws); C.push = G; clearTimeout(G.dieT); send(ws, { t: "psnap", s: isBat(G) ? batSnap(G) : G.game.snapshot() }); if (G.live) send(ws, { t: "ptt", info: G.live.info() }); } break; }
         if (m.t === "pstart") {
           if (!G) { G = { game: createPush(), ops: new Set(), who: WHO.name, name: "", live: null, on: null }; PUSHG.set(WHO.name, G); pushEvents(G); }
           G.ops.add(ws); C.push = G; clearTimeout(G.dieT);
-          G.game.start(m.cfg || {}, m.gifts); pushLive(G, C.name); for (const k of pushKeys(G)) PUSHLAST.set(k, { cfg: m.cfg || {}, gifts: m.gifts || null }); pushRun(G); pushSend(G, { t: "psnap", s: G.game.snapshot() }); break;
+          G.game.start(m.cfg || {}, m.gifts); G.cfg = Object.assign({}, m.cfg || {}, { field: G.game.snapshot().cfg.field }); pushLive(G, C.name); for (const k of pushKeys(G)) PUSHLAST.set(k, { cfg: m.cfg || {}, gifts: m.gifts || null }); pushRun(G); pushSend(G, { t: "psnap", s: isBat(G) ? batSnap(G) : G.game.snapshot() }); break;
         }
         if (!G) return;
         if (m.t === "pslots") { G.game.setSlots(m.gifts); for (const k of pushKeys(G)) { const L = PUSHLAST.get(k); if (L) L.gifts = m.gifts; } }
         else if (m.t === "pskill") G.game.skill(m.k === 2 ? 2 : 1);
         else if (m.t === "plike") G.game.like(m.n === 50 ? 50 : 10, "テスト");
+        else if (m.t === "ptest" && isBat(G)) { const side = m.side === "x" ? "x" : "h", L = G.game.slots[side], sl = typeof m.unit === "string" ? L.find(q => q.unit === m.unit) : L[Math.max(0, Math.min(5, m.i | 0))]; if (sl) batAdd(G, side, sl, "テスト", sl.coins); }
+        else if (m.t === "plike" && isBat(G)) batLike(G, m.n === 50 ? 50 : 10, "テスト");
         else if (m.t === "ptest") G.game.test(m.side === "x" ? "x" : "h", typeof m.unit === "string" ? m.unit.slice(0, 12) : Math.max(0, Math.min(5, m.i | 0)), "テスト");
         else if (m.t === "pstop") pushStop(G);
         else if (m.t === "pboost" && WHO.owner) G.game.boost(2, 30, "all");
+        else if (isBat(G) && (m.t === "previve" || m.t === "pfall" || m.t === "pwin")) { const B = G.bat, S = B && B.sim && B.sim.S, king = t => S && S.towers.find(x => x.team === t && x.king);
+          if (m.t === "previve" && B && B.over) B.it = 0;
+          else if (m.t === "pfall" && B && !B.over && king("b")) king("b").hp = 0;
+          else if (m.t === "pwin" && B && !B.over && king("r")) king("r").hp = 0; }
         else if (m.t === "previve") G.game.revive();
         else if (m.t === "pfall") { const S = G.game.S; if (S && !S.over) S.fortB = 0; } // test: knock the castle down
         else if (m.t === "pwin") { const S = G.game.S; if (S && !S.over) S.fortR = 0; } // test: take the enemy fort

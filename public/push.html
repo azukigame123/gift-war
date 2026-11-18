@@ -255,7 +255,7 @@ function connect(){if(!NAME){$("msg").textContent="URLに ?stream=名前 が必�
  const ws=WS=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws?inv="+encodeURIComponent(INV));
  ws.onopen=()=>{tries=0;ws.send(JSON.stringify({t:"watch",name:NAME}));$("msg").textContent=""};
  ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}
-  if(m.t==="psnap"&&m.s){const now=performance.now();if(tSn)iv=iv*.8+Math.max(30,Math.min(250,now-tSn))*.2;PREV=SN;SN=m.s;tSn=now;if(VIEWM==="count")count();}
+  if(m.t==="psnap"&&m.s){const fb=m.s.field||(m.s.cfg&&m.s.cfg.field);if(fb==="battle"&&VIEWM!=="count"){const q=new URLSearchParams(location.search);q.set("v",VIEWM==="mini"?"bmini":"full");if(VIEWM!=="mini")q.set("c","1");location.replace("/?"+q.toString());return}const now=performance.now();if(tSn)iv=iv*.8+Math.max(30,Math.min(250,now-tSn))*.2;PREV=SN;SN=m.s;tSn=now;if(VIEWM==="count")count();}
   else if(m.t==="pend"){cn=null}};
  ws.onclose=()=>{if(!EMBED)$("msg").textContent=tries>2?"サーバーにつながりません（再接続中）":"";setTimeout(connect,Math.min(15000,1000*(++tries)))};}
 // local mode (preview without the server): runs the same push.js in the page, controlled by the parent page

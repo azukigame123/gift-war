@@ -224,7 +224,7 @@ function createPush() {
     };
   }
   return {
-    start(cfg, g) { CFG = { goal: [0, 3, 5, 7, 10].includes(+cfg.goal) ? +cfg.goal : 5, fort: [1500, 3000, 5000, 8000, 12000].includes(+cfg.fort) ? +cfg.fort : 3000, castle: [3000, 5000, 8000, 12000, 20000, 30000].includes(+cfg.castle) ? +cfg.castle : 5000, pun: !!cfg.pun, auto: !!cfg.auto, rv: [10, 30, 60, 90, 120].includes(+cfg.rv) ? +cfg.rv : 60 }; if (g) slots = cleanSlots(g); COUNT = 0; interT = 0; newLap(); },
+    start(cfg, g) { CFG = { goal: [0, 3, 5, 7, 10].includes(+cfg.goal) ? +cfg.goal : 5, fort: [1500, 3000, 5000, 8000, 12000].includes(+cfg.fort) ? +cfg.fort : 3000, castle: [3000, 5000, 8000, 12000, 20000, 30000].includes(+cfg.castle) ? +cfg.castle : 5000, field: cfg.field === "battle" ? "battle" : "course", pun: !!cfg.pun, auto: !!cfg.auto, rv: [10, 30, 60, 90, 120].includes(+cfg.rv) ? +cfg.rv : 60 }; if (g) slots = cleanSlots(g); COUNT = 0; interT = 0; newLap(); },
     setSlots(g) { slots = cleanSlots(g); },
     result(text) { if (!S || S.over !== "x") return false; S.pun = String(text || "").slice(0, 40); if (S.punWait) { S.punWait = false; interT = CFG.rv; } return true; },
     revive() { if (!S || !S.over || S.clear) return false; interT = 0; S.punWait = false; return true; },
