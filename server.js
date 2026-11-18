@@ -340,7 +340,7 @@ function batStart(G) {
   const room = B.room; room.players.b.name = G.name || G.who; room.phase = "battle";
   const sim = room.sim = B.sim = createSim({ log: (c, t) => room.ev.push(["l", c, t]), play: k => room.ev.push(["s", k]) });
   const slots = G.game.slots;
-  for (const t of ["b", "r"]) { sim.DECK[t].clear(); UNIT_IDS.forEach(x => sim.DECK[t].add(x)); sim.MODE[t] = "5"; sim.SM[t] = {}; }
+  for (const t of ["b", "r"]) { sim.DECK[t].clear(); UNIT_IDS.forEach(x => sim.DECK[t].add(x)); sim.MODE[t] = "all"; /* every gift unit goes out by itself (nobody deploys by hand in push mode) */ sim.SM[t] = {}; }
   for (const [side, t] of [["h", "b"], ["x", "r"]]) for (const sl of slots[side]) { const m = sim.smOf(sl.unit, sl.n > 1 ? COINV_OF(sl.unit) : sl.coins); if (m !== 1) sim.SM[t][sl.unit] = m; }
   sim.CFG.cap = 60; sim.setAuto(false, false); sim.AG.b = sim.AG.r = false; sim.setAutoGift(false); sim.GR.b = sim.GR.r = 1; sim.PRAC.on = false; sim.OFF.b = sim.OFF.r = false;
   sim.newState(); const S = sim.S; S.t = 1e9; S.gf = { b: {}, r: {} }; S.gc = null;

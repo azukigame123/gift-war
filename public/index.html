@@ -1120,7 +1120,7 @@ function renderCanvas(k){
 }
 
 // ---------- stream preview ----------
-const stCv=document.getElementById("streamCv"),stG=stCv.getContext("2d");let stA=.5725,STV="",BV="",FC=false,PV="battle";try{const q=new URLSearchParams(location.search);if(q.get("stream")){const v=q.get("v");if(v==="full"||v==="half"||v==="bmini")STV=v;FC=q.get("c")==="1"}else{const v=localStorage.getItem("giftwar_view");if(v==="half")BV=v;FC=localStorage.getItem("giftwar_fc")==="1"}}catch(e){}
+const stCv=document.getElementById("streamCv"),stG=stCv.getContext("2d");let stA=.5725,STV="",BV="",FC=false,PV="battle";try{const q=new URLSearchParams(location.search);if(q.get("stream")){const v=q.get("v");if(v==="full"||v==="half"||v==="bmini"||v==="bpush")STV=v;FC=q.get("c")==="1"}else{const v=localStorage.getItem("giftwar_view");if(v==="half")BV=v;FC=localStorage.getItem("giftwar_fc")==="1"}}catch(e){}
 const IS_STREAM=!!new URLSearchParams(location.search).get("stream");function curView(){return IS_STREAM?STV:(PV==="full"?"full":BV)}try{const q=+new URLSearchParams(location.search).get("r");const v=q||+localStorage.getItem("giftwar_ratio");if([.5725,.5625,.75,1,1.7778].includes(v))stA=v}catch(e){}
 function syncView(){const P=(sel,f)=>document.querySelectorAll(sel).forEach(x=>x.setAttribute("aria-pressed",f(x)));P("#pvSel button",x=>x.dataset.p===PV);P("#sview button",x=>x.dataset.v===BV);P("#fcSel button",x=>(x.dataset.c==="1")===FC);
  const bo=document.getElementById("bvOpt"),fo=document.getElementById("fvOpt"),as=document.getElementById("aspect");if(bo)bo.hidden=PV!=="battle";if(fo)fo.hidden=PV!=="full";if(as){as.style.display=PV!=="battle"?"none":"";as.style.opacity=BV?.4:1;as.style.pointerEvents=BV?"none":""}}
@@ -1139,6 +1139,7 @@ function coin(g,x,y,r){g.fillStyle="#ffcf3f";g.beginPath();g.arc(x,y,r,0,7);g.fi
 function legendIds(){const a=UNITS.map(u=>u.id).filter(id=>id!=="rookie");a.push("rookie");return a}
 function drawStream(){
   if(STV==="bmini"){drawBMini(stG,stCv.width,stCv.height);return}
+  if(STV==="bpush"){drawBPush(stG,stCv.width,stCv.height);return}
   if(STV){drawFieldView(stG,stCv.width,stCv.height,STV==="full",STV==="full"&&FC);return}
   if(VSF&&IS_STREAM&&stCv.width/stCv.height>1.05){const t=(performance.now()-VSF.t0)/1000;if(t<3.6&&PH!=="battle"){const g0=stG;g0.setTransform(1,0,0,1,0,0);g0.clearRect(0,0,stCv.width,stCv.height);vsFrame(g0,stCv.width,stCv.height,t,Math.max(1,stCv.width/1280),VSF,false);return}}
   if(VSH){const W0=stCv.width,H0=stCv.height;if(drawVSHalf(stG,W0,H0))return}
@@ -1205,6 +1206,32 @@ function bovDraw(g,BW,BH,TB,fh,fall,e){const dt=1/60,M=BMINI||{};
    else btxt(g,`砦の復活まで ${it}秒`,tx,l2,13,"#d4d0e4","left",3,tw)}
   else{const t=M.mvp||[];btxt(g,t[0]?`いちばん守った人：${t[0][0]}（${t[0][1]}コイン）`:"みんなの力で攻略！",tx,l1,12,"#fff","left",3,tw);btxt(g,`次の押し合いまで ${it}秒`,tx,l2+4,12,"#d4d0e4","left",3,tw)}
   g.restore()}
+// a character card of the push lineup: gift icon + character (+ ×n / ×power)
+function bcard(g,q,team,x,y,w,h,small){const [id,gid,url,lab,pw,n]=q;g.fillStyle="rgba(255,255,255,.08)";g.beginPath();g.roundRect?g.roundRect(x,y,w,h,small?5:9):g.rect(x,y,w,h);g.fill();
+  const gi=bgimg(url||(GIFTS.find(e=>String(e[3])===String(gid))||[])[1]),gs=small?Math.min(h*.62,w*.48):Math.min(32,w*.4);if(gi&&ok(gi))g.drawImage(gi,x+3,y+3,gs,gs);
+  const im=IMG[id+"_"+team];if(ok(im)){const ch=small?h-2:h-12,cw=ch*im.naturalWidth/im.naturalHeight,cx=small?x+w-cw-1:x+w/2-cw/2+gs*.25;g.save();if(team==="r"){g.translate(cx+cw,y);g.scale(-1,1);g.drawImage(im,0,small?1:6,cw,ch)}else g.drawImage(im,cx,y+(small?1:6),cw,ch);g.restore()}
+  const tg=n>1?`×${n}体`:pw&&Math.abs(pw-1)>=.05?`×${pw}`:"";if(tg&&!small)btxt(g,tg,x+3+gs/2,y+h-12,12,pw>1||n>1?"#ffe27a":"#cbd3ea","center",4)}
+// 押し合い用URL with the battle field: the push screen's character strips (top = 救済/青, bottom = 妨害/赤), the battlefield in the middle, no hero gauge
+function drawBPush(g,W,H){
+  const keep=S;if(!S)S=idleState();
+  STK.field=CANVAS[0].field;STK.mirror=CANVAS[0].mirror;STK2.field=CANVAS[1].field;STK2.mirror=CANVAS[1].mirror;OBJS=1.15;renderCanvas(STK);renderCanvas(STK2);OBJS=1;
+  const sw=FW*.97,sh0=FH*.92,sy0=FH*.04,BW=640,SH=96,fh=BW/2*sh0/sw,BH=SH*2+fh+8,k=Math.min(W/BW,H/BH),ox=(W-BW*k)/2,oy=(H-BH*k)/2;
+  g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,W,H);g.setTransform(k,0,0,k,ox,oy);g.fillStyle="#0b0f1d";g.fillRect(0,0,BW,BH);
+  const TB=SH+4;
+  const now=performance.now(),ov=BMINI&&BMINI.over;if(ov&&BOV.k!==ov){BOV.k=ov;BOV.t0=now;bovInit(ov,BW,TB,fh)}if(!ov)BOV.k=null;const oe=ov?(now-BOV.t0)/1000:9,shk=oe<.7?(1-oe/.7)*9:0;
+  g.save();g.beginPath();g.rect(0,TB,BW,fh);g.clip();if(shk)g.translate((Math.random()-.5)*shk,(Math.random()-.5)*shk);g.drawImage(STK.cv,FW*.03,sy0,sw,sh0,0,TB,BW/2,fh);g.drawImage(STK2.cv,0,sy0,sw,sh0,BW/2,TB,BW/2,fh);g.restore();
+  g.fillStyle="rgba(255,255,255,.5)";g.fillRect(BW/2-1,TB,2,fh);
+  const kt=t=>S.towers.find(x=>x.team===t&&x.king),hb=(x,t,lab,right)=>{const T=kt(t),v=T?Math.max(0,T.hp/T.max):0,w=170;g.fillStyle="rgba(11,15,29,.85)";g.fillRect(x,TB+8,w,12);g.fillStyle=v<.3?"#ffcf3f":t==="b"?"#3fd47a":"#ff4d6a";g.fillRect(x+2,TB+10,(w-4)*v,8);btxt(g,`${lab} ${Math.round(v*100)}%`,right?x+w:x,TB+32,13,"#fff",right?"right":"left",4)};
+  hb(10,"b","豆の砦",false);hb(BW-180,"r","敵の砦",true);
+  if(ov)bovDraw(g,BW,BH,TB,fh,ov==="x",oe);
+  const SL=BMINI&&BMINI.slots;
+  const strip=(L,y,team)=>{g.fillStyle=team==="b"?"rgba(14,52,30,.94)":"rgba(64,14,26,.94)";g.beginPath();g.roundRect?g.roundRect(4,y,BW-8,SH,12):g.rect(4,y,BW-8,SH);g.fill();
+    const n=Math.max(1,(L||[]).length),cw=(BW-16)/n;(L||[]).forEach((q,i)=>{const j=team==="b"?i:n-1-i;bcard(g,q,team,10+j*cw,y+5,cw-6,SH-18,false)});
+    g.fillStyle=team==="b"?"#3fd47a":"#ff4d6a";g.fillRect(10,y+SH-8,BW-20,3);btxt(g,team==="b"?"守る（救済）":"落とす（妨害）",team==="b"?14:BW-14,y+SH-14,10,team==="b"?"#bff5d2":"#ffd0d8",team==="b"?"left":"right",3)};
+  strip(SL&&SL.h,0,"b");strip(SL&&SL.x,BH-SH,"r");
+  btxt(g,`今日の落城 ${(BMINI&&BMINI.falls)||0}回`,BW/2,TB+16,13,"#fff","center",4);
+  g.setTransform(1,0,0,1,0,0);S=keep;
+}
 // 押し合い（バトクラの戦場）の小窓: both halves of the battlefield side by side, with the push top bar and gift bar
 function drawBMini(g,W,H){
   const keep=S;if(!S)S=idleState();
@@ -1229,7 +1256,7 @@ function drawBMini(g,W,H){
   const ids=legendIds().filter(id=>id!=="rookie").slice(0,6);g.font="800 11px 'M PLUS 1p',sans-serif";
   g.textAlign="left";g.fillStyle="#7aa8ff";g.fillText("守る",8,by+15);g.textAlign="right";g.fillStyle="#ff7a8f";g.fillText("落とす",BW-8,by+15);
   const SL=BMINI&&BMINI.slots;
-  if(SL){for(const [side,x0,dx] of [["h",38,24],["x",BW-64,-24]])(SL[side]||[]).slice(0,6).forEach((q,i)=>{const gi=bgimg(q[2]||(GIFTS.find(x=>String(x[3])===String(q[1]))||[])[1]);if(gi&&ok(gi))g.drawImage(gi,x0+i*dx,by+5,20,20)})}
+  if(SL){for(const [side,x0,dx,t] of [["h",36,29,"b"],["x",BW-90,-29,"r"]])(SL[side]||[]).slice(0,6).forEach((q,i)=>bcard(g,q,t,x0+i*dx,by+3,28,BB-6,true))}
   else ids.forEach((id,i)=>{const x1=38+i*28,x2=BW-62-i*28;for(const [x,t] of [[x1,"b"],[x2,"r"]]){const im=IMG[id+"_"+t];if(ok(im)){const h=22,w=h*im.naturalWidth/im.naturalHeight;g.drawImage(im,x+(24-w)/2,by+4,w,h)}}});
   g.restore();g.setTransform(1,0,0,1,0,0);S=keep;
 }
@@ -1762,7 +1789,7 @@ function netStart(m){NETX.rdone=false;const you=m.you;NET.team=you;NET.on=true;s
   const it=setInterval(()=>{k--;if(k>0){n.textContent=k;play("beep")}else if(k===0){n.textContent="START!";play("go")}else{clearInterval(it);ov.hidden=true;setPhase("battle")}},900)})}
 function netBackToLobby(){NET.on=false;PRAC.on=false;wrapEl.classList.remove("net-b","net-r","prac","practest","offl");$("resOv").hidden=true;resTimer=null;setRoom("b");setPhase("lobby");newState();refreshUI();lobbyUI()}
 function netMsg(m){
-  if(m.t==="psnap"&&STV==="bmini"&&m.s){const fb=m.s.field||(m.s.cfg&&m.s.cfg.field);if(fb&&fb!=="battle"){const q=new URLSearchParams(location.search);q.set("v","mini");location.replace("push.html?"+q.toString());return}BMINI=m.s;return}
+  if(m.t==="psnap"&&(STV==="bmini"||STV==="bpush")&&m.s){const fb=m.s.field||(m.s.cfg&&m.s.cfg.field);if(fb&&fb!=="battle"){const q=new URLSearchParams(location.search);q.set("v",STV==="bpush"?"push":"mini");location.replace("push.html?"+q.toString());return}BMINI=m.s;return}
   if(m.t==="psnap"||m.t==="ptt"||m.t==="pend"||m.t==="pkey"){if(window.PUSHUI)PUSHUI.msg(m);return}
   if(m.t==="hi")setTimeout(()=>{if(window.PUSHUI)PUSHUI.hi(m)});
   if(m.t==="rdone"){NETX.rdone=true;return}
@@ -1889,7 +1916,7 @@ setInterval(()=>{if(NETX.owner&&!document.hidden)invLoad()},20000);
 async function invLoad(){try{const j=await invApi("invites");if(j.ok){invLoad.persist=j.persist;invRender(j.users,j.persist)}}catch(e){}}
 $("invMake").onclick=async()=>{const n=$("invName").value.trim();if(!n)return;try{const j=await invApi("invite",`&name=${encodeURIComponent(n)}&memo=${encodeURIComponent($("invMemo").value.trim())}`);if(!j.ok){invMsg(j.msg||"作れませんでした");return}
   invRender(j.users,invLoad.persist);try{await navigator.clipboard.writeText(j.url);invMsg(`@${j.name} の招待URLを作って、コピーしました`)}catch(x){invMsg(`@${j.name} の招待URLを作りました（一覧の「URLをコピー」でコピーできます）`)}$("invName").value="";$("invMemo").value=""}catch(e){}};
-function frame(){const now=performance.now();fpsAcc+=now-lastT;lastT=now;fpsN++;if(cardsDirty&&imgLeft===0){cardsDirty=false;PLAYERS.forEach(p=>UNITS.forEach(u=>drawCard(p.pcs[u.id],u,p.team)))}const t0=performance.now();if(PH==="battle"&&!NET.on)for(let i=0;i<speed;i++){tick++;step()}else tick++;if(NET.on)netLerp(now);if(PH==="battle"&&S.over&&!resTimer)resTimer=setTimeout(showResult,1500);simAcc+=performance.now()-t0;if(fpsN>=30){document.getElementById("fps").textContent=Math.round(1000/(fpsAcc/fpsN));document.getElementById("simms").textContent=(simAcc/fpsN).toFixed(1);document.getElementById("ucount").textContent=S.units.length;fpsAcc=simAcc=fpsN=0}dexStep();for(let i=LFX.length-1;i>=0;i--)if(--LFX[i].life<=0)LFX.splice(i,1);CANVAS.forEach(renderCanvas);if(S.over&&!NETX.overAt)NETX.overAt=performance.now();if(!S.over)NETX.overAt=0;if(STREAM_NAME&&(!NET.on||NETX.rdone||(NETX.overAt&&performance.now()-NETX.overAt>600000))){stG.setTransform(1,0,0,1,0,0);stG.clearRect(0,0,stCv.width,stCv.height);if(STV==="full"&&uiT%2===0){const keep=S;S=idleState();try{drawFieldView(stG,stCv.width,stCv.height,true,FC,true)}finally{S=keep;FVT=0}}if(STV==="bmini"&&uiT%2===0)drawBMini(stG,stCv.width,stCv.height)}else if(uiT%2===0){drawStream();if(S.over&&NETX.overAt&&performance.now()-NETX.overAt>1500)drawResultCard(stG,stCv.width,stCv.height)}if(++uiT%6===0)refreshUI();requestAnimationFrame(frame)}
+function frame(){const now=performance.now();fpsAcc+=now-lastT;lastT=now;fpsN++;if(cardsDirty&&imgLeft===0){cardsDirty=false;PLAYERS.forEach(p=>UNITS.forEach(u=>drawCard(p.pcs[u.id],u,p.team)))}const t0=performance.now();if(PH==="battle"&&!NET.on)for(let i=0;i<speed;i++){tick++;step()}else tick++;if(NET.on)netLerp(now);if(PH==="battle"&&S.over&&!resTimer)resTimer=setTimeout(showResult,1500);simAcc+=performance.now()-t0;if(fpsN>=30){document.getElementById("fps").textContent=Math.round(1000/(fpsAcc/fpsN));document.getElementById("simms").textContent=(simAcc/fpsN).toFixed(1);document.getElementById("ucount").textContent=S.units.length;fpsAcc=simAcc=fpsN=0}dexStep();for(let i=LFX.length-1;i>=0;i--)if(--LFX[i].life<=0)LFX.splice(i,1);CANVAS.forEach(renderCanvas);if(S.over&&!NETX.overAt)NETX.overAt=performance.now();if(!S.over)NETX.overAt=0;if(STREAM_NAME&&(!NET.on||NETX.rdone||(NETX.overAt&&performance.now()-NETX.overAt>600000))){stG.setTransform(1,0,0,1,0,0);stG.clearRect(0,0,stCv.width,stCv.height);if(STV==="full"&&uiT%2===0){const keep=S;S=idleState();try{drawFieldView(stG,stCv.width,stCv.height,true,FC,true)}finally{S=keep;FVT=0}}if(STV==="bmini"&&uiT%2===0)drawBMini(stG,stCv.width,stCv.height);if(STV==="bpush"&&uiT%2===0)drawBPush(stG,stCv.width,stCv.height)}else if(uiT%2===0){drawStream();if(S.over&&NETX.overAt&&performance.now()-NETX.overAt>1500)drawResultCard(stG,stCv.width,stCv.height)}if(++uiT%6===0)refreshUI();requestAnimationFrame(frame)}
 {const d=$("dispB");d.value=CFG.disp||"";d.oninput=()=>{CFG.disp=d.value.trim().slice(0,16);saveCfg();sendCfg()};
  const f=$("icFile"),clr=$("icClr"),paint=()=>{clr.hidden=!CFG.icon;avatar($("avB"),$("ttB").value,"b")};paint();
  $("icPick").onclick=()=>f.click();clr.onclick=()=>{CFG.icon="";saveCfg();sendCfg();clr.hidden=true;setAv($("avB"),TT.b==="ok"&&LASTAV,$("ttB").value)};
